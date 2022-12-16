@@ -442,9 +442,13 @@ class CebraAnnWidget(QWidget):
 
     def _btn_mem_compute_onclicked(self, value: bool):
 
-        res = QCebraNetDialog().get_results(self._project.mem_params)
+        ok, res = QCebraNetDialog().get_results(self._project.mem_params)
 
-        self._project.set_mem()
+        self._project.mem_params = res
+
+        if ok:
+            # TODO run membrane net with the set parameters
+            pass
 
     def _btn_sv_compute_onclick(self, value: bool):
         show_info('TODO: Implement this!')

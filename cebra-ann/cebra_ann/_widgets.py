@@ -7,7 +7,7 @@ class QSliderLabelEdit(QWidget):
     
     def __init__(
             self, value, range, single_step,
-            decimals=1,
+            decimals=None,
             maximum_line_edit_width=None
     ):
 
@@ -26,7 +26,6 @@ class QSliderLabelEdit(QWidget):
         self.sld.setRange(self._dec2int(range[0]), self._dec2int(range[1]))
         self.sld.setSingleStep(self._dec2int(single_step))
         self.sld.setValue(self._dec2int(value))
-        self.sld.valueChanged.connect(self._sld_value_changed)
         self.sld.sliderMoved.connect(self._sld_slider_moved)
 
         layout.addWidget(self.sld)
@@ -46,10 +45,6 @@ class QSliderLabelEdit(QWidget):
         # layout.addLayout(hlyo)
 
         layout.setContentsMargins(0, 0, 0, 0)
-
-    def _sld_value_changed(self):
-        self.value = self.sld.value()
-        # print(f'value = {self.value}')
 
     def _int2dec(self, value):
         if self.decimals is not None and self.decimals > 0:
