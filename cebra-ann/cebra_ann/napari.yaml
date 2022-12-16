@@ -1,0 +1,9 @@
+name: cebra-ann
+contributions:
+  commands:
+    - id: cebra-ann.widget
+      title: CebraANN
+      python_name: cebra_ann._widget:CebraAnnWidget
+  widgets:
+    - command: cebra-ann.widget
+      display_name: CebraANN
