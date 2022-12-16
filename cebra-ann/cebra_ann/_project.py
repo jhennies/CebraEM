@@ -4,6 +4,16 @@ import numpy as np
 import json
 
 
+mem_defaults = dict(
+    shape=None,  # Use the full raw data shape
+    halo=16,
+    batch_size=64,
+    sigma=0.0,
+    qnorm_low=0.0,
+    qnorm_high=1.0
+)
+
+
 defaults = dict(
     path=None,
     raw=None,
@@ -18,7 +28,8 @@ defaults = dict(
     instance_seg_running=False,
     semantics=dict(),  # A dict of the form {semantic_name: filepath}
     semantic_names=[],
-    semantic_types=dict()
+    semantic_types=dict(),
+    mem_params=mem_defaults
 )
 
 
@@ -43,6 +54,7 @@ class AnnProject:
         self.semantics = defaults['semantics']
         self.semantic_names = defaults['semantic_names']
         self.semantic_types = defaults['semantic_types']
+        self.mem_params = defaults['mem_params']
 
         # --- Properties that are only used as long as the session is alive ---
         # Flags which state if one of the layers were altered
@@ -95,6 +107,8 @@ class AnnProject:
                 self.semantics_touched[name] = False
         if 'semantic_types' in project_info:
             self.semantic_types = project_info['semantic_types']
+        if 'mem_params' in project_info:
+            self.mem_params = project_info['mem_params']
 
     def _load_from_proj_file(self):
         fp = self.get_project_json()
@@ -139,7 +153,8 @@ class AnnProject:
             instance_seg_running=self.instance_seg_running,
             semantics=self.semantics,
             semantic_names=self.semantic_names,
-            semantic_types=self.semantic_types
+            semantic_types=self.semantic_types,
+            mem_params=self.mem_params
         )
 
     def save(self):

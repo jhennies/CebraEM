@@ -2,6 +2,8 @@
 from PyQt5.QtCore import *
 from qtpy.QtWidgets import *
 
+from ._widgets import QSliderLabelEdit
+
 
 class QParameterDialog(QDialog):
 
@@ -11,8 +13,40 @@ class QParameterDialog(QDialog):
         self.layout = QFormLayout()
         self.title = title
         
-    def setup_ui(self, *args, **kwargs):
-        
+    def setup_ui(self, *args, standard_rows=None, **kwargs):
+
+        # Add the parameter rows as defined in standard_rows
+        if standard_rows is not None:
+
+            self.std_rows = []
+
+            for row_spec in standard_rows:
+
+                idx = row_spec['id']
+                type = row_spec['type']
+                default = row_spec['default']
+                label = row_spec['label']
+
+                lyo_this = QHBoxLayout()
+
+                if type == 'line_edit':
+                    self.std_rows.append(QLineEdit(default))
+
+                elif type == 'combo_box':
+                    cmb = QComboBox()
+                    cmb.addItems(default[0])
+                    cmb.setCurrentText(default[1])
+                    self.std_rows.append(cmb)
+
+                elif type == 'slider':
+                    sld = QSliderLabelEdit(default, (0, 10), 1)
+                    self.std_rows.append(sld)
+
+                lyo_this.addWidget(self.std_rows[-1])
+
+                self.layout.addRow(QLabel(f'{label}: '), lyo_this)
+
+        # Add the OK and cancel buttons
         self.buttonBox = QDialogButtonBox(self)
         self.buttonBox.setOrientation(Qt.Horizontal)
         self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
@@ -26,10 +60,35 @@ class QParameterDialog(QDialog):
 
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
+
+
+    def get_results(self, *args, standard_rows=None, **kwargs):
+        """
+        Generate a dialog using some standard rows as described below
+        :param args:
+        :param standard_rows:
+            list like so:
+            [
+                {
+                    "id": "id1",
+                    "type": "line_edit",
+                    "default": def_val1,
+                    "label": "Line edit"
+                },
+                {
+                    "id": "id2",
+                    "type": "combo_box",
+                    "default": [["current_item", "other_item"], "current_item"],
+                    "label": "Combo box"
+                },
+            ]
+
+            possible types: "line_edit", "combo_box", "slider"
+        :param kwargs:
+        :return:
+        """
         
-    def get_results(self, *args, **kwargs):
-        
-        self.setup_ui()
+        self.setup_ui(standard_rows=standard_rows, )
 
 
 class QModifyLayerDialog(QParameterDialog):
@@ -79,9 +138,87 @@ class QCebraNetDialog(QParameterDialog):
         super(QCebraNetDialog, self).__init__()
         self.title = 'CebraNET parameters'
 
-    def setup_ui(self):
+    def get_results(self, mem_params):
+
+        def _to_str(val):
+            if val is None:
+                return ''
+            elif type(val) is tuple or type(val) is list:
+                return str.join(', ', val)
+            else:
+                return f'{val}'
+
+        std_rows = [
+            dict(
+                id='shape',
+                type='line_edit',
+                default=_to_str(mem_params['shape']),
+                label='Shape'
+            ),
+            dict(
+                id='halo',
+                type='line_edit',
+                default=_to_str(mem_params['halo']),
+                label='Halo'
+            ),
+            dict(
+                id='batch_size',
+                type='line_edit',
+                default=_to_str(mem_params['batch_size']),
+                label='Batch size'
+            ),
+            dict(
+                id='sigma',
+                type='slider',
+                default=mem_params['sigma'],
+                label='Sigma'
+            ),
+            dict(
+                id='qnorm_low',
+                type='slider',
+                default=mem_params['qnorm_low'],
+                label='QNorm low'
+            ),
+            dict(
+                id='qnorm_high',
+                type='slider',
+                default=mem_params['qnorm_high'],
+                label='QNorm high'
+            )
+        ]
+
+        self.setup_ui(standard_rows=std_rows)
+
+        if self.exec_() == QDialog.Accepted:
+            return 1
+        else:
+            return None
+
+
+class QCebraNetDialogOld(QParameterDialog):
+
+    def __init__(self):
+        super(QCebraNetDialog, self).__init__()
+        self.title = 'CebraNET parameters'
+
+    def setup_ui(self, mem_params):
+
+        def _to_str(val):
+            if val is None:
+                return ''
+            elif type(val) is tuple or type(val) is list:
+                return str.join(', ', val)
+            else:
+                return f'{val}'
 
         layout = self.layout
+
+        shape = mem_params['shape']
+        halo = mem_params['halo']
+        batch_size = mem_params['batch_size']
+        sigma = mem_params['sigma']
+        qnorm_low = mem_params['qnorm_low']
+        qnorm_high = mem_params['qnorm_high']
 
         # Layouts for each row
         lyo_shape = QHBoxLayout()
@@ -92,20 +229,22 @@ class QCebraNetDialog(QParameterDialog):
         lyo_qnorm_high = QHBoxLayout()
 
         # Row shape
-        self.lne_shape = QLineEdit()
+        self.lne_shape = QLineEdit(_to_str(shape))
         lyo_shape.addWidget(self.lne_shape)
         # Row halo
-        self.lne_halo = QLineEdit()
+        self.lne_halo = QLineEdit(_to_str(halo))
         lyo_halo.addWidget(self.lne_halo)
         # Row batch size
-        self.lne_batch_size = QLineEdit()
+        self.lne_batch_size = QLineEdit(_to_str(batch_size))
         lyo_batch_size.addWidget(self.lne_batch_size)
         # Row sigma
         self.sld_sigma = QSlider(Qt.Horizontal)
         self.sld_sigma.setRange(0, 100)
         self.sld_sigma.setSingleStep(1)
         self.sld_sigma.setValue(0)
-        self.lne_sigma = QLineEdit()
+        self.lne_sigma = QLineEdit(_to_str(sigma))
+        self.lne_sigma.setMaximumWidth(70)
+        self.lne_sigma.setAlignment(Qt.AlignRight)
         lyo_sigma.addWidget(self.sld_sigma)
         lyo_sigma.addWidget(self.lne_sigma)
         # Row qnorm low
@@ -113,7 +252,9 @@ class QCebraNetDialog(QParameterDialog):
         self.sld_qnorm_low.setRange(0, 50)
         self.sld_qnorm_low.setSingleStep(1)
         self.sld_qnorm_low.setValue(0)
-        self.lne_qnorm_low = QLineEdit()
+        self.lne_qnorm_low = QLineEdit(_to_str(qnorm_low))
+        self.lne_qnorm_low.setMaximumWidth(70)
+        self.lne_qnorm_low.setAlignment(Qt.AlignRight)
         lyo_qnorm_low.addWidget(self.sld_qnorm_low)
         lyo_qnorm_low.addWidget(self.lne_qnorm_low)
         # Row qnorm high
@@ -121,7 +262,9 @@ class QCebraNetDialog(QParameterDialog):
         self.sld_qnorm_high.setRange(50, 100)
         self.sld_qnorm_high.setSingleStep(1)
         self.sld_qnorm_high.setValue(0)
-        self.lne_qnorm_high = QLineEdit()
+        self.lne_qnorm_high = QLineEdit(_to_str(qnorm_high))
+        self.lne_qnorm_high.setMaximumWidth(70)
+        self.lne_qnorm_high.setAlignment(Qt.AlignRight)
         lyo_qnorm_high.addWidget(self.sld_qnorm_high)
         lyo_qnorm_high.addWidget(self.lne_qnorm_high)
 
@@ -135,9 +278,9 @@ class QCebraNetDialog(QParameterDialog):
         
         super(QCebraNetDialog, self).setup_ui()
 
-    def get_results(self):
+    def get_results(self, mem_params):
 
-        self.setup_ui()
+        self.setup_ui(mem_params)
 
         if self.exec_() == QDialog.Accepted:
             return 1
