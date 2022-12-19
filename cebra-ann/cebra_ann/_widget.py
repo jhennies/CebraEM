@@ -29,6 +29,8 @@ from ._widgets import QSliderLabelEdit
 from h5py import File
 from copy import deepcopy
 import numpy as np
+from cebra_em_core.cebra_net import run_cebra_net, default_model_path
+from cebra_em_core import pre_processing
 
 
 ORGANELLES = dict(
@@ -447,8 +449,51 @@ class CebraAnnWidget(QWidget):
         self._project.mem_params = res
 
         if ok:
-            # TODO run membrane net with the set parameters
-            pass
+            def _assert_3d(val):
+                if type(val) is not tuple and type(val) is not list:
+                    val = [val] * 3
+                return val
+
+            shape = _assert_3d(res['shape']) if res['shape'] is not None else self.viewer.layers['raw'].data.shape
+            halo = _assert_3d(res['halo'])
+            batch_size = _assert_3d(res['batch_size'])
+            sigma = res['sigma']
+            qnorm_low = res['qnorm_low']
+            qnorm_high = res['qnorm_high']
+
+            full_shape = np.array(self.viewer.layers['raw'].data.shape)
+            shape = np.array(shape)
+            starts = ((full_shape - shape) / 2).astype(int)
+            stops = ((full_shape + shape) / 2).astype(int)
+            print(f'starts = {starts}')
+            print(f'stops = {stops}')
+
+            raw = self.viewer.layers['raw'].data[
+                  starts[0]: stops[0],
+                  starts[1]: stops[1],
+                  starts[2]: stops[2]
+            ]
+
+            self._project.set_mem()
+
+            raw = pre_processing(raw, sigma, qnorm_low, qnorm_high)
+
+            run_cebra_net(
+                raw_channels=[[raw]],
+                model_filepath=default_model_path,
+                target_filepath=self._project.get_absolute_path(self._project.mem),
+                target_size=batch_size,
+                overlap=(np.array(halo) / 2).astype(int),
+                squeeze_result=True
+            )
+
+            with File(self._project.get_absolute_path(self._project.mem), mode='r') as f:
+                mem = f['data'][:]
+
+            self.update_layer('mem', mem, 'image', visible=True, translate=None)
+
+            self._set_layer_props()
+            self._set_project()
 
     def _btn_sv_compute_onclick(self, value: bool):
         show_info('TODO: Implement this!')

@@ -140,47 +140,6 @@ class QModifyLayerDialog(QParameterDialog):
             return None, None
 
 
-class QModifyLayerDialogOld(QParameterDialog):
-
-    def __init__(self):
-        super(QModifyLayerDialogOld, self).__init__()
-        self.title = 'Modify Layer'
-
-    def setup_ui(self, txt, cmb_list, cmb_item):
-
-        layout = self.layout
-
-        edit_text = txt[10:]
-        self.txt = QLineEdit(edit_text)
-        self.cmb = QComboBox()
-        self.cmb.addItems(cmb_list)
-        self.cmb.setCurrentText(cmb_item)
-
-        layout_caption = QHBoxLayout()
-        layout_caption.addWidget(QLabel(f'Change name and type of {txt}:'))
-        layout_caption.setContentsMargins(0, 0, 0, 10)
-        layout.addRow(layout_caption)
-        layout_txt = QHBoxLayout()
-        layout_txt.addWidget(QLabel('semantics_'))
-        layout_txt.addWidget(self.txt)
-        layout.addRow(layout_txt)
-        layout_cmb = QHBoxLayout()
-        layout_cmb.addWidget(self.cmb)
-        layout_cmb.setContentsMargins(0, 0, 0, 10)
-        layout.addRow(layout_cmb)
-
-        super(QModifyLayerDialogOld, self).setup_ui()
-
-    def get_results(self, txt, cmb_list, cmb_item):
-
-        self.setup_ui(txt, cmb_list, cmb_item)
-
-        if self.exec_() == QDialog.Accepted:
-            return f'semantics_{self.txt.text()}', self.cmb.currentText()
-        else:
-            return None, None
-
-
 class QCebraNetDialog(QParameterDialog):
 
     def __init__(self):
@@ -266,7 +225,8 @@ class QCebraNetDialog(QParameterDialog):
 
         self.setup_ui(standard_rows=std_rows)
 
-        return_dict = dict(
+        def get_return_dict():
+            return dict(
                 shape=_to_val(self.std_rows[0].text(), dtype=int),
                 halo=_to_val(self.std_rows[1].text(), dtype=int),
                 batch_size=_to_val(self.std_rows[2].text(), dtype=int),
@@ -276,6 +236,6 @@ class QCebraNetDialog(QParameterDialog):
             )
 
         if self.exec_() == QDialog.Accepted:
-            return True, return_dict
+            return True, get_return_dict()
         else:
-            return False, return_dict
+            return False, get_return_dict()
