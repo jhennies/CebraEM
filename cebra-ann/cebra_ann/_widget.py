@@ -25,9 +25,12 @@ from ._data import crop_to_same_shape
 from ._multicut import supervoxel_merging
 from ._funcs import get_disk_positions
 from ._dialogs import QModifyLayerDialog, QCebraNetDialog
+from ._widgets import QSliderLabelEdit
 from h5py import File
 from copy import deepcopy
 import numpy as np
+from cebra_em_core.cebra_net import run_cebra_net, default_model_path
+from cebra_em_core import pre_processing
 
 
 ORGANELLES = dict(
@@ -107,40 +110,34 @@ class CebraAnnWidget(QWidget):
         # Pre-merging
         layout_pre_merging = QFormLayout()
         self.grp_pre_merging = QGroupBox('Pre-merging')
-        self.sld_beta = QSlider(Qt.Horizontal)
-        self.sld_beta.setRange(0, 100)
-        self.sld_beta.setSingleStep(1)
-        self.sld_beta.setValue(50)
-        self.lne_beta = QLineEdit('0.50')
-        self.lne_beta.setAlignment(Qt.AlignRight)
-        self.lne_beta.setMaximumWidth(75)
+        self.sld_beta = QSliderLabelEdit(
+            0.5, (0, 1), 0.1,
+            decimals=2,
+            maximum_line_edit_width=75
+        )
+        # FIXME sld_beta should have it's own valueChanged event but it works like this for now
+        self.sld_beta.sld.valueChanged.connect(self._sld_beta_onvaluechanged)
         self.btn_pre_merging = QPushButton('Compute')
-        self.sld_beta.valueChanged.connect(self._sld_beta_onvaluechanged)
-        self.lne_beta.editingFinished.connect(self._lne_beta_oneditingfinished)
         self.btn_pre_merging.clicked.connect(self._btn_pre_merging_onclicked)
         layout_beta = QHBoxLayout()
         layout_beta.addWidget(self.sld_beta)
-        layout_beta.addWidget(self.lne_beta)
         layout_beta.addWidget(self.btn_pre_merging)
         layout_pre_merging.addRow(QLabel('Beta: '), layout_beta)
         self.grp_pre_merging.setLayout(layout_pre_merging)
         layout.addWidget(self.grp_pre_merging)
 
         # Instance segmentation
-        self.sld_brush_size = QSlider(Qt.Horizontal)
-        self.sld_brush_size.setRange(1, MAX_BRUSH_SIZE)
-        self.sld_brush_size.setSingleStep(1)
-        self.sld_brush_size.setValue(5)
-        self.lne_brush_size = QLineEdit('5')
-        self.lne_brush_size.setAlignment(Qt.AlignRight)
-        self.lne_brush_size.setMaximumWidth(75)
+        self.sld_brush_size = QSliderLabelEdit(
+            5, (1, MAX_BRUSH_SIZE), 1,
+            decimals=None,
+            maximum_line_edit_width=75
+        )
         self.btn_instances = QPushButton('Start')
-        self.sld_brush_size.valueChanged.connect(self._sld_brush_size_onvaluechanged)
-        self.lne_brush_size.editingFinished.connect(self._lne_brush_size_oneditingfinished)
+        self.sld_brush_size.sld.valueChanged.connect(self._sld_brush_size_onvaluechanged)
+        # self.lne_brush_size.editingFinished.connect(self._lne_brush_size_oneditingfinished)
         self.btn_instances.clicked.connect(self._btn_instances_onclicked)
         layout_instances_row = QHBoxLayout()
         layout_instances_row.addWidget(self.sld_brush_size)
-        layout_instances_row.addWidget(self.lne_brush_size)
         layout_instances_row.addWidget(self.btn_instances)
         layout_instances = QFormLayout()
         layout_instances.addRow(QLabel('Brush size: '), layout_instances_row)
@@ -386,7 +383,7 @@ class CebraAnnWidget(QWidget):
             self.lne_raw.setText(self._project.raw)
             self.lne_mem.setText(self._project.mem)
             self.lne_sv.setText(self._project.sv)
-            self.sld_beta.setValue(self._project.beta * 100)
+            self.sld_beta.setValue(self._project.beta)
             self.sld_brush_size.setValue(self._project.brush_size)
 
             if not do_not_load_data:
@@ -447,27 +444,64 @@ class CebraAnnWidget(QWidget):
 
     def _btn_mem_compute_onclicked(self, value: bool):
 
-        res = QCebraNetDialog().get_results()
+        ok, res = QCebraNetDialog().get_results(self._project.mem_params)
 
-        self._project.set_mem()
+        self._project.mem_params = res
+
+        if ok:
+            def _assert_3d(val):
+                if type(val) is not tuple and type(val) is not list:
+                    val = [val] * 3
+                return val
+
+            shape = _assert_3d(res['shape']) if res['shape'] is not None else self.viewer.layers['raw'].data.shape
+            halo = _assert_3d(res['halo'])
+            batch_size = _assert_3d(res['batch_size'])
+            sigma = res['sigma']
+            qnorm_low = res['qnorm_low']
+            qnorm_high = res['qnorm_high']
+
+            full_shape = np.array(self.viewer.layers['raw'].data.shape)
+            shape = np.array(shape)
+            starts = ((full_shape - shape) / 2).astype(int)
+            stops = ((full_shape + shape) / 2).astype(int)
+            print(f'starts = {starts}')
+            print(f'stops = {stops}')
+
+            raw = self.viewer.layers['raw'].data[
+                  starts[0]: stops[0],
+                  starts[1]: stops[1],
+                  starts[2]: stops[2]
+            ]
+
+            self._project.set_mem()
+
+            raw = pre_processing(raw, sigma, qnorm_low, qnorm_high)
+
+            run_cebra_net(
+                raw_channels=[[raw]],
+                model_filepath=default_model_path,
+                target_filepath=self._project.get_absolute_path(self._project.mem),
+                target_size=batch_size,
+                overlap=(np.array(halo) / 2).astype(int),
+                squeeze_result=True
+            )
+
+            with File(self._project.get_absolute_path(self._project.mem), mode='r') as f:
+                mem = f['data'][:]
+
+            self.update_layer('mem', mem, 'image', visible=True, translate=None)
+
+            self._set_layer_props()
+            self._set_project()
 
     def _btn_sv_compute_onclick(self, value: bool):
         show_info('TODO: Implement this!')
         self._project.set_sv()
 
     def _sld_beta_onvaluechanged(self, value: int):
+        # FIXME I didn't yet figure out how to add a custom event to QSliderLabelEdit, so I still have to divide by 100
         self._project.beta = float(value) / 100
-        self.lne_beta.setText('{:.2f}'.format(self._project.beta))
-
-    def _lne_beta_oneditingfinished(self):
-        value = float(self.lne_beta.text())
-        if value > 1:
-            value = 1.
-        if value < 0:
-            value = 0.
-        self._project.beta = value
-        self.lne_beta.setText('{:.2f}'.format(self._project.beta))
-        self.sld_beta.setValue(self._project.beta * 100)
 
     def _btn_pre_merging_onclicked(self, value: bool):
 
@@ -476,17 +510,6 @@ class CebraAnnWidget(QWidget):
 
     def _sld_brush_size_onvaluechanged(self, value: int):
         self._project.brush_size = int(value)
-        self.lne_brush_size.setText(f'{self._project.brush_size}')
-
-    def _lne_brush_size_oneditingfinished(self):
-        value = int(self.lne_brush_size.text())
-        if value > MAX_BRUSH_SIZE:
-            value = MAX_BRUSH_SIZE
-        if value < 1:
-            value = 1
-        self._project.brush_size = value
-        self.lne_brush_size.setText(f'{self._project.brush_size}')
-        self.sld_brush_size.setValue(self._project.brush_size)
 
     def _btn_instances_onclicked(self, value: bool):
 
