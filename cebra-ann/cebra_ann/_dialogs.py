@@ -180,6 +180,12 @@ class QCebraNetDialog(QParameterDialog):
                 label='Halo: '
             ),
             dict(
+                id='padding',
+                type='combo_box',
+                default=[['zeros', 'data'], mem_params['padding']],
+                label='Padding: '
+            ),
+            dict(
                 id='batch_size',
                 type='line_edit',
                 default=_to_str(mem_params['batch_size']),
@@ -229,10 +235,123 @@ class QCebraNetDialog(QParameterDialog):
             return dict(
                 shape=_to_val(self.std_rows[0].text(), dtype=int),
                 halo=_to_val(self.std_rows[1].text(), dtype=int),
-                batch_size=_to_val(self.std_rows[2].text(), dtype=int),
-                sigma=self.std_rows[3].value,
-                qnorm_low=self.std_rows[4].value,
-                qnorm_high=self.std_rows[5].value
+                padding=self.std_rows[2].currentText(),
+                batch_size=_to_val(self.std_rows[3].text(), dtype=int),
+                sigma=self.std_rows[4].value,
+                qnorm_low=self.std_rows[5].value,
+                qnorm_high=self.std_rows[6].value
+            )
+
+        if self.exec_() == QDialog.Accepted:
+            return True, get_return_dict()
+        else:
+            return False, get_return_dict()
+
+
+class QSupervoxelsDialog(QParameterDialog):
+
+    def __init__(self):
+        super(QSupervoxelsDialog, self).__init__()
+        self.title = 'CebraNET parameters'
+
+    def get_results(self, sv_params):
+
+        def _to_str(val):
+            if val is None:
+                return ''
+            elif type(val) is tuple or type(val) is list:
+                return str.join(', ', [str(v) for v in val])
+            else:
+                return f'{val}'
+
+        def _to_val(txt, dtype=float):
+            if txt == '':
+                return None
+            elif ',' in txt:
+                values = str.split(txt, ',')
+                assert len(values) == 3, 'Supply either only one value or an individual value for all dimensions!'
+                return [dtype(v) for v in values]
+            else:
+                return dtype(txt)
+
+        std_rows = [
+            dict(
+                id='shape',
+                type='line_edit',
+                default=_to_str(sv_params['shape']),
+                label='Shape: '
+            ),
+            dict(
+                id='halo',
+                type='line_edit',
+                default=_to_str(sv_params['halo']),
+                label='Halo: '
+            ),
+            dict(
+                id='padding',
+                type='combo_box',
+                default=[['zeros', 'data'], sv_params['padding']],
+                label='Padding: '
+            ),
+            dict(
+                id='threshold',
+                type='slider',
+                default=sv_params['threshold'],
+                label='Threshold: ',
+                kwargs=dict(
+                    range=(0, 1),
+                    single_step=0.001,
+                    decimals=3,
+                    maximum_line_edit_width=70
+                )
+            ),
+            dict(
+                id='min_membrane_size',
+                type='slider',
+                default=sv_params['min_membrane_size'],
+                label='Min membrane size: ',
+                kwargs=dict(
+                    range=(0, 100),
+                    single_step=1,
+                    maximum_line_edit_width=70
+                )
+            ),
+            dict(
+                id='sigma_dt',
+                type='slider',
+                default=sv_params['sigma_dt'],
+                label='Sigma (DT): ',
+                kwargs=dict(
+                    range=(0, 10),
+                    single_step=0.1,
+                    decimals=1,
+                    maximum_line_edit_width=70
+                )
+            ),
+            dict(
+                id='min_segment_size',
+                type='slider',
+                default=sv_params['min_segment_size'],
+                label='Min segment size: ',
+                kwargs=dict(
+                    range=(0, 256),
+                    single_step=1,
+                    maximum_line_edit_width=70
+                )
+            )
+        ]
+
+        self.setup_ui(standard_rows=std_rows)
+
+        def get_return_dict():
+            return dict(
+                shape=_to_val(self.std_rows[0].text(), dtype=int),
+                halo=_to_val(self.std_rows[1].text(), dtype=int),
+                padding=self.std_rows[2].currentText(),
+                threshold=self.std_rows[3].value,
+                min_membrane_size=self.std_rows[4].value,
+                sigma_dt=self.std_rows[5].value,
+                min_segment_size=self.std_rows[6].value
             )
 
         if self.exec_() == QDialog.Accepted:

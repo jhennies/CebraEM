@@ -50,13 +50,13 @@ class QSliderLabelEdit(QWidget):
         if self.decimals is not None and self.decimals > 0:
             return float(value) / (10 ** self.decimals)
         else:
-            return value
+            return int(value)
 
     def _dec2int(self, value):
         if self.decimals is not None and self.decimals > 0:
             return value * 10 ** self.decimals
         else:
-            return value
+            return int(value)
 
     def _set_text(self, value):
         format_pattern = '{}' if (self.decimals is None or self.decimals == 0) else '{' + f':.{self.decimals}f' + '}'
@@ -67,7 +67,10 @@ class QSliderLabelEdit(QWidget):
         self._set_text(self.value)
 
     def _lne_editing_finished(self):
-        value = float(self.lne.text())
+        if self.decimals is not None and self.decimals > 0:
+            value = float(self.lne.text())
+        else:
+            value = int(self.lne.text())
         if value > self.range[1]:
             value = self.range[1]
         if value < self.range[0]:
