@@ -3,6 +3,12 @@ import numpy as np
 from skimage.morphology import disk
 
 
+def assert_3d(val):
+    if type(val) is not tuple and type(val) is not list:
+        val = [val] * 3
+    return val
+
+
 def get_disk_positions(brush_size, center, shape, dims_order):
 
     shape = np.array(shape)
