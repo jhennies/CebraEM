@@ -48,7 +48,6 @@ MAX_BRUSH_SIZE = 40
 
 # TODO Next steps:
 
-# TODO Remove unnecessary layers when loading a project
 # TODO Good to have: CTRL+E and CTRL+T (transposing axes) should rotate around mouse pointer!
 # FIXME layer.editable=False does not work. Would be good to avoid the user altering the labels layers.
 
@@ -68,6 +67,9 @@ class CebraAnnWidget(QWidget):
         self.btn_save_project = QPushButton('Save Project')
         layout.addWidget(self.btn_save_project)
         self.btn_save_project.clicked.connect(self._btn_save_project_onclicked)
+        self.btn_close_project = QPushButton('Close Project')
+        layout.addWidget(self.btn_close_project)
+        self.btn_close_project.clicked.connect(self._btn_close_project_onclicked)
 
         # Data inputs (raw, mem, sv) including load and compute buttons
         layout_inputs = QFormLayout()
@@ -208,6 +210,9 @@ class CebraAnnWidget(QWidget):
                         viewer.layers.selection = {viewer.layers['instances']}
 
     def _btn_load_project_onclicked(self, value: bool):
+
+        self._close_project()
+
         folder = QFileDialog.getExistingDirectory(
             self, 'Select project folder ...'
         )
@@ -225,29 +230,7 @@ class CebraAnnWidget(QWidget):
         with File(fp, mode='w') as f:
             f.create_dataset('data', data=data, compression='gzip')
 
-    def _btn_save_project_onclicked(self, value: bool):
-
-        if self._project is None:
-            folder = QFileDialog.getExistingDirectory(
-                self, 'Select an empty folder ...'
-            )
-            if folder is not None and folder != '':
-                if validate_project(folder, create=True, empty=True):
-                    self._project = AnnProject(folder)
-                    show_info(f'Project folder set to {folder}')
-                    # Now get the loaded layers into the project (any layers other than raw, mem and sv are ignored)
-                    if 'raw' in self.viewer.layers:
-                        self._project.set_raw()
-                    if 'mem' in self.viewer.layers:
-                        self._project.set_mem()
-                    if 'sv' in self.viewer.layers:
-                        self._project.set_sv()
-                    self._set_project(do_not_load_data=True)
-                else:
-                    show_info('No valid project location! Select an empty folder!')
-                    return
-            else:
-                return
+    def _save_project(self):
 
         print(f'Saving project to {self._project.path}:')
 
@@ -284,6 +267,63 @@ class CebraAnnWidget(QWidget):
                     self._project.semantics_touched[sem] = False
 
         print('... done!')
+
+    def _btn_save_project_onclicked(self, value: bool):
+
+        if self._project is None:
+            folder = QFileDialog.getExistingDirectory(
+                self, 'Select an empty folder ...'
+            )
+            if folder is not None and folder != '':
+                if validate_project(folder, create=True, empty=True):
+                    self._project = AnnProject(folder)
+                    show_info(f'Project folder set to {folder}')
+                    # Now get the loaded layers into the project (any layers other than raw, mem and sv are ignored)
+                    if 'raw' in self.viewer.layers:
+                        self._project.set_raw()
+                    if 'mem' in self.viewer.layers:
+                        self._project.set_mem()
+                    if 'sv' in self.viewer.layers:
+                        self._project.set_sv()
+                    self._set_project(do_not_load_data=True)
+                else:
+                    show_info('No valid project location! Select an empty folder!')
+                    return
+            else:
+                return
+
+        self._save_project()
+
+    def _close_project(self):
+
+        if self._project is not None:
+
+            # Ask if the current project should really be closed and if the current state should be saved
+            answer = QMessageBox.warning(
+                self, 'Close Project?',
+                'You are closing the current project, if not saved all recent progress will be lost.\n\n'
+                'Do you want to save before closing?',
+                buttons=QMessageBox.StandardButtons(QMessageBox.Save|QMessageBox.Close|QMessageBox.Cancel)
+            )
+
+            if answer != QMessageBox.Cancel:
+
+                if answer == QMessageBox.Save:
+                    self._save_project()
+
+                # Remove all layers that belong to the project
+                for lyr in self._project.get_all_active_layers():
+                    self.viewer.layers.remove(lyr)
+
+                # Close the project
+                self._project = None
+
+                # Update the GUI
+                self._set_project()
+
+    def _btn_close_project_onclicked(self, value: bool):
+
+        self._close_project()
 
     def update_layer(self, name, data, layer_type, visible=True, translate=None):
         layers = self.viewer.layers
@@ -374,8 +414,6 @@ class CebraAnnWidget(QWidget):
 
         if self._project is not None:
 
-            # TODO Remove all existing layers
-
             # Sets the project information and status to the GUI
             self.viewer.title = f'CebraANN - {self._project.path}'
             self.lne_raw.setText(self._project.raw)
@@ -388,6 +426,14 @@ class CebraAnnWidget(QWidget):
                 # Load the data and create the respective Napari layers
                 self._load_data()
             self._set_layer_props()
+
+        else:
+
+            self.viewer.title = f'CebraANN'
+            self.lne_raw.setText('')
+            self.lne_mem.setText('')
+            self.lne_sv.setText('')
+            self.cmb_sem_layers.clear()
 
         # Figure out which widgets need to be enabled or disabled (visible or hidden)
         if self._project is None:

@@ -238,6 +238,23 @@ class AnnProject:
                 [f'{name} ({self.semantic_types[name]})' for name in self.semantic_names]
             )
 
+    def get_all_active_layers(self):
+        all_layers = []
+        if self.raw is not None:
+            all_layers.append('raw')
+        if self.mem is not None:
+            all_layers.append('mem')
+        if self.sv is not None:
+            all_layers.append('sv')
+        if self.pre_merge is not None:
+            all_layers.append('pre_merge')
+        if self.instances is not None:
+            all_layers.append('instances')
+        if len(self.semantics) > 0:
+            for sem in self.semantic_names:
+                all_layers.append(sem)
+        return all_layers
+
     # A collection of static functionalities that are loosely linked to the project and should only be called once a
     # project is loaded
     @staticmethod
