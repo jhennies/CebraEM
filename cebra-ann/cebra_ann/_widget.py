@@ -23,14 +23,14 @@ from napari.utils.notifications import show_info
 from ._project import validate_project, AnnProject
 from ._data import crop_to_same_shape
 from ._multicut import supervoxel_merging
-from ._funcs import get_disk_positions
+from ._funcs import get_disk_positions, assert_3d
 from ._dialogs import QModifyLayerDialog, QCebraNetDialog, QSupervoxelsDialog
 from ._widgets import QSliderLabelEdit
 from h5py import File
 from copy import deepcopy
 import numpy as np
 from cebra_em_core.cebra_net import run_cebra_net, default_model_path
-from cebra_em_core import pre_processing
+from cebra_em_core import pre_processing, watershed_dt_with_probs
 
 
 ORGANELLES = dict(
@@ -443,15 +443,11 @@ class CebraAnnWidget(QWidget):
         self._project.mem_params = res
 
         if ok:
-            def _assert_3d(val):
-                if type(val) is not tuple and type(val) is not list:
-                    val = [val] * 3
-                return val
 
-            shape = _assert_3d(res['shape']) if res['shape'] is not None else self.viewer.layers['raw'].data.shape
-            halo = np.array(_assert_3d(res['halo']))
+            shape = assert_3d(res['shape']) if res['shape'] is not None else self.viewer.layers['raw'].data.shape
+            halo = np.array(assert_3d(res['halo']))
             padding = res['padding']
-            batch_size = _assert_3d(res['batch_size'])
+            batch_size = assert_3d(res['batch_size'])
             sigma = res['sigma']
             qnorm_low = res['qnorm_low']
             qnorm_high = res['qnorm_high']
@@ -510,8 +506,57 @@ class CebraAnnWidget(QWidget):
         self._project.sv_params = res
 
         if ok:
-            pass
 
+            shape = assert_3d(res['shape']) if res['shape'] is not None else self.viewer.layers['mem'].data.shape
+            halo = np.array(assert_3d(res['halo']))
+            padding = res['padding']
+            threshold = res['threshold']
+            min_membrane_size = res['min_membrane_size']
+            sigma_dt = res['sigma_dt']
+            min_segment_size = res['min_segment_size']
+
+            full_shape = np.array(self.viewer.layers['mem'].data.shape)
+            shape = np.array(shape)
+            if padding == 'data':
+                starts = ((full_shape - shape - halo) / 2).astype(int)
+                stops = ((full_shape + shape + halo) / 2).astype(int)
+            elif padding == 'zeros':
+                starts = ((full_shape - shape) / 2).astype(int)
+                stops = ((full_shape + shape) / 2).astype(int)
+            print(f'starts = {starts}')
+            print(f'stops = {stops}')
+
+            mem = self.viewer.layers['mem'].data[
+                  starts[0]: stops[0],
+                  starts[1]: stops[1],
+                  starts[2]: stops[2]
+            ]
+
+            self._project.set_sv()
+
+            sv = watershed_dt_with_probs(
+                mem,
+                threshold=threshold,
+                min_membrane_size=min_membrane_size,
+                anisotropy=(1, 1, 1),
+                sigma_dt=sigma_dt,
+                min_segment_size=min_segment_size,
+                clean_close_seeds=True
+            )
+
+            if padding == 'data':
+                sv = sv[
+                      halo[0]: -halo[0],
+                      halo[1]: -halo[1],
+                      halo[2]: -halo[2],
+                ]
+            with File(self._project.get_absolute_path(self._project.sv), mode='w') as f:
+                f.create_dataset('data', data=sv, compression='gzip')
+
+            self.update_layer('sv', sv, 'labels', visible=True, translate=None)
+
+            self._set_layer_props()
+            self._set_project()
 
     def _sld_beta_onvaluechanged(self, value: int):
         # FIXME I didn't yet figure out how to add a custom event to QSliderLabelEdit, so I still have to divide by 100
