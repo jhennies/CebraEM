@@ -48,7 +48,6 @@ MAX_BRUSH_SIZE = 40
 
 # TODO Next steps:
 
-# TODO Implement computation of Supervoxels
 # TODO Remove unnecessary layers when loading a project
 # TODO Good to have: CTRL+E and CTRL+T (transposing axes) should rotate around mouse pointer!
 # FIXME layer.editable=False does not work. Would be good to avoid the user altering the labels layers.
