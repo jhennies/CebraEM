@@ -1,6 +1,10 @@
-import torch as t
-from .common.run_models2 import predict_model_from_h5
-from .common.piled_unets import PiledUnet
+
+try:
+    import torch as t
+    from .common.run_models2 import predict_model_from_h5
+    from .common.piled_unets import PiledUnet
+except ModuleNotFoundError:
+    t = None
 
 import os
 
