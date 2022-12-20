@@ -3,10 +3,14 @@ import numpy as np
 import h5py
 import os
 import sys
-import torch as t
 from vigra.filters import gaussianSmoothing
 
 from .data import quantile_norm
+
+try:
+    import torch as t
+except ModuleNotFoundError:
+    print('torch not available!')
 
 
 def pre_processing(raw, sigma=0.0, qnorm_low=0.0, qnorm_high=1.0):
