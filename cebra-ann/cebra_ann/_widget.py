@@ -85,22 +85,31 @@ class CebraAnnWidget(QWidget):
         self.btn_sv_load = QPushButton('Load')
         self.btn_mem_compute = QPushButton('Compute')
         self.btn_sv_compute = QPushButton('Compute')
+        self.btn_raw_x = QPushButton('X')
+        self.btn_mem_x = QPushButton('X')
+        self.btn_sv_x = QPushButton('X')
         self.btn_raw_load.clicked.connect(self._btn_raw_load_onclicked)
         self.btn_mem_load.clicked.connect(self._btn_mem_load_onclicked)
         self.btn_sv_load.clicked.connect(self._btn_sv_load_onclicked)
         self.btn_mem_compute.clicked.connect(self._btn_mem_compute_onclicked)
         self.btn_sv_compute.clicked.connect(self._btn_sv_compute_onclick)
+        self.btn_raw_x.clicked.connect(self._btn_raw_x_onclick)
+        self.btn_mem_x.clicked.connect(self._btn_mem_x_onclick)
+        self.btn_sv_x.clicked.connect(self._btn_sv_x_onclick)
         self.raw_in_layout = QHBoxLayout()
         self.mem_in_layout = QHBoxLayout()
         self.sv_in_layout = QHBoxLayout()
         self.raw_in_layout.addWidget(self.lne_raw)
         self.raw_in_layout.addWidget(self.btn_raw_load)
+        self.raw_in_layout.addWidget(self.btn_raw_x)
         self.mem_in_layout.addWidget(self.lne_mem)
         self.mem_in_layout.addWidget(self.btn_mem_compute)
         self.mem_in_layout.addWidget(self.btn_mem_load)
+        self.mem_in_layout.addWidget(self.btn_mem_x)
         self.sv_in_layout.addWidget(self.lne_sv)
         self.sv_in_layout.addWidget(self.btn_sv_compute)
         self.sv_in_layout.addWidget(self.btn_sv_load)
+        self.sv_in_layout.addWidget(self.btn_sv_x)
         layout_inputs.addRow(QLabel('Raw: '), self.raw_in_layout)
         layout_inputs.addRow(QLabel('Mem: '), self.mem_in_layout)
         layout_inputs.addRow(QLabel('SV: '), self.sv_in_layout)
@@ -319,7 +328,7 @@ class CebraAnnWidget(QWidget):
                 self._project = None
 
                 # Update the GUI
-                self._set_project()
+                self._set_project(do_not_load_data=True)
 
     def _btn_close_project_onclicked(self, value: bool):
 
@@ -447,7 +456,6 @@ class CebraAnnWidget(QWidget):
             self.grp_inputs.setEnabled(True)
             self.btn_mem_compute.setEnabled(self._project.raw is not None)
             self.btn_sv_compute.setEnabled(self._project.mem is not None)
-            # FIXME: This has to be dependent of the data actually being loaded! Or both?
             self.grp_pre_merging.setEnabled(
                 self._project.raw is not None and self._project.mem is not None and self._project.sv is not None)
             self.grp_instances.setEnabled(
@@ -473,13 +481,38 @@ class CebraAnnWidget(QWidget):
                 self.cmb_sem_layers.addItems(self._project.get_semantic_names_and_types())
 
     def _btn_raw_load_onclicked(self, value: bool):
-        show_info('TODO: Implement this!')
+
+        fp, ext = QFileDialog.getOpenFileName(
+            self, 'Select raw data file ...', directory=self._project.path,
+            filter='*.h5'
+        )
+        if fp is not None and fp != '':
+            print(f'Opening raw file: {fp}')
+            self._project.set_raw(fp)
+            # self._set_layer_props()
+            self._set_project()
 
     def _btn_mem_load_onclicked(self, value: bool):
-        show_info('TODO: Implement this!')
+        fp, ext = QFileDialog.getOpenFileName(
+            self, 'Select membrane prediction data file ...', directory=self._project.path,
+            filter='*.h5'
+        )
+        if fp is not None and fp != '':
+            print(f'Opening mem file: {fp}')
+            self._project.set_mem(fp)
+            # self._set_layer_props()
+            self._set_project()
 
     def _btn_sv_load_onclicked(self, value: bool):
-        show_info('TODO: Implement this!')
+        fp, ext = QFileDialog.getOpenFileName(
+            self, 'Select supervoxel data file ...', directory=self._project.path,
+            filter='*.h5'
+        )
+        if fp is not None and fp != '':
+            print(f'Opening sv file: {fp}')
+            self._project.set_sv(fp)
+            # self._set_layer_props()
+            self._set_project()
 
     def _btn_mem_compute_onclicked(self, value: bool):
 
@@ -603,33 +636,93 @@ class CebraAnnWidget(QWidget):
             self._set_layer_props()
             self._set_project()
 
+    def _remove_unused_layers(self):
+
+        to_remove = []
+        for lyr in self.viewer.layers:
+            if lyr.name == 'raw' and self._project.raw is None:
+                to_remove.append('raw')
+            if lyr.name == 'mem' and self._project.mem is None:
+                to_remove.append('mem')
+            if lyr.name == 'sv' and self._project.sv is None:
+                to_remove.append('sv')
+            if lyr.name == 'pre_merge' and self._project.pre_merge is None:
+                to_remove.append('pre_merge')
+            if lyr.name == 'instances' and self._project.instances is None:
+                to_remove.append('instances')
+            if lyr.name[:10] == 'semantics_' and lyr.name not in self._project.semantic_names:
+                to_remove.append(lyr.name)
+
+        print(f'to_remove: {to_remove}')
+
+        for lyr_name in to_remove:
+            self.viewer.layers.remove(lyr_name)
+
+    def _remove_downstream(self, step, tpe='remove'):
+        """
+        Sets the projects progress back to the specified step
+        :param step: one of ['raw', 'mem', 'sv', 'pre_merge', 'instances', semantics']
+        :param tpe: one of ['recompute', 'remove', 'restart']
+        :return:
+        """
+        if tpe == 'remove':
+            msg = f'Are you sure you want to remove layer {step}?'
+        elif tpe == 'recompute':
+            msg = f'Are you sure you want to re-compute step {step}?'
+        elif tpe == 'restart':
+            msg = f'Are you sure you want to restart step {step}?'
+        else:
+            raise NotImplementedError()
+        answer = QMessageBox.warning(
+            self, f'Removing progress!',
+            f'{msg}\n\n'
+            'Note that all downstream progress will be removed!',
+            buttons=QMessageBox.StandardButtons(QMessageBox.Yes|QMessageBox.No)
+        )
+
+        if answer == QMessageBox.Yes:
+
+            self._project.set_back(step)
+            self._remove_unused_layers()
+            self._set_project(do_not_load_data=True)
+            return True
+
+        else:
+            return False
+
+    def _btn_raw_x_onclick(self, value: bool):
+
+        if self._project.raw is not None:
+            self._remove_downstream('raw', tpe='remove')
+
+    def _btn_mem_x_onclick(self, value: bool):
+
+        if self._project.mem is not None:
+            self._remove_downstream('mem', tpe='remove')
+
+    def _btn_sv_x_onclick(self, value: bool):
+
+        if self._project.sv is not None:
+            self._remove_downstream('sv', tpe='remove')
+
     def _sld_beta_onvaluechanged(self, value: int):
         # FIXME I didn't yet figure out how to add a custom event to QSliderLabelEdit, so I still have to divide by 100
         self._project.beta = float(value) / 100
 
     def _btn_pre_merging_onclicked(self, value: bool):
 
-        self._pre_merge()
-        self._set_layer_props()
+        ok = self._remove_downstream('pre_merge', tpe='recompute') if 'instances' in self.viewer.layers else True
+
+        if ok:
+            self._pre_merge()
+            self._set_layer_props()
 
     def _sld_brush_size_onvaluechanged(self, value: int):
         self._project.brush_size = int(value)
 
     def _btn_instances_onclicked(self, value: bool):
 
-        if self._project.instance_seg_running:
-            answer = QMessageBox.warning(
-                self, 'Restart instance segmentation?',
-                'Are you sure you want to restart instance segmentation?\n\n'
-                'The progress in the active instance segmentation will be lost!',
-                buttons=QMessageBox.StandardButtons(QMessageBox.Yes|QMessageBox.No)
-            )
-        else:
-            answer = QMessageBox.Yes
-
-        if answer == QMessageBox.Yes:
-            self._start_instance_segmentation()
-            self._set_layer_props()
+        self._start_instance_segmentation()
 
     def _cb_instance_segmentation(self):
         # The instance segmentation uses layers.data_setitem() to include the napari history for proper undos.
@@ -789,17 +882,20 @@ class CebraAnnWidget(QWidget):
     def _start_instance_segmentation(self, instance_data=None):
 
         # TODO Add field to choose the source: sv or pre-merge (by default it should be pre-merge if it exists)
-        # TODO If this is a restart then the semantic layers should also be deleted (or at least emptied)
 
-        self._project.instance_seg_running = True
-        if instance_data is None:
-            instance_data = deepcopy(self.viewer.layers['pre_merge'].data)
-        translate = self.viewer.layers['pre_merge'].translate
-        self.update_layer('instances', instance_data, 'labels', visible=True, translate=translate)
-        self._project.set_instances(self._project.brush_size)
+        ok = self._remove_downstream('instances', tpe='restart') if self._project.instance_seg_running else True
 
-        # With _project.instance_seg_running set to True this will now do all the key bindings etc.
-        self._set_project(do_not_load_data=True)
+        if ok:
+            self._project.instance_seg_running = True
+            if instance_data is None:
+                instance_data = deepcopy(self.viewer.layers['pre_merge'].data)
+            translate = self.viewer.layers['pre_merge'].translate
+            self.update_layer('instances', instance_data, 'labels', visible=True, translate=translate)
+            self._project.set_instances(self._project.brush_size)
+
+            # With _project.instance_seg_running set to True this will now do all the key bindings etc.
+            self._set_project(do_not_load_data=True)
+            self._set_layer_props()
 
     def _pre_merge(self):
         """Run pre-merging of supervoxels using multicut"""
