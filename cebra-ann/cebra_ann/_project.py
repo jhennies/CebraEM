@@ -31,6 +31,9 @@ defaults = dict(
     raw=None,
     mem=None,
     sv=None,
+    raw_locked=False,
+    mem_locked=False,
+    sv_locked=False,
     pre_merge=None,
     pre_merge_beta=None,
     beta=0.5,
@@ -57,6 +60,9 @@ class AnnProject:
         self.raw = defaults['raw']
         self.mem = defaults['mem']
         self.sv = defaults['sv']
+        self.raw_locked = defaults['raw_locked']
+        self.mem_locked = defaults['mem_locked']
+        self.sv_locked = defaults['sv_locked']
         self.pre_merge = defaults['pre_merge']
         self.pre_merge_beta = defaults['pre_merge_beta']
         self.beta = defaults['beta']
@@ -99,6 +105,12 @@ class AnnProject:
             self.mem = project_info['mem']
         if 'sv' in project_info:
             self.sv = project_info['sv']
+        if 'raw_locked' in project_info:
+            self.raw_locked = project_info['raw_locked']
+        if 'mem_locked' in project_info:
+            self.mem_locked = project_info['mem_locked']
+        if 'sv_locked' in project_info:
+            self.sv_locked = project_info['sv_locked']
         if 'pre_merge' in project_info:
             self.pre_merge = project_info['pre_merge']
         if 'beta' in project_info:
@@ -160,6 +172,9 @@ class AnnProject:
             raw=self.raw,
             mem=self.mem,
             sv=self.sv,
+            raw_locked=self.raw_locked,
+            mem_locked=self.mem_locked,
+            sv_locked=self.sv_locked,
             pre_merge=self.pre_merge,
             pre_merge_beta=self.pre_merge_beta,
             beta=self.beta,
@@ -178,17 +193,29 @@ class AnnProject:
         with open(self.get_project_json(), mode='w') as f:
             json.dump(self._generate_project_info_dict(), f, indent=2)
 
-    def set_raw(self):
-        self.raw = self.default_raw()
-        self.raw_touched = True
+    def set_raw(self, fp=None):
+        if fp is None:
+            self.raw = self.default_raw()
+            self.raw_touched = True
+        else:
+            path, file = os.path.split(fp)
+            self.raw = os.path.join('{project}', file) if path == self.path else fp
 
-    def set_mem(self):
-        self.mem = self.default_mem()
-        self.mem_touched = True
+    def set_mem(self, fp=None):
+        if fp is None:
+            self.mem = self.default_mem()
+            self.mem_touched = True
+        else:
+            path, file = os.path.split(fp)
+            self.mem = os.path.join('{project}', file) if path == self.path else fp
 
-    def set_sv(self):
-        self.sv = self.default_sv()
-        self.sv_touched = True
+    def set_sv(self, fp=None):
+        if fp is None:
+            self.sv = self.default_sv()
+            self.sv_touched = True
+        else:
+            path, file = os.path.split(fp)
+            self.sv = os.path.join('{project}', file) if path == self.path else fp
 
     def set_pre_merge(self, beta):
         self.pre_merge = self.default_pre_merge()
@@ -237,6 +264,67 @@ class AnnProject:
             return(
                 [f'{name} ({self.semantic_types[name]})' for name in self.semantic_names]
             )
+
+    def get_all_active_layers(self):
+        all_layers = []
+        if self.raw is not None:
+            all_layers.append('raw')
+        if self.mem is not None:
+            all_layers.append('mem')
+        if self.sv is not None:
+            all_layers.append('sv')
+        if self.pre_merge is not None:
+            all_layers.append('pre_merge')
+        if self.instances is not None:
+            all_layers.append('instances')
+        if len(self.semantics) > 0:
+            for sem in self.semantic_names:
+                all_layers.append(sem)
+        return all_layers
+
+    def set_back(self, step):
+
+        def instances():
+            self.instances = None
+            self.instance_seg_running = False
+            self.instances_touched = False
+            self.semantics = defaults['semantics']
+            self.semantic_names = defaults['semantic_names']
+            self.semantic_types = defaults['semantic_types']
+            self.semantics_touched = dict()
+
+        def pre_merge():
+            self.pre_merge = None
+            self.pre_merge_touched = False
+            instances()
+
+        def sv():
+            self.sv = None
+            self.sv_touched = False
+            pre_merge()
+
+        def mem():
+            self.mem = None
+            self.mem_touched = False
+            sv()
+
+        def raw():
+            self.raw = None
+            self.raw_touched = False
+            mem()
+
+        if step == 'sv':
+            sv()
+        elif step == 'mem':
+            mem()
+        elif step == 'raw':
+            raw()
+        elif step == 'pre_merge':
+            pre_merge()
+        elif step == 'instances':
+            instances()
+        else:
+            raise NotImplementedError(f'step = {step} not implemented!')
 
     # A collection of static functionalities that are loosely linked to the project and should only be called once a
     # project is loaded
