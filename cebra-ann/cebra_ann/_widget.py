@@ -1,4 +1,4 @@
-
+import vigra.analysis
 from qtpy.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -230,14 +230,18 @@ class CebraAnnWidget(QWidget):
                 self._project = AnnProject(folder)
                 show_info(f'Project folder set to {folder}')
                 self._set_project()
+                self._save_project()
             else:
                 show_info('No valid project location!')
 
-    def _save_layer(self, name):
+    def _save_layer(self, name, data=None, attrs=None):
         fp = self._project.get_absolute_path(name=name)
-        data = self.viewer.layers[name].data
+        data = data if data is not None else self.viewer.layers[name].data
         with File(fp, mode='w') as f:
-            f.create_dataset('data', data=data, compression='gzip')
+            d = f.create_dataset('data', data=data, compression='gzip')
+            if attrs is not None:
+                for k, v in attrs.items():
+                    d.attrs[k] = v
 
     def _save_project(self):
 
@@ -384,6 +388,38 @@ class CebraAnnWidget(QWidget):
         else:
             pass
 
+    def _load_supervoxels(self):
+
+        # Load supervoxels
+        with File(self._project.get_absolute_path(self._project.sv), mode='r') as f:
+            sv = f['data'][:]
+            attrs = f['data'].attrs
+
+            is_unique = False if 'is_unique' not in attrs else attrs['is_unique']
+
+        if not is_unique:
+            dtype = sv.dtype
+
+            # Compute connected components
+            tsv = vigra.analysis.labelMultiArray(sv if sv.dtype == 'uint8' else sv.astype('uint32'))
+            tsv = tsv if dtype == 'uint8' else tsv.astype(dtype)
+
+            # Save and return
+            if len(np.unique(tsv)) != len(np.unique(sv)):
+                print('Supervoxels did not have unique IDs!')
+                # Make sure the new supervoxel map is not overwriting a file that is not managed by the project.
+                if self._project.sv[:9] != '{project}':
+                    print('Setting sv path to default to avoid overwriting external data!')
+                    self._project.set_sv()
+                # Save the supervoxels
+                self._save_layer('sv', data=tsv, attrs={'is_unique': True})
+                self._project.sv_touched = False
+                return tsv
+            else:
+                return sv
+        else:
+            return sv
+
     def _load_data(self):
 
         data = dict()
@@ -393,7 +429,7 @@ class CebraAnnWidget(QWidget):
         if self._project.mem is not None:
             data['mem'] = File(self._project.get_absolute_path(self._project.mem), mode='r')['data'][:]
         if self._project.sv is not None:
-            data['sv'] = File(self._project.get_absolute_path(self._project.sv), mode='r')['data'][:]
+            data['sv'] = self._load_supervoxels()
         if self._project.pre_merge is not None:
             data['pre_merge'] = File(self._project.get_absolute_path(self._project.pre_merge), mode='r')['data'][:]
         if self._project.instances is not None:
@@ -909,7 +945,7 @@ class CebraAnnWidget(QWidget):
 
         pm = supervoxel_merging(mem, sv, beta=beta) + 1
 
-        translate = self.viewer.layers['sv'].translate
+        translate = self.viewer.layers['mem'].translate
 
         self.update_layer('pre_merge', pm, 'labels', visible=True, translate=translate)
         self._project.set_pre_merge(beta)
