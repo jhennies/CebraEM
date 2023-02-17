@@ -46,7 +46,7 @@ fi
 source activate base
 
 # Always create an environment with python, elf and vigra
-conda create -y -n "$NAME" -c conda-forge python=3.9 python-elf vigra || exit 1
+conda create -y -n "$NAME" -c conda-forge python=3.9 mobie_utils=0.3 python-elf vigra || exit 1
 conda activate "$NAME" || exit 1
 conda list
 # And always install the cebra-em-core package

@@ -2,8 +2,24 @@
 import os
 from .common.project import make_project_structure
 from .common.params import copy_default_params, query_parameters
-from .common.configs import init_mask_config, init_main_config, init_raw_config, init_image_config, set_version
+from .common.config import (
+    init_mask_config,
+    init_main_config,
+    init_raw_config,
+    init_image_config,
+    get_config,
+    get_mask_xml,
+    set_version
+)
 from .common.tasks import compute_task_positions
+from .common.dependencies import init_dependencies
+from .common.mobie_utils import (
+    get_mobie_project_path,
+    init_with_raw,
+    init_membrane_prediction,
+    init_supervoxels,
+    init_mask,
+)
 from .common.version import __version__
 
 
@@ -75,13 +91,24 @@ def compute_all_task_positions(
         compute_task_positions(image, project_path=project_path, verbose=verbose)
 
 
+def init_all_dependencies(
+        images=('membrane_prediction', 'supervoxels'),
+        project_path=None,
+        n_workers=1,
+        verbose=False
+):
+
+    for image in images:
+        init_dependencies(image, project_path=project_path, n_workers=n_workers, verbose=verbose)
+
+
 def init_mobie_dataset(
         project_path=None,
         verbose=False
 ):
 
     mobie_project_path = get_mobie_project_path(project_path=project_path)
-    config_raw = get_config('raw')
+    config_raw = get_config('raw', project_path=project_path)
     raw_xml_path = config_raw['xml_path']
     mask_xml_path = get_mask_xml(project_path=project_path)
 
@@ -206,21 +233,20 @@ def init_project(
         verbose=verbose
     )
 
+    # Initialize the mobie project
     print('')
     print('Initializing mobie project ...')
-
-    # Compute position grid for each dataset
-    compute_all_task_positions(project_path=project_path, verbose=verbose)
-
-    print('')
-    print('Initializing dependencies ...')
-
-    # Initialize the dependencies for each image
-    init_dependencies_module(project_path=project_path, n_workers=max_workers, verbose=verbose)
-
-    # Initialize the mobie project
     init_mobie_dataset(project_path=project_path, verbose=verbose)
 
+    # Compute position grid for each dataset
     print('')
     print('Computing positions ...')
+    compute_all_task_positions(project_path=project_path, verbose=verbose)
+
+    # Initialize the dependencies for each image
+    print('')
+    print('Initializing dependencies ...')
+    init_all_dependencies(project_path=project_path, n_workers=max_workers, verbose=verbose)
+
+
 

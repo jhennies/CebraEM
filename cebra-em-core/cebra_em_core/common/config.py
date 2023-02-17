@@ -14,6 +14,13 @@ def absolute_path(path, project_path=None):
     return path.format(project_path=project_path)
 
 
+def get_mask_xml(project_path=None):
+    try:
+        return get_config('mask', project_path=project_path)['xml_path']
+    except KeyError:
+        return None
+
+
 def get_config_path(relpath=False, project_path=None):
     if project_path is None:
         project_path = '.'

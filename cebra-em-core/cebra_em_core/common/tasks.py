@@ -4,7 +4,7 @@ import pickle
 import numpy as np
 from pybdv.util import get_key, get_scale_factors, open_file
 from pybdv.metadata import get_data_path
-from .configs import get_config, get_config_filepath, absolute_path, add_to_config_json
+from .config import get_config, get_config_filepath, absolute_path, add_to_config_json
 from .bdv_utils import is_h5
 
 
@@ -167,6 +167,10 @@ def compute_task_positions(image_name, project_path=None, verbose=False):
     config = get_config(image_name, project_path=project_path)
     config_fp = get_config_filepath(image_name, project_path=project_path)
 
+    if verbose:
+        print(f'image_name = {image_name}')
+        print(f'config = {config}')
+
     batch_shape = config['batch_shape']
     ds_shape = config['shape']
     target_resolution = config['resolution']
@@ -210,7 +214,7 @@ def compute_task_positions(image_name, project_path=None, verbose=False):
     )
 
     positions_rel_fp = os.path.join(tasks_rel_folder, f'positions_{image_name}.pkl')
-    positions_fp = absolute_path(positions_rel_fp)
+    positions_fp = absolute_path(positions_rel_fp, project_path=project_path)
     with open(positions_fp, 'wb') as f:
         pickle.dump(positions, f)
 
@@ -220,3 +224,4 @@ def compute_task_positions(image_name, project_path=None, verbose=False):
             'positions': positions_rel_fp
         }
     )
+
