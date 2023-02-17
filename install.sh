@@ -13,7 +13,7 @@ while getopts :htn: opt; do
       echo "  -t    Do not install pytorch"
       echo "  -n    Environment name"
       echo ""
-      echo "  PACKAGE: The name of the package to install: [\"ann\", \"inf\", \"core\", \"all\"]"
+      echo "  PACKAGE: The name of the package to install: [\"ann\", \"em\", \"core\", \"all\"]"
       echo ""
       exit 0
       ;;
@@ -56,14 +56,22 @@ pip install -e ./cebra-em-core/ || exit 1
 if [ "$PACKAGE" == ann ] || [ "$PACKAGE" == all ]; then
   pip install -e ./cebra-ann/ || exit 1
 fi
-if [ "$PACKAGE" == inf ] || [ "$PACKAGE" == all ]; then
-  pip install -e ./cebra-inf/ || exit 1
+if [ "$PACKAGE" == em ] || [ "$PACKAGE" == all ]; then
+  pip install -e ./cebra-em/ || exit 1
 fi
 
 # Install torch by default
 if [ "$TORCH" == true ]; then
   install_torch.py || exit 1
 fi
+
+# Install pybdv
+mkdir ext_packages
+cd ext_packages || exit 1
+git clone https://github.com/jhennies/pybdv.git
+cd pybdv || exit 1
+git checkout bdv_dataset_with_stiching
+python setup.py install
 
 echo ""
 echo "Installation successful!"

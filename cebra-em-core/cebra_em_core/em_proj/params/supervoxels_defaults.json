@@ -1,0 +1,22 @@
+{
+  "batch_shape": [256, 256, 256],
+  "resolution": null,
+  "halo": [64, 64, 64],
+  "offset": [128, 128, 128],
+  "sv_method": "watershed_dt_with_probs",
+  "sv_kwargs": {
+    "threshold": 0.05,
+    "min_membrane_size": 1,
+    "anisotropy": [1, 1, 1],
+    "sigma_dt": 1.0,
+    "min_segment_size": 48,
+    "clean_close_seeds": true
+  },
+  "resources": {
+    "cpus": 1,
+    "mem_mb": 6144,
+    "time_min": 20,
+    "gpus": 0
+  },
+  "n_workers": 1
+}

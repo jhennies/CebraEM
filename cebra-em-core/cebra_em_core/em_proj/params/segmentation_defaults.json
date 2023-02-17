@@ -1,0 +1,41 @@
+{
+  "batch_shape": [384, 384, 384],
+  "resolution": null,
+  "halo": [64, 64, 64],
+  "offset": [0, 0, 0],
+  "run_script": "run_segmentation.py",
+  "mc_args": {
+    "lifted": false,
+    "node_classification": true,
+    "beta": 0.5,
+    "gamma": 1.0,
+    "lifted_nhood": 2,
+    "adapt_edge_probs": false
+  },
+  "learning_kwargs": {
+    "ignore_label": null,
+    "n_estimators": 200,
+    "max_depth": 50,
+    "n_jobs": 16,
+    "verbose": 1
+  },
+  "lifted_learning_kwargs": {
+    "n_estimators": 100,
+    "max_depth": 100,
+    "n_jobs": 16,
+    "verbose": 1
+  },
+  "node_learning_kwargs": {
+    "n_estimators": 200,
+    "max_depth": 50,
+    "n_jobs": 16,
+    "verbose": 1
+  },
+  "resources": {
+    "cpus": 1,
+    "mem_mb": 8192,
+    "time_min": 120,
+    "gpus": 0
+  },
+  "n_workers": 1
+}
