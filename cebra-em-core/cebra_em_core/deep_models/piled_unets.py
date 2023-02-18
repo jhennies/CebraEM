@@ -1,10 +1,7 @@
-
-import numpy as np
-
 # from .modules import nn
 import torch.nn as nn
 from torch import cat
-from .modules import Unet
+from cebra_em_core.deep_models.modules import Unet
 try:
     from torchsummary import summary
 except ImportError:

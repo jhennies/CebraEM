@@ -1,8 +1,8 @@
 
 import os
-from .common.project import make_project_structure
-from .common.params import copy_default_params, query_parameters
-from .common.config import (
+from cebra_em_core.project_utils.project import make_project_structure
+from cebra_em_core.project_utils.params import copy_default_params, query_parameters
+from cebra_em_core.project_utils.config import (
     init_mask_config,
     init_main_config,
     init_raw_config,
@@ -11,16 +11,16 @@ from .common.config import (
     get_mask_xml,
     set_version
 )
-from .common.tasks import compute_task_positions
-from .common.dependencies import init_dependencies
-from .common.mobie_utils import (
+from cebra_em_core.project_utils.tasks import compute_task_positions
+from cebra_em_core.project_utils.dependencies import init_dependencies
+from cebra_em_core.dataset.mobie_utils import (
     get_mobie_project_path,
     init_with_raw,
     init_membrane_prediction,
     init_supervoxels,
     init_mask,
 )
-from .common.version import __version__
+from cebra_em_core.version import __version__
 
 
 def init_parameters(
@@ -194,7 +194,7 @@ def init_project(
     """
 
     assert project_path is not None
-    project_path = os.path.join(project_path, '')
+    project_path = os.path.join(os.path.abspath(project_path), '')
     if verbose:
         print(f'project_path = {project_path}')
 

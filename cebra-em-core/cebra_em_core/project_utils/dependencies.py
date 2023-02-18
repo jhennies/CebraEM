@@ -5,7 +5,7 @@ import pickle
 import os
 from concurrent.futures import ThreadPoolExecutor
 
-from .config import get_config, get_config_filepath, absolute_path, add_to_config_json
+from cebra_em_core.project_utils.config import get_config, get_config_filepath, absolute_path, add_to_config_json
 
 
 def find_dependencies(

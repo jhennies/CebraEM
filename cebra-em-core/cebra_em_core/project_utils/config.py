@@ -2,14 +2,12 @@
 import os
 import json
 import numpy as np
-from .project import assert_valid_project
-from .params import load_params
+from cebra_em_core.project_utils.project import get_current_project_path
+from cebra_em_core.project_utils.params import load_params
 
 
 def absolute_path(path, project_path=None):
-    if project_path is None:
-        project_path = '.'
-    assert_valid_project(project_path)
+    project_path = get_current_project_path(project_path=project_path)
 
     return path.format(project_path=project_path)
 
@@ -22,9 +20,7 @@ def get_mask_xml(project_path=None):
 
 
 def get_config_path(relpath=False, project_path=None):
-    if project_path is None:
-        project_path = '.'
-    assert_valid_project(project_path)
+    project_path = get_current_project_path(project_path=project_path)
 
     if relpath:
         return 'config'

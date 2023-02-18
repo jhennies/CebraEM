@@ -7,11 +7,14 @@ setup(
     author_email='hennies@embl.de',
     packages=['cebra_em'],
     scripts=[
-        'bin/init_project.py'
+        'bin/init_project.py',
+        'bin/run.py'
     ],
     # url='',
     # license='',
     # description='',
     # long_description='',
-    # install_requires=[]
+    install_requires=[
+        'snakemake'
+    ]
 )

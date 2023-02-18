@@ -8,8 +8,8 @@ from pybdv.metadata import get_data_path, get_attributes, get_resolution
 from mobie.utils import require_dataset_and_view
 from mobie.xml_utils import copy_xml_with_newpath
 from mobie.metadata.source_metadata import add_source_to_dataset
-from .config import absolute_path, get_config, add_to_config_json, get_config_filepath
-from .bdv_utils import is_h5, get_shape, create_empty_dataset
+from cebra_em_core.project_utils.config import absolute_path, get_config, add_to_config_json, get_config_filepath
+from cebra_em_core.dataset.bdv_utils import is_h5, get_shape, create_empty_dataset
 from pybdv.util import get_key, open_file
 
 

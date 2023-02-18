@@ -4,8 +4,8 @@ import pickle
 import numpy as np
 from pybdv.util import get_key, get_scale_factors, open_file
 from pybdv.metadata import get_data_path
-from .config import get_config, get_config_filepath, absolute_path, add_to_config_json
-from .bdv_utils import is_h5
+from cebra_em_core.project_utils.config import get_config, get_config_filepath, absolute_path, add_to_config_json
+from cebra_em_core.dataset.bdv_utils import is_h5
 
 
 def get_tasks_folder(project_path=None, relpath=False):

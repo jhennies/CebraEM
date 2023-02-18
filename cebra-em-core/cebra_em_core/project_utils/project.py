@@ -1,7 +1,7 @@
 
 import os
 import json
-from .version import __version__, VALID_VERSIONS
+from cebra_em_core.version import __version__, VALID_VERSIONS
 
 
 def assert_valid_project(project_path):
@@ -53,3 +53,43 @@ def make_project_structure(project_path, ignore_non_empty=False):
     open(os.path.join(workflow_path, 'mock'), mode='w').close()
 
     return config_path, params_path, tasks_path
+
+
+def get_current_project_path(project_path=None):
+
+    if project_path is None:
+        project_path = os.path.join(os.path.abspath('.'), '')
+    else:
+        project_path = os.path.join(os.path.abspath(project_path), '')
+    assert_valid_project(project_path)
+
+    return project_path
+
+
+def lock_project(project_path=None):
+    project_path = get_current_project_path(project_path=project_path)
+
+    lock_fp = os.path.abspath(os.path.join(project_path, '.lock'))
+    if os.path.exists(lock_fp):
+        return lock_fp, 'is_locked_error'
+    else:
+        try:
+            open(lock_fp, 'w').close()
+        except:
+            return lock_fp, 'could_not_lock_error'
+        return lock_fp, ''
+
+
+def unlock_project(project_path=None):
+    project_path = get_current_project_path(project_path=project_path)
+
+    lock_fp = os.path.join(project_path, '.lock')
+
+    if os.path.exists(lock_fp):
+        try:
+            os.remove(lock_fp)
+        except:
+            return 'could_not_unlock_error'
+        return ''
+    else:
+        return 'is_unlocked_error'

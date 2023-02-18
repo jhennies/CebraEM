@@ -3,21 +3,21 @@ import sys
 import os
 from shutil import copy
 import json
-from .repo import get_repo_path
-from .project import assert_valid_project
+from cebra_em_core.misc.repo import get_repo_path
+from cebra_em_core.project_utils.project import assert_valid_project
 
 
 if sys.platform == 'linux':
-    from ..linux.misc import show_in_editor
+    from cebra_em_core.linux.misc import show_in_editor
 elif sys.platform[:3] == 'win':
-    from ..windows.misc import show_in_editor
+    from cebra_em_core.windows.misc import show_in_editor
 else:
     raise RuntimeError(f'Running on {sys.platform} not supported! ')
 
 
 def get_params_path(image_name, project_path=None):
     if project_path is None:
-        project_path = '.'
+        project_path = '../misc'
     assert_valid_project(project_path)
     return os.path.join(project_path, 'params', f'{image_name}.json')
 
@@ -34,7 +34,7 @@ def copy_default_params(
 
     defaults_path = os.path.join(
         get_repo_path(),
-        'em_proj', 'params'
+        'project_utils', 'params'
     )
     if verbose:
         print(f'defaults_path = {defaults_path}')

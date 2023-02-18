@@ -2,15 +2,17 @@
 
 TORCH=true
 NAME=cebra-em-env
+CONDA=conda
 
-while getopts :htn: opt; do
+while getopts :htmn: opt; do
   case $opt in
     h)
       echo ""
-      echo "Usage: ./install.sh [-h] [-n] [-t] PACKAGE"
+      echo "Usage: ./install.sh [-h] [-t] [-m] [-n NAME] PACKAGE"
       echo ""
       echo "  -h    Help"
       echo "  -t    Do not install pytorch"
+      echo "  -m    Use mamba instead of conda"
       echo "  -n    Environment name"
       echo ""
       echo "  PACKAGE: The name of the package to install: [\"ann\", \"em\", \"core\", \"all\"]"
@@ -19,6 +21,9 @@ while getopts :htn: opt; do
       ;;
     t)
       TORCH=false
+      ;;
+    m)
+      CONDA=mamba
       ;;
     n)
       NAME=$OPTARG
@@ -46,7 +51,7 @@ fi
 source activate base
 
 # Always create an environment with python, elf and vigra
-conda create -y -n "$NAME" -c conda-forge python=3.9 mobie_utils=0.3 python-elf vigra || exit 1
+"$CONDA" create -y -n "$NAME" -c conda-forge python=3.9 mobie_utils=0.3 python-elf vigra || exit 1
 conda activate "$NAME" || exit 1
 conda list
 # And always install the cebra-em-core package
