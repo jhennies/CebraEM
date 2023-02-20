@@ -43,4 +43,4 @@ rule run_<name>:
         p='gpu' if resources_<name>['gpus'] > 0 else 'htc',
         gres='--gres=gpu:2080Ti:1' if resources_<name>['gpus'] > 0 else ''
     script:
-        os.path.join(cebra_em_path, 'inf_utils', '<run_script>')
+        os.path.join(cebra_em_path, 'run_scripts', '<run_script>')

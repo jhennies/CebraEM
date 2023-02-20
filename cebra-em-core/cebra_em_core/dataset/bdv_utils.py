@@ -11,6 +11,7 @@ from pybdv.util import HDF5_EXTENSIONS
 from pybdv.util import get_key, open_file
 from pybdv.converter import normalize_output_path
 from pybdv.metadata import write_n5_metadata, write_h5_metadata, write_xml_metadata, validate_attributes
+from pybdv.bdv_datasets import BdvDataset
 
 
 def is_h5(xml_path):
@@ -106,5 +107,113 @@ def create_empty_dataset(
                        enforce_consistency=enforce_consistency)
 
     return False
+
+
+class BdvDatasetAdvanced(BdvDataset):
+
+    def __init__(
+            self,
+            path,
+            timepoint,
+            setup_id,
+            downscale_mode='mean',
+            halo=None,
+            background_value=None,
+            unique=False,
+            update_max_id=False,
+            n_threads=1,
+            verbose=False
+    ):
+
+        self._halo = halo
+        self._background_value = background_value
+        self._unique = unique
+        self._update_max_id = update_max_id
+
+        if unique:
+            self._update_max_id = True
+
+        super().__init__(
+            path,
+            timepoint,
+            setup_id,
+            downscale_mode=downscale_mode,
+            n_threads=n_threads,
+            verbose=verbose
+        )
+
+    def set_halo(self, halo):
+        """
+        Adjust the halo any time you want
+        """
+        self._halo = halo
+
+    def set_max_id(self, idx, compare_with_present=False):
+        """
+        Use this to update the largest present id in the dataset if you employ a stitching method with unique == True.
+        The id is automatically updated if new data is written.
+        """
+        data_path = self._path
+        with open_file(data_path, 'a') as f:
+            key = get_key(self._is_h5, self._timepoint, self._setup_id, 0)
+            if not compare_with_present or f[key].attrs['maxId'] < idx:
+                f[key].attrs['maxId'] = idx
+
+    def get_max_id(self):
+        data_path = self._path
+        with open_file(data_path, 'r') as f:
+            key = get_key(self._is_h5, self._timepoint, self._setup_id, 0)
+            max_id = f[key].attrs['maxId']
+        return max_id
+
+    def _crop(self, dd, volume, unique):
+        """
+        Writes the data to the dataset while cropping away the halo and updating the max id
+        """
+
+        if unique:
+            max_id = self.get_max_id()
+        else:
+            max_id = 0
+
+        position = [d.start for d in dd]
+        shp = [d.stop - d.start for d in dd]
+        assert list(volume.shape) == shp
+
+        halo = self._halo
+
+        volume = volume[
+                 halo[0]: -halo[0],
+                 halo[1]: -halo[1],
+                 halo[2]: -halo[2]
+                 ]
+        if unique:
+            if self._background_value is not None:
+                assert self._background_value == 0, 'Only implemented for background value == 0'
+                volume[volume != 0] = volume[volume != 0] + max_id
+            else:
+                volume += max_id + 1
+
+        dd = np.s_[
+            position[0] + halo[0]: position[0] + shp[0] - halo[0],
+            position[1] + halo[1]: position[1] + shp[1] - halo[1],
+            position[2] + halo[2]: position[2] + shp[2] - halo[2]
+        ]
+
+        return dd, volume
+
+    def __setitem__(self, key, value):
+
+        # Get key and value to write
+        key, value = self._crop(key, value, self._unique)
+
+        # Update the maximum label
+        if self._update_max_id:
+            vol_max = int(value.max())
+            print(f'Updating max_id to: {vol_max}')
+            self.set_max_id(vol_max, compare_with_present=True)
+
+        # Now call the super with the properly stitched volume
+        super().__setitem__(key, value)
 
 

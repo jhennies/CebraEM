@@ -51,7 +51,7 @@ fi
 source activate base
 
 # Always create an environment with python, elf and vigra
-"$CONDA" create -y -n "$NAME" -c conda-forge python=3.9 mobie_utils=0.3 python-elf vigra || exit 1
+"$CONDA" create -y -n "$NAME" -c conda-forge python=3.9 python-elf pybdv mobie_utils=0.3 vigra bioimageio.core || exit 1
 conda activate "$NAME" || exit 1
 conda list
 # And always install the cebra-em-core package
@@ -70,13 +70,13 @@ if [ "$TORCH" == true ]; then
   install_torch.py || exit 1
 fi
 
-# Install pybdv
-mkdir ext_packages
-cd ext_packages || exit 1
-git clone https://github.com/jhennies/pybdv.git
-cd pybdv || exit 1
-git checkout bdv_dataset_with_stiching
-python setup.py install
+## Install pybdv
+#mkdir ext_packages
+#cd ext_packages || exit 1
+#git clone https://github.com/jhennies/pybdv.git
+#cd pybdv || exit 1
+#git checkout bdv_dataset_with_stiching
+#python setup.py install
 
 echo ""
 echo "Installation successful!"
