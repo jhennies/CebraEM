@@ -115,15 +115,14 @@ def run(
         print('Could not lock the project. No write permission?')
         return 1
 
-    # # TODO is this still needed or a relic from an older version?
-    # # Create or clean the run requests folder
-    # if not os.path.exists(os.path.join(project_path, '.run_requests')):
-    #     os.mkdir(os.path.join(project_path, '.run_requests'))
-    # else:
-    #     from glob import glob
-    #     write_blocks = glob(os.path.join(project_path, '.run_requests', '.request_*'))
-    #     for wb in write_blocks:
-    #         os.remove(wb)
+    # Create or clean the run requests folder
+    if not os.path.exists(os.path.join(project_path, '.run_requests')):
+        os.mkdir(os.path.join(project_path, '.run_requests'))
+    else:
+        from glob import glob
+        write_blocks = glob(os.path.join(project_path, '.run_requests', '.request_*'))
+        for wb in write_blocks:
+            os.remove(wb)
 
     while len(targets) > 0:
 

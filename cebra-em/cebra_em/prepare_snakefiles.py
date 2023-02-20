@@ -153,7 +153,8 @@ def prepare_run_snakefile(targets, project_path, verbose=False):
         if 'run_script' in conf_tgt.keys():
             run_script = conf_tgt['run_script']
         else:
-            run_script = f'run_{target}.py'
+            # run_script = f'run_{target}.py'
+            run_script = f'run_task.py'
         resources = _get_resources_str(conf_tgt['resources'])
 
         block = source_block
