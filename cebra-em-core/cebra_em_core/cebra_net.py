@@ -1,4 +1,7 @@
 
+# TODO This is deprecated, using the bioimageio.core functionality now
+#   Currently this is still used in CebraANN though
+
 try:
     import torch as t
     from cebra_em_core.deep_models.run_models2 import predict_model_from_h5

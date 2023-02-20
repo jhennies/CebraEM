@@ -5,7 +5,7 @@ import os
 import sys
 from vigra.filters import gaussianSmoothing
 
-from cebra_em_core.misc.data import quantile_norm
+from cebra_em_core.dataset.data import quantile_norm
 
 try:
     import torch as t

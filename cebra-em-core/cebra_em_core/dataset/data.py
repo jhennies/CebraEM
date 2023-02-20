@@ -1,8 +1,11 @@
 
+import sys
 import numpy as np
+import os
 import scipy.ndimage as ndi
 from pybdv.util import open_file
-from .alignment import xcorr_on_volume
+from cebra_em_core.dataset.alignment import xcorr_on_volume
+from concurrent.futures import ThreadPoolExecutor
 
 
 def _apply_transform(x,
@@ -281,4 +284,64 @@ def quantile_norm(volume, qlow, qhigh):
 
     # Convert back to the original dtype
     return volume.astype(dtype)
+
+
+def small_objects_to_zero(m, size_filter, verbose=False, n_workers=os.cpu_count()):
+
+    def _to_zero(idx, obj_id):
+        sys.stdout.write('\r' + 'Identifying small objects: {} %'.format(int(100 * float(idx + 1) / float(len(smalls)))))
+        m[m == obj_id] = 0
+
+    if verbose:
+        print('Finding small objects ...')
+    u, c = np.unique(m, return_counts=True)
+    smalls = u[c < size_filter]
+
+    if verbose:
+        print('Setting smalls to zero ...')
+
+    with ThreadPoolExecutor(max_workers=n_workers) as tpe:
+        tasks = [
+            tpe.submit(_to_zero, idx, small)
+            for idx, small in enumerate(smalls)
+        ]
+        [task.result() for task in tasks]
+
+    return m
+
+
+def relabel_consecutive(map, sort_by_size=False, n_workers=os.cpu_count()):
+
+    def _relabel(idx, label, segment):
+        sys.stdout.write('\r' + 'Relabelling: {} %'.format(int(100 * float(idx + 1) / float(len(relabel_dict)))))
+        # print('label {} -> segment {}'.format(label, segment))
+        map[map == label] = -segment
+
+    map = map + 1
+
+    if sort_by_size:
+        labels, counts = np.unique(map, return_counts=True)
+        labels = labels[np.argsort(counts)[::-1]].tolist()
+    else:
+        labels = np.unique(map).tolist()
+    relabel_dict = dict(zip(labels, range(len(labels))))
+
+    # Perform the mapping
+    c = 0
+    map = map.astype('float32')
+    with ThreadPoolExecutor(max_workers=n_workers) as tpe:
+        tasks = []
+        idx = 0
+        for label, segment in relabel_dict.items():
+            tasks.append(
+                tpe.submit(_relabel, idx, label, segment)
+            )
+            idx += 1
+        [task.result() for task in tasks]
+    map = (-map).astype('float32')
+
+    return map
+
+
+
 

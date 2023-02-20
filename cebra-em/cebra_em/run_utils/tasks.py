@@ -1,6 +1,6 @@
 
 import numpy as np
-from cebra_em_core.misc.data import crop_and_scale
+from cebra_em_core.dataset.data import crop_and_scale
 
 
 def load_data(

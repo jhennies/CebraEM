@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from vigra.analysis import relabelConsecutive, labelMultiArray
 from elf.segmentation.utils import make_3d_edges
+from cebra_em_core.dataset.data import small_objects_to_zero
 
 
 def crop_center(data, target_shape):
@@ -29,32 +30,6 @@ def crop_to_same_shape(*volumes):
     volumes = [crop_center(vol, min_shape) for vol in volumes]
 
     return volumes
-
-
-def small_objects_to_zero(m, size_filter, verbose=False):
-
-    def _to_zero(idx, obj_id):
-        sys.stdout.write('\r' + 'Identifying small objects: {} %'.format(int(100 * float(idx + 1) / float(len(smalls)))))
-        # if verbose:
-        #     print(f'{idx + 1}/{len(smalls)}')
-        m[m == obj_id] = 0
-
-    if verbose:
-        print('Finding small objects ...')
-    u, c = np.unique(m, return_counts=True)
-    smalls = u[c < size_filter]
-
-    if verbose:
-        print('Setting smalls to zero ...')
-
-    with ThreadPoolExecutor(max_workers=os.cpu_count()) as tpe:
-        tasks = [
-            tpe.submit(_to_zero, idx, small)
-            for idx, small in enumerate(smalls)
-        ]
-        [task.result() for task in tasks]
-
-    return m
 
 
 def merge_small_segments(m, size=48, verbose=False):

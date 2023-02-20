@@ -7,7 +7,8 @@ setup(
     author_email='hennies@embl.de',
     packages=['cebra_em_core'],
     scripts=[
-        'bin/install_torch.py'
+        'bin/install_torch.py',
+        'bin/convert_to_bdv.py'
     ],
     # url='',
     # license='',
