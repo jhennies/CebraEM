@@ -136,37 +136,35 @@ def run(
             dryrun=dryrun
         )
 
-        # # TODO: Add the cluster profile
-        # # TODO: Make sure there is no email or group name coded in here, use:
-        # #    a) environment variables or
-        # #    b) request a modification of the config.yaml
-        # if cluster is not None:
-        #     if cluster == 'slurm':
-        #         kwargs['resources']['gpu'] = gpus
-        #         # kwargs['resources']['membrane_prediction_writer'] = 64  # In theory writing in parallel works
-        #         # kwargs['resources']['supervoxels_writer'] = 64
-        #         kwargs['cluster'] = (
-        #             "sbatch "
-        #             "-p {params.p} {params.gres} "
-        #             "-t {resources.time_min} "
-        #             "--mem={resources.mem_mb} "
-        #             "-c {resources.cpus} "
-        #             "-o log/{rule}_{wildcards}d.%N.%j.out "
-        #             "-e log/{rule}_{wildcards}d.%N.%j.err "
-        #             "--mail-type=FAIL "
-        #             "--mail-user=hennies@embl.de "
-        #             "-A Schwab "
-        #             f"--qos={qos}")
-        #         kwargs['cluster_config'] = 'cluster/slurm/config.yaml'
-        #         kwargs['nodes'] = cores
-        #         kwargs['restart_times'] = restart_times
-        #     else:
-        #         raise RuntimeError(f'Not supporting cluster = {cluster}')
+        # TODO: Add the cluster profile
+        # TODO: Make sure there is no email or group name coded in here, use:
+        #    a) environment variables or
+        #    b) request a modification of the config.yaml
+        if cluster is not None:
+            if cluster == 'slurm':
+                kwargs['resources']['gpu'] = gpus
+                # kwargs['resources']['membrane_prediction_writer'] = 64  # In theory writing in parallel works
+                # kwargs['resources']['supervoxels_writer'] = 64
+                kwargs['cluster'] = (
+                    "sbatch "
+                    "-p {params.p} {params.gres} "
+                    "-t {resources.time_min} "
+                    "--mem={resources.mem_mb} "
+                    "-c {resources.cpus} "
+                    "-o log/{rule}_{wildcards}d.%N.%j.out "
+                    "-e log/{rule}_{wildcards}d.%N.%j.err "
+                    "--mail-type=FAIL "
+                    "--mail-user=hennies@embl.de "
+                    "-A Schwab "
+                    f"--qos={qos}")
+                # kwargs['cluster_config'] = 'cluster/slurm/config.yaml'
+                kwargs['nodes'] = cores
+                kwargs['restart_times'] = restart_times
+            else:
+                raise RuntimeError(f'Not supporting cluster = {cluster}')
 
-        # # TODO: Adapt to the new workflow architecture
-        # if rerun:
-        #     kwargs['forcerun'] = [f'prepare_task_{target}' for target in targets]
-        #     kwargs['forcerun'].extend([f'write_result_{target}' for target in targets])
+        if rerun:
+            kwargs['forcerun'] = [f'run_{target}' for target in targets]
         if qos == 'low':
             kwargs['force_incomplete'] = True
 
