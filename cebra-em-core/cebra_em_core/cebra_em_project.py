@@ -24,6 +24,7 @@ from cebra_em_core.version import __version__
 
 
 def init_parameters(
+        general_params=None,
         raw_params=None,
         mem_params=None,
         sv_params=None,
@@ -33,9 +34,9 @@ def init_parameters(
         verbose=False
 ):
     if has_mask:
-        images = ('raw', 'mask', 'membrane_prediction', 'supervoxels')
+        images = ('raw', 'mask', 'general', 'membrane_prediction', 'supervoxels')
     else:
-        images = ('raw', 'membrane_prediction', 'supervoxels')
+        images = ('raw', 'general', 'membrane_prediction', 'supervoxels')
 
     # Copy the default parameters
     copy_default_params(
@@ -47,11 +48,13 @@ def init_parameters(
     query_parameters(
         dict(
             raw=raw_params,
+            mask=mask_params,
+            general=general_params,
             membrane_prediction=mem_params,
-            supervoxels=sv_params,
-            mask=mask_params
+            supervoxels=sv_params
         ) if has_mask else dict(
             raw=raw_params,
+            general=general_params,
             membrane_prediction=mem_params,
             supervoxels=sv_params
         ),
@@ -155,6 +158,7 @@ def init_project(
         project_path,
         raw_data_xml,
         mask_xml=None,
+        general_params=None,
         raw_params=None,
         mem_params=None,
         sv_params=None,
@@ -210,6 +214,7 @@ def init_project(
     # Copy the default parameters
     # Query the parameters for images (mask, membrane_prediction, supervoxels)
     init_parameters(
+        general_params=general_params,
         raw_params=raw_params,
         mem_params=mem_params,
         sv_params=sv_params,

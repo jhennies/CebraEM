@@ -6,5 +6,5 @@ def show_in_editor(filepath):
 
     run([
         'bash --login -c '
-        f'"gedit {filepath}"'
+        f'"vi {filepath}"'
     ], shell=True)

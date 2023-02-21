@@ -85,6 +85,10 @@ def init_image_config(image_name, project_path=None, force=False):
     add_to_config_json(config_main_fp, {'configs': {image_name: '{project_path}' + config_image_rel}})
     add_to_config_json(
         config_image_fp,
+        load_params('general', project_path=project_path)
+    )
+    add_to_config_json(
+        config_image_fp,
         load_params(image_name, project_path=project_path)
     )
 

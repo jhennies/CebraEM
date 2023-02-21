@@ -1,15 +1,11 @@
 {
   "batch_shape": [256, 256, 256],
-  "model_weights": "{CEBRANET_PATH}/models/default_weights.pyt",
   "model_overlap": 32,
-  "resolution": [0.01, 0.01, 0.01],
-  "halo": [16, 16, 16],
-  "offset": [0, 0, 0],
+  "model": null,
   "resources": {
     "cpus": 1,
     "mem_mb": 2048,
     "time_min": 30,
     "gpus": 1
-  },
-  "n_workers": 1
+  }
 }
