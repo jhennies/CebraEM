@@ -10,6 +10,22 @@ from pybdv.metadata import get_data_path, get_key
 from cebra_em_core.dataset.bdv_utils import is_h5
 from cebra_em_core.bioimageio.cebra_net import run_cebra_net
 from cebra_em.misc.bdv_io import vol_to_bdv
+from cebra_em_core.segmentation.supervoxels import watershed_dt_with_probs
+
+
+def out_of_mask(input_dict, mask_ids):
+    mask = input_dict['mask'] if 'mask' in input_dict else None
+
+    # Do not compute if completely outside the mask
+    if mask_ids is not None:
+        assert mask is not None
+        tmask = np.zeros(mask.shape, dtype=bool)
+        for idx in mask_ids:
+            tmask[mask == idx] = True
+        if not tmask.any():
+            return True
+        del mask, tmask
+    return False
 
 
 def run_membrane_prediction(
@@ -23,21 +39,36 @@ def run_membrane_prediction(
         assert len(input_dict) == 1
 
     raw = input_dict['raw']
-    mask = input_dict['mask'] if 'mask' in input_dict else None
 
     # Do not compute if completely outside the mask
-    if mask_ids is not None:
-        assert mask is not None
-        tmask = np.zeros(mask.shape, dtype=bool)
-        for idx in mask_ids:
-            tmask[mask == idx] = True
-        if not tmask.any():
-            return np.zeros(raw.shape)
-        del mask, tmask
+    if out_of_mask(input_dict, mask_ids):
+        return np.zeros(raw.shape)
+    else:
+        return run_cebra_net(raw).squeeze()
 
-    result = run_cebra_net(raw).squeeze()
 
-    return result
+def run_supervoxels(
+        input_dict,
+        sv_kwargs,
+        mask_ids=None
+):
+    assert 'membrane_prediction' in input_dict
+    if 'mask' in input_dict:
+        assert len(input_dict) == 2
+    else:
+        assert len(input_dict) == 1
+
+    mem = input_dict['membrane_prediction']
+
+    # Do not compute if completely outside the mask
+    if out_of_mask(input_dict, mask_ids):
+        return np.zeros(mem.shape)
+    else:
+        return watershed_dt_with_probs(
+            mem,
+            **sv_kwargs,
+            verbose=verbose
+        )
 
 
 if __name__ == '__main__':
@@ -142,6 +173,9 @@ if __name__ == '__main__':
 
     if dataset == 'membrane_prediction':
         output_data = run_membrane_prediction(input_data, mask_ids=mask_ids)
+    elif dataset == 'supervoxels':
+        sv_kwargs = config_ds['sv_kwargs']
+        output_data = run_supervoxels(input_data, sv_kwargs, mask_ids=mask_ids)
     else:
         raise RuntimeError(f'Invalid dataset: {dataset}')
 

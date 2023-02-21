@@ -22,7 +22,7 @@ def _make_dependencies_<name>(wildcards):
     if dependencies[dep_ds_idx] is not None:
         assert dep_ds != 'raw'
         for dep_idx in dependencies[dep_ds_idx][int(wildcards.idx)]:
-            dependency_list.append(ancient(os.path.join(project_path, "snk_wf", f"write_result_{dep_ds}_{dep_idx}.json")))
+            dependency_list.append(ancient(os.path.join(project_path, "snk_wf", f"run_{dep_ds}_{dep_idx}.json")))
     return dependency_list
 
 

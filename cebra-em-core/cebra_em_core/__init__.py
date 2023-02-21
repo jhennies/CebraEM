@@ -7,9 +7,6 @@ try:
     from .cebra_em_project import init_project
 except ImportError:
     print(f'Info: project_handling module not available. If you are running CebraANN this is OK.')
-except SystemError:
-    pass
-
 # from .common import config
 # from .common import dependencies
 # from .common import *

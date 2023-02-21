@@ -109,9 +109,6 @@ def pos_generator(
 
         if verbose:
             print(f'p_mask = {p_mask}')
-            p_mask_im = p_mask.reshape(mesh_shp)
-            with open_file(f'/g/schwab/hennies/tmp/p_mask_{offset[0]}.h5', mode='w') as f:
-                f.create_dataset('mask', data=p_mask_im.astype('uint8') * 255, compression='gzip')
 
         return positions[p_mask]
 
