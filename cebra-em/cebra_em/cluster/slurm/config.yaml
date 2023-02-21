@@ -1,0 +1,2 @@
+jobs: 64
+cluster: "sbatch -p {params.p} {params.gres} -t {resources.time_min} --mem={resources.mem_mb} -c {resources.cpus} -o log/{rule}_{wildcards}.out -e log/{rule}_{wildcards}.err --mail-type=FAIL --mail-user=hennies@embl.de -A Schwab"
