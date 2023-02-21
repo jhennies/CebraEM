@@ -1,5 +1,4 @@
 {
-  "batch_shape": [256, 256, 256],
   "model_overlap": 32,
   "model": null,
   "resources": {

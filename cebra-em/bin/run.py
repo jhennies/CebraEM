@@ -136,11 +136,9 @@ def run(
             dryrun=dryrun
         )
 
-        # TODO: Add the cluster profile
-        # TODO: Make sure there is no email or group name coded in here, use:
-        #    a) environment variables or
-        #    b) request a modification of the config.yaml
         if cluster is not None:
+            if not os.path.exists(os.path.join(project_path, 'log')):
+                os.mkdir(os.path.join(project_path, 'log'))
             if cluster == 'slurm':
                 kwargs['resources']['gpu'] = gpus
                 # kwargs['resources']['membrane_prediction_writer'] = 64  # In theory writing in parallel works
@@ -154,10 +152,9 @@ def run(
                     "-o log/{rule}_{wildcards}d.%N.%j.out "
                     "-e log/{rule}_{wildcards}d.%N.%j.err "
                     "--mail-type=FAIL "
-                    "--mail-user=hennies@embl.de "
-                    "-A Schwab "
+                    f"--mail-user={os.environ['MAIL']} "
+                    f"-A {os.environ['GROUP']} "
                     f"--qos={qos}")
-                # kwargs['cluster_config'] = 'cluster/slurm/config.yaml'
                 kwargs['nodes'] = cores
                 kwargs['restart_times'] = restart_times
             else:
