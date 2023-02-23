@@ -8,7 +8,8 @@ setup(
     packages=['cebra_em_core'],
     scripts=[
         'bin/install_torch.py',
-        'bin/convert_to_bdv.py'
+        'bin/convert_to_bdv.py',
+        'bin/normalize_instances.py'
     ],
     # url='',
     # license='',

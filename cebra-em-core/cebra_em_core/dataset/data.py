@@ -8,6 +8,22 @@ from cebra_em_core.dataset.alignment import xcorr_on_volume
 from concurrent.futures import ThreadPoolExecutor
 
 
+def crop_zero_padding_3d(dat, return_as_arrays=False):
+    # argwhere will give you the coordinates of every non-zero point
+    true_points = np.argwhere(dat)
+    # take the smallest points and use them as the top left of your crop
+    top_left = true_points.min(axis=0)
+    # take the largest points and use them as the bottom right of your crop
+    bottom_right = true_points.max(axis=0)
+    # generate bounds
+    bounds = np.s_[top_left[0]:bottom_right[0] + 1,  # plus 1 because slice isn't
+                   top_left[1]:bottom_right[1] + 1,  # inclusive
+                   top_left[2]:bottom_right[2] + 1]
+    if return_as_arrays:
+        return bounds, top_left, bottom_right
+    return bounds
+
+
 def _apply_transform(x,
                     transform_matrix,
                     channel_axis=0,
@@ -61,7 +77,7 @@ def _transform_matrix_offset_center(matrix, x, y, z):
     return transform_matrix
 
 
-def _scale_and_shift(vol, scale, shift, order=1, scale_im_size=False, verbose=False):
+def scale_and_shift(vol, scale, shift=(0., 0., 0.), order=1, scale_im_size=False, verbose=False):
 
     im = vol[..., None]
 
@@ -256,13 +272,15 @@ def crop_and_scale(
     raw = load_data(input_path, internal_path, floor_p0_dash, input_shape, xcorr=xcorr, verbose=verbose)
     if scale_result:
         if np.sum(scale != 1) or np.sum(shift != 0):
-            raw = _scale_and_shift(raw, scale, shift, order=order, verbose=verbose)
+            raw = scale_and_shift(raw, scale, shift, order=order, verbose=verbose)
             raw = raw[:output_shape[0], :output_shape[1], :output_shape[2]]
+
+    assert raw.shape == output_shape
 
     return raw
 
 
-def quantile_norm(volume, qlow, qhigh):
+def quantile_norm(volume, qlow, qhigh, verbose=False):
 
     dtype = volume.dtype
     assert dtype == 'uint8', 'Only unsigned 8bit is implemented'
@@ -270,6 +288,9 @@ def quantile_norm(volume, qlow, qhigh):
 
     # Get quantiles of full volume
     # Could potentially also be a reference slice, multiple reference slices, ...
+    if verbose:
+        print(f'qlow = {qlow}')
+        print(f'np.unique(volume) = {np.unique(volume)}')
     q_lower_ref = np.quantile(volume, qlow)
     q_upper_ref = np.quantile(volume, qhigh)
 
