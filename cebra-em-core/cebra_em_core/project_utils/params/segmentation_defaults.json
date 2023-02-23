@@ -1,4 +1,8 @@
 {
+  "quantile_norm": {
+    "quantiles": [0.1, 0.9],
+    "anchors": [0.1, 0.9]
+  },
   "batch_shape": [384, 384, 384],
   "halo": [64, 64, 64],
   "mc_args": {
