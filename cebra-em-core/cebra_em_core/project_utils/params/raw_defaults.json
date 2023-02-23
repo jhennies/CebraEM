@@ -1,3 +1,4 @@
 {
-  "xcorr": false
+  "xcorr": false,
+  "quantile_spacing": 0.02
 }

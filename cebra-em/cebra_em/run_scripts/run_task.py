@@ -1,8 +1,10 @@
 
 import numpy as np
 import pickle
+import os
+import json
 
-from cebra_em.run_utils.tasks import load_data
+from cebra_em.run_utils.tasks import load_data, apply_normalization
 from cebra_em_core.project_utils.project import get_current_project_path
 from cebra_em_core.project_utils.config import get_config, absolute_path
 from cebra_em.run_utils.run_specs import get_run_json
@@ -150,6 +152,16 @@ if __name__ == '__main__':
         position_halo = np.array(position)
         shape_halo = np.array(batch_shape)
 
+    relative_quantiles = config_ds['quantile_norm'] if 'quantile_norm' in config_ds else None
+    if relative_quantiles is not None:
+        raw_quantiles_fp = snakemake.input[-1]
+        assert raw_quantiles_fp == os.path.join(project_path, 'snk_wf', 'raw_quantiles.json'), \
+            f"{raw_quantiles_fp} != {os.path.join(project_path, 'snk_wf', 'raw_quantiles.json')}"
+        with open(raw_quantiles_fp, mode='r') as f:
+            raw_quantiles = json.load(f)
+    else:
+        raw_quantiles = None
+
     # _______________________________________________________________________________
     # Retrieve the input
     input_data = load_data(
@@ -167,6 +179,19 @@ if __name__ == '__main__':
 
     if verbose:
         print(f'input_data.keys() = {input_data.keys()}')
+
+    # _______________________________________________________________________________
+    # Pre-processing
+
+    if relative_quantiles is not None:
+        input_data['raw'] = apply_normalization(
+            input_data['raw'],
+            input_data['mask'],
+            mask_ids,
+            raw_quantiles,
+            relative_quantiles,
+            verbose=verbose
+        )
 
     # _______________________________________________________________________________
     # Run the task

@@ -23,6 +23,8 @@ def _make_dependencies_<name>(wildcards):
         assert dep_ds != 'raw'
         for dep_idx in dependencies[dep_ds_idx][int(wildcards.idx)]:
             dependency_list.append(ancient(os.path.join(project_path, "snk_wf", f"run_{dep_ds}_{dep_idx}.json")))
+    if 'quantile_norm' in config_<name> and config_<name>['quantile_norm'] is not None:
+        dependency_list.append(os.path.join(project_path, "snk_wf", f"raw_quantiles.json"))
     return dependency_list
 
 

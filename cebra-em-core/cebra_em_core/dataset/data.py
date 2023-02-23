@@ -8,6 +8,22 @@ from cebra_em_core.dataset.alignment import xcorr_on_volume
 from concurrent.futures import ThreadPoolExecutor
 
 
+def crop_zero_padding_3d(dat, return_as_arrays=False):
+    # argwhere will give you the coordinates of every non-zero point
+    true_points = np.argwhere(dat)
+    # take the smallest points and use them as the top left of your crop
+    top_left = true_points.min(axis=0)
+    # take the largest points and use them as the bottom right of your crop
+    bottom_right = true_points.max(axis=0)
+    # generate bounds
+    bounds = np.s_[top_left[0]:bottom_right[0] + 1,  # plus 1 because slice isn't
+                   top_left[1]:bottom_right[1] + 1,  # inclusive
+                   top_left[2]:bottom_right[2] + 1]
+    if return_as_arrays:
+        return bounds, top_left, bottom_right
+    return bounds
+
+
 def _apply_transform(x,
                     transform_matrix,
                     channel_axis=0,
@@ -61,7 +77,7 @@ def _transform_matrix_offset_center(matrix, x, y, z):
     return transform_matrix
 
 
-def _scale_and_shift(vol, scale, shift, order=1, scale_im_size=False, verbose=False):
+def scale_and_shift(vol, scale, shift=(0., 0., 0.), order=1, scale_im_size=False, verbose=False):
 
     im = vol[..., None]
 
@@ -207,6 +223,7 @@ def crop_and_scale(
         scale_result=True,
         order=1,
         xcorr=False,
+        extended_return=False,
         verbose=False,
 ):
     """
@@ -222,6 +239,7 @@ def crop_and_scale(
     :param scale_result:
     :param order:
     :param xcorr:
+    :param extended_return: Return transformations as well
     :param verbose:
     :return:
     """
@@ -253,16 +271,27 @@ def crop_and_scale(
         + (p0_dash - floor_p0_dash)
 
     # Load raw data
-    raw = load_data(input_path, internal_path, floor_p0_dash, input_shape, xcorr=xcorr, verbose=verbose)
+    raw = load_data(
+        input_path,
+        internal_path,
+        floor_p0_dash,
+        input_shape,
+        xcorr=xcorr,
+        verbose=verbose
+    )
     if scale_result:
         if np.sum(scale != 1) or np.sum(shift != 0):
-            raw = _scale_and_shift(raw, scale, shift, order=order, verbose=verbose)
+            raw = scale_and_shift(raw, scale, shift, order=order, verbose=verbose)
             raw = raw[:output_shape[0], :output_shape[1], :output_shape[2]]
 
+    assert np.sum(np.array(raw.shape) - np.array(output_shape)) == 0, 'Shape of the computed map and expected output shape must match!'
+
+    if extended_return:
+        return raw, scale, shift
     return raw
 
 
-def quantile_norm(volume, qlow, qhigh):
+def quantile_norm(volume, qlow, qhigh, verbose=False):
 
     dtype = volume.dtype
     assert dtype == 'uint8', 'Only unsigned 8bit is implemented'
@@ -270,6 +299,9 @@ def quantile_norm(volume, qlow, qhigh):
 
     # Get quantiles of full volume
     # Could potentially also be a reference slice, multiple reference slices, ...
+    if verbose:
+        print(f'qlow = {qlow}')
+        print(f'np.unique(volume) = {np.unique(volume)}')
     q_lower_ref = np.quantile(volume, qlow)
     q_upper_ref = np.quantile(volume, qhigh)
 
@@ -343,5 +375,89 @@ def relabel_consecutive(map, sort_by_size=False, n_workers=os.cpu_count()):
     return map
 
 
+def get_quantiles(
+        raw_handle,
+        seg,
+        raw_resolution,
+        seg_resolution,
+        seg_ids=None,
+        quantile_spacing=0.2,
+        verbose=False
+):
 
+    if seg_ids is None:
+        seg_ids = np.unqiue(seg)[1:]
 
+    raw_resolution, seg_resolution = np.array(raw_resolution), np.array(seg_resolution)
+    quantiles = {}
+
+    for idx in seg_ids:
+
+        # --- Get all pixels of the current object in the raw data ---
+        print(f'Extracting quantiles for idx = {idx}')
+
+        # Get the bounding box of the current object in the segmentation
+        bounds, top_left, bottom_right = crop_zero_padding_3d(seg == idx, return_as_arrays=True)
+
+        # Fetch the data from the segmentation
+        this_obj = seg[bounds]
+        this_obj[this_obj != idx] = 0
+
+        # Transorm the bounds to the raw resolution
+        scale = seg_resolution / raw_resolution
+        top_left_rr = (top_left * scale).astype(int)
+        bottom_right_rr = ((bottom_right + 1) * scale).astype(int)
+
+        if verbose:
+            print(f'top_left = {top_left}')
+            print(f'top_left_rr = {top_left_rr}')
+            print(f'bottom_right = {bottom_right}')
+            print(f'bottom_right_rr = {bottom_right_rr}')
+
+        # Fetch the object area from the raw data
+        bounds_rr = np.s_[top_left_rr[0]:bottom_right_rr[0],
+                 top_left_rr[1]:bottom_right_rr[1],
+                 top_left_rr[2]:bottom_right_rr[2]]
+        # FIXME this can be ommited by directly fetching the relvant pixels from the full map
+        this_raw = raw_handle[bounds_rr]
+
+        # Get the raw pixels of the current object
+        print(f'Fetching the raw pixels ...')
+        pos = (
+            (np.where(this_obj > 1)[0] * scale[0]).astype(int),
+            (np.where(this_obj > 1)[1] * scale[1]).astype(int),
+            (np.where(this_obj > 1)[2] * scale[2]).astype(int)
+        )
+        raw_pixels = this_raw[pos]
+
+        # Determine the quantile list
+        if verbose:
+            print('Computing the quantiles ...')
+        this_quantiles = {q: np.quantile(raw_pixels, q / 100) for q in range(0, 100, int(quantile_spacing * 100))}
+
+        # Append to the return dict
+        quantiles[idx] = this_quantiles
+
+        # # Scale the seg to match the raw
+        # print(f'Scaling the segmentation ...')
+        # if verbose:
+        #     print(f'scale = {scale}')
+        # this_obj_r = scale_and_shift(
+        #     this_obj,
+        #     scale=scale,
+        #     scale_im_size=this_raw.shape,
+        #     order=0
+        # )
+        #
+        # # Get the raw pixels of the current object
+        # raw_pixels = this_raw[this_obj_r > 1]
+        #
+        # # Determine the quantile list
+        # if verbose:
+        #     print('Computing the quantiles ...')
+        # this_quantiles = {q: np.quantile(raw_pixels, q / 100) for q in range(0, 100, int(quantile_spacing * 100))}
+        #
+        # # Append to the return dict
+        # quantiles[idx] = this_quantiles
+
+    return quantiles

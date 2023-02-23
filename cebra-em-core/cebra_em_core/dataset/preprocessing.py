@@ -4,10 +4,17 @@ import os
 import numpy as np
 from tifffile import imread, imsave
 from pybdv import make_bdv
-from pybdv.util import open_file
+from pybdv.util import open_file, get_key
 from h5py import File
 
-from .data import small_objects_to_zero, relabel_consecutive
+from .data import (
+    small_objects_to_zero,
+    relabel_consecutive,
+    crop_zero_padding_3d,
+    scale_and_shift,
+    quantile_norm
+)
+from .bdv_utils import create_empty_dataset
 
 
 SUPPORTED_FILE_TYPES = ['h5', 'n5', 'model']
@@ -182,3 +189,119 @@ def convert_to_bdv(
              downscale_factors=scale_factors,
              downscale_mode=scale_mode,
              resolution=resolution, unit=unit)
+
+
+def normalize_instances(
+        raw_source,
+        raw_key,
+        seg_source,
+        seg_key,
+        target_path,
+        raw_resolution=(0.01, 0.01, 0.01),
+        seg_resolution=(0.01, 0.01, 0.01),
+        unit='micrometer',
+        instance_ids=None,
+        quantiles=(0.1, 0.9),
+        anchor_values=(0.05, 0.95),
+        dtype='uint8',
+        bdv_scale_factors=(2, 2, 4),
+        scale_mode='mean',
+        verbose=False,
+):
+
+    print(f'Fetching inputs ...')
+    # Read the segmentation
+    with open_file(seg_source, mode='r') as f:
+        seg = f[seg_key][:]
+    # Open the raw dataset (but don't read the data at once!)
+    rf = open_file(raw_source, mode='r')[raw_key]
+
+    if verbose:
+        print(f'seg.shape = {seg.shape}')
+        print(f'rf.shape = {rf.shape}')
+
+    bdv_scale_factors = [[x] * 3 for x in bdv_scale_factors]
+
+    print('Generating target dataset ...')
+    # Generate a target dataset of the same shape as the raw dataset
+    create_empty_dataset(
+        target_path,
+        0, 0,
+        rf.shape,
+        data_dtype=dtype,
+        scale_factors=bdv_scale_factors,
+        resolution=raw_resolution,
+        unit=unit,
+        verbose=verbose
+    )
+
+    # Get the target dataset handle
+    target_key = get_key(False, 0, 0, 0)
+    tfh = open_file(target_path, mode='a')
+
+    # Get the IDs of the instances
+    if instance_ids is None:
+        print('Fetching instance ids ...')
+        instance_ids = np.unique(seg)[1:]
+
+    if verbose:
+        print(f'instance_ids = {instance_ids}')
+
+    seg_resolution = np.array(seg_resolution)
+    raw_resolution = np.array(raw_resolution)
+
+    for idx in instance_ids:
+
+        # --- Get all pixels of the current object in the raw data ---
+
+        # Get the bounding box of the current object in the segmentation
+        bounds, top_left, bottom_right = crop_zero_padding_3d(seg == idx, return_as_arrays=True)
+
+        # Fetch the data from the segmentation
+        this_obj = seg[bounds]
+        this_obj[this_obj != idx] = 0
+
+        # Transorm the bounds to the raw resolution
+        scale = seg_resolution / raw_resolution
+        top_left_rr = (top_left * scale).astype(int)
+        bottom_right_rr = ((bottom_right + 1) * scale).astype(int)
+
+        if verbose:
+            print(f'top_left = {top_left}')
+            print(f'top_left_rr = {top_left_rr}')
+            print(f'bottom_right = {bottom_right}')
+            print(f'bottom_right_rr = {bottom_right_rr}')
+
+        # Fetch the object area from the raw data
+        bounds_rr = np.s_[top_left_rr[0]:bottom_right_rr[0],
+                 top_left_rr[1]:bottom_right_rr[1],
+                 top_left_rr[2]:bottom_right_rr[2]]
+        this_raw = rf[bounds_rr]
+
+        # Scale the seg to match the raw
+        if verbose:
+            print(f'scale = {scale}')
+        this_obj_r = scale_and_shift(
+            this_obj,
+            scale=scale,
+            scale_im_size=this_raw.shape,
+            order=0
+        )
+
+        if verbose:
+            print(f'this_obj_r.shape = {this_obj_r.shape}')
+            print(f'this_raw.shape = {this_raw.shape}')
+        assert this_obj_r.shape == this_raw.shape
+
+        # from matplotlib import pyplot as plt
+        # plt.imshow(this_obj_r[0, :])
+        # plt.figure()
+        # plt.imshow(this_raw[0, :])
+        # plt.show()
+
+        this_raw[this_obj_r > 1] = quantile_norm(this_raw[this_obj_r > 1], quantiles[0], quantiles[1], verbose=verbose)
+
+        if verbose:
+            print(f'np.unique(this_raw) = {np.unique(this_raw)}')
+        tfh[target_key][bounds_rr] = this_raw
+    tfh.close()
