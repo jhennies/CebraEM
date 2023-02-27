@@ -13,26 +13,76 @@ from cebra_em_core.dataset.bdv_utils import is_h5
 from cebra_em_core.bioimageio.cebra_net import run_cebra_net
 from cebra_em.misc.bdv_io import vol_to_bdv
 from cebra_em_core.segmentation.supervoxels import watershed_dt_with_probs
+from cebra_em_core.dataset.data import crop_zero_padding_3d
 
 
-def out_of_mask(input_dict, mask_ids):
-    mask = input_dict['mask'] if 'mask' in input_dict else None
+def compute_task_with_mask(func, vol, mask, mask_ids, halo=None, verbose=False):
 
-    # Do not compute if completely outside the mask
-    if mask_ids is not None:
-        assert mask is not None
-        tmask = np.zeros(mask.shape, dtype=bool)
+    def _get_bin_mask():
+        tm = np.zeros(mask.shape, dtype=bool)
         for idx in mask_ids:
-            tmask[mask == idx] = True
-        if not tmask.any():
-            return True
-        del mask, tmask
-    return False
+            tm[mask == idx] = True
+        return tm
+
+    bin_mask = _get_bin_mask()
+
+    if halo is not None:
+        halo_mask = bin_mask[halo[0]: -halo[0],
+                             halo[1]: -halo[1],
+                             halo[2]: -halo[2]]
+    else:
+        halo_mask = bin_mask.copy()
+
+    # Return if there is no data in the main ROI
+    if not halo_mask.any():
+        if verbose:
+            print(f'No data inside ROI, returning zeros ...')
+        return np.zeros(vol.shape)
+        # --------------------------------------
+
+    # Simply compute if there is no background in the mask
+    if bin_mask.min() > 0:
+        if verbose:
+            print(f'Mask fully within data, computing normally ...')
+        return func(vol)
+        # --------------------------------------
+
+    if verbose:
+        print(f'Mask contains zeros, cropping to bounds ...')
+    # Crop the bounding rect of the mask
+    bounds = crop_zero_padding_3d(bin_mask)
+    vol_in = vol[bounds]
+
+    # Compute the respective subarea
+    res = func(vol_in)
+    if verbose:
+        print(f'res.shape = {res.shape}')
+        print(f'np.unique(res) = {np.unique(res)}')
+
+    if verbose:
+        print(f'Padding result to original size ...')
+    # Pad the result to match the input shape
+    vol_out = np.zeros(vol.shape, res.dtype)
+    vol_out[bounds] = res
+    if verbose:
+        print(f'vol_out.shape = {vol_out.shape}')
+        print(f'np.unique(vol_out) = {np.unique(vol_out)}')
+
+    if verbose:
+        print(f'Removing everything outside the mask ...')
+    # Remove everything outside the mask
+    vol_out[np.logical_not(bin_mask)] = 0
+    if verbose:
+        print(f'np.unique(vol_out) = {np.unique(vol_out)}')
+
+    return vol_out
 
 
 def run_membrane_prediction(
         input_dict,
-        mask_ids=None
+        mask_ids=None,
+        halo=None,
+        verbose=False
 ):
     assert 'raw' in input_dict
     if 'mask' in input_dict:
@@ -42,18 +92,26 @@ def run_membrane_prediction(
 
     raw = input_dict['raw']
 
-    # Do not compute if completely outside the mask
-    if out_of_mask(input_dict, mask_ids):
-        return np.zeros(raw.shape)
+    def _run_cebra_net(vol):
+        return run_cebra_net(vol).squeeze()
+
+    if 'mask' in input_dict:
+        if verbose:
+            print(f'Computing with mask ...')
+        return compute_task_with_mask(_run_cebra_net, raw, input_dict['mask'], mask_ids=mask_ids, halo=halo, verbose=verbose)
     else:
-        return run_cebra_net(raw).squeeze()
+        if verbose:
+            print(f'Computing without mask ...')
+        return _run_cebra_net(raw)
 
 
 def run_supervoxels(
         input_dict,
         sv_kwargs,
-        mask_ids=None
+        mask_ids=None,
+        halo=None
 ):
+    # TODO check if a mask can be applied to computation such that exhaustive memory hungry steps can be avoided
     assert 'membrane_prediction' in input_dict
     if 'mask' in input_dict:
         assert len(input_dict) == 2
@@ -62,15 +120,14 @@ def run_supervoxels(
 
     mem = input_dict['membrane_prediction']
 
-    # Do not compute if completely outside the mask
-    if out_of_mask(input_dict, mask_ids):
-        return np.zeros(mem.shape)
+    def run_sv(vol):
+        return watershed_dt_with_probs(vol, **sv_kwargs, verbose=verbose)
+
+    if 'mask' in input_dict:
+        return compute_task_with_mask(run_sv, mem, input_dict['mask'], mask_ids=mask_ids, halo=halo)
     else:
-        return watershed_dt_with_probs(
-            mem,
-            **sv_kwargs,
-            verbose=verbose
-        )
+        return run_sv(mem)
+
 
 
 if __name__ == '__main__':
@@ -196,11 +253,15 @@ if __name__ == '__main__':
     # _______________________________________________________________________________
     # Run the task
 
+    # TODO: Also add:
+    #  Cropping to the bounds of the valid mask ids (Otherwise SV computation loves to go out of memory)
+    #    (See original implementation for the supervoxel run script)
+
     if dataset == 'membrane_prediction':
-        output_data = run_membrane_prediction(input_data, mask_ids=mask_ids)
+        output_data = run_membrane_prediction(input_data, mask_ids=mask_ids, halo=halo, verbose=verbose)
     elif dataset == 'supervoxels':
         sv_kwargs = config_ds['sv_kwargs']
-        output_data = run_supervoxels(input_data, sv_kwargs, mask_ids=mask_ids)
+        output_data = run_supervoxels(input_data, sv_kwargs, mask_ids=mask_ids, halo=halo)
     else:
         raise RuntimeError(f'Invalid dataset: {dataset}')
 
