@@ -34,6 +34,37 @@ def _update_image_name(xml_path, image_name):
     tree.write(xml_path)
 
 
+def _resolution_to_micrometer(xml_path):
+    et = ET.parse(xml_path).getroot()
+    # Change the unit in the view setups
+    setups = et.find("SequenceDescription").find("ViewSetups").findall("ViewSetup")
+    change_ratio = 1
+    for vs in setups:
+        vx = vs.find("voxelSize")
+        unit = vx.find("unit")
+        if unit.text == 'nanometer':
+            print('Changing unit to micrometer ...')
+            size = vx.find("size")
+            size_arr = np.array([float(x) / 1000 for x in str.split(size.text, ' ')])
+            size.text = str.join(' ', [str(x) for x in size_arr])
+            unit.text = 'micrometer'
+            change_ratio = 1000
+        elif unit.text == 'micrometer':
+            pass
+        else:
+            raise RuntimeError(f'Invalid unit: {unit.text}; Valid units: "micrometer", "nanometer"')
+
+    # Also change it for the View registration
+    if change_ratio != 1:
+        affine = et.find("ViewRegistrations").find("ViewRegistration").find("ViewTransform").find("affine")
+        affine_arr = np.array([float(x) / change_ratio for x in str.split(affine.text, ' ')])
+        affine.text = str.join(' ', [str(x) for x in affine_arr])
+
+    # Write the result
+    tree = ET.ElementTree(et)
+    tree.write(xml_path)
+
+
 def init_with_raw(mobie_project_path, dataset_name, raw_xml_path, image_name, project_path=None, verbose=False):
 
     if is_h5(raw_xml_path):
@@ -68,6 +99,7 @@ def init_with_raw(mobie_project_path, dataset_name, raw_xml_path, image_name, pr
     xml_path = xml_path.format(data_format.replace('.', '-'))
     copy_xml_with_newpath(raw_xml_path, xml_path, raw_data_path, path_type='absolute', data_format=data_format)
     _update_image_name(xml_path, image_name)
+    _resolution_to_micrometer(xml_path)
 
     # Add the metadata
     # add_source_metadata(dataset_folder, 'image', image_name, xml_path, overwrite=True, view=view)
@@ -341,6 +373,7 @@ def init_mask(dataset_folder, mask_xml_path, image_name, project_path=None, verb
     xml_path = xml_path.format(data_format.replace('.', '-'))
     copy_xml_with_newpath(mask_xml_path, xml_path, mask_data_path, path_type='absolute', data_format=data_format)
     _update_image_name(xml_path, image_name)
+    _resolution_to_micrometer(xml_path)
 
     mask_attributes = get_attributes(xml_path, 0)
     mask_resolution = get_resolution(xml_path, 0)
