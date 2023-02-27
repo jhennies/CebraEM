@@ -134,6 +134,13 @@ def convert_to_bdv(
         verbose=False
 ):
 
+    # Currently CebraEM internally only uses micrometer, hence I am only supporting it here as well
+    if unit != 'micrometer':
+        print('\nCebraEM uses the pixel spacing in micrometers. Hence only micrometer is supported here.\n'
+              'Re-run the function and supply the resolution in micrometer scale!\n\n'
+              'Exiting ...\n')
+        return
+
     # Checking for the file type
     file_type = os.path.splitext(source_path)[1]
 
