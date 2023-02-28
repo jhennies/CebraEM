@@ -284,7 +284,10 @@ def crop_and_scale(
             raw = scale_and_shift(raw, scale, shift, order=order, verbose=verbose)
             raw = raw[:output_shape[0], :output_shape[1], :output_shape[2]]
 
-    assert np.sum(np.array(raw.shape) - np.array(output_shape)) == 0, 'Shape of the computed map and expected output shape must match!'
+    assert np.sum(np.array(raw.shape) - np.array(output_shape)) == 0, (
+        f'Shape of the computed map and expected output '
+        f'shape must match! raw.shape = {raw.shape} != output_shape = {output_shape}'
+    )
 
     if extended_return:
         return raw, scale, shift
