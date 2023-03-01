@@ -190,7 +190,8 @@ def load_with_zero_padding(dataset, starts, ends, shape, verbose=False):
 def load_data(
         input_path,
         internal_path,
-        pos, shape,
+        pos,
+        shape,
         xcorr=False,
         verbose=False
 ):
@@ -261,14 +262,40 @@ def crop_and_scale(
     p1_dash = p1 * output_res / input_res
 
     floor_p0_dash = np.floor(p0_dash).astype(int)
+    rem_p0_dash = p0_dash - floor_p0_dash
     ceil_p1_dash = np.ceil(p1_dash).astype(int)
+    # rem_p1_dash = p1_dash - ceil_p1_dash
 
-    input_shape = np.max([p1 - p0, ceil_p1_dash - floor_p0_dash], axis=0)
+    input_shape = ceil_p1_dash - floor_p0_dash
 
     scale = input_res / output_res
 
-    shift = 0.5 / scale * (input_shape - scale * input_shape) \
-        + (p0_dash - floor_p0_dash)
+    # I'm struggling to get this right!
+    # FIXME check this, why is this the best so far???
+    shift = rem_p0_dash / input_res * output_res
+
+    if verbose:
+        print(f'input_res = {input_res}')
+        print(f'output_res = {output_res}')
+        print(f'p0 = {p0}')
+        print(f'p1 = {p1}')
+        print(f'p0_dash = {p0_dash}')
+        print(f'p1_dash = {p1_dash}')
+        print(f'floor_p0_dash = {floor_p0_dash}')
+        print(f'rem_p0_dash = {rem_p0_dash}')
+        print(f'ceil_p1_dash = {ceil_p1_dash}')
+        print(f'input_shape = {input_shape}')
+        print(f'scale = {scale}')
+        print(f'shift = {shift}')
+
+    # ceil_p1_dash = np.ceil(p1_dash).astype(int)
+    #
+    # input_shape = np.max([p1 - p0, ceil_p1_dash - floor_p0_dash], axis=0)
+    #
+    # scale = input_res / output_res
+    #
+    # shift = 0.5 / scale * (input_shape - scale * input_shape) \
+    #     + (p0_dash - floor_p0_dash)
 
     # Load raw data
     raw = load_data(
@@ -281,7 +308,7 @@ def crop_and_scale(
     )
     if scale_result:
         if np.sum(scale != 1) or np.sum(shift != 0):
-            raw = scale_and_shift(raw, scale, shift, order=order, verbose=verbose)
+            raw = scale_and_shift(raw, scale, shift, scale_im_size=True, order=order, verbose=verbose)
             raw = raw[:output_shape[0], :output_shape[1], :output_shape[2]]
 
     assert np.sum(np.array(raw.shape) - np.array(output_shape)) == 0, (

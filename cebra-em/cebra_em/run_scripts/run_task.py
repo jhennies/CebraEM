@@ -94,6 +94,8 @@ def run_membrane_prediction(
 
     def _run_cebra_net(vol):
         return run_cebra_net(vol).squeeze()
+        # # Use this for debugging:
+        # return np.ones(vol.shape) * 255
 
     if 'mask' in input_dict:
         if verbose:
@@ -122,6 +124,8 @@ def run_supervoxels(
 
     def run_sv(vol):
         return watershed_dt_with_probs(vol, **sv_kwargs, verbose=verbose)
+        # # Use this for debugging:
+        # return np.ones(vol.shape)
 
     if 'mask' in input_dict:
         return compute_task_with_mask(run_sv, mem, input_dict['mask'], mask_ids=mask_ids, halo=halo)
