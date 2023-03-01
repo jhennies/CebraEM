@@ -1,4 +1,5 @@
 
+print('before imports')
 import numpy as np
 import pickle
 import os
@@ -14,7 +15,6 @@ from cebra_em_core.bioimageio.cebra_net import run_cebra_net
 from cebra_em.misc.bdv_io import vol_to_bdv
 from cebra_em_core.segmentation.supervoxels import watershed_dt_with_probs
 from cebra_em_core.dataset.data import crop_zero_padding_3d
-
 
 def compute_task_with_mask(func, vol, mask, mask_ids, halo=None, verbose=False):
 
@@ -93,9 +93,9 @@ def run_membrane_prediction(
     raw = input_dict['raw']
 
     def _run_cebra_net(vol):
-        return run_cebra_net(vol).squeeze()
-        # # Use this for debugging:
-        # return np.ones(vol.shape) * 255
+        # return run_cebra_net(vol).squeeze()
+        # Use this for debugging:
+        return np.ones(vol.shape) * 255
 
     if 'mask' in input_dict:
         if verbose:
@@ -123,15 +123,14 @@ def run_supervoxels(
     mem = input_dict['membrane_prediction']
 
     def run_sv(vol):
-        return watershed_dt_with_probs(vol, **sv_kwargs, verbose=verbose)
-        # # Use this for debugging:
-        # return np.ones(vol.shape)
+        # return watershed_dt_with_probs(vol, **sv_kwargs, verbose=verbose)
+        # Use this for debugging:
+        return np.ones(vol.shape)
 
     if 'mask' in input_dict:
         return compute_task_with_mask(run_sv, mem, input_dict['mask'], mask_ids=mask_ids, halo=halo)
     else:
         return run_sv(mem)
-
 
 
 if __name__ == '__main__':
