@@ -94,7 +94,7 @@ rule quantile_norm:
     output:
         os.path.join(os.path.join(project_path, "snk_wf", f"raw_quantiles.json"))
     resources:
-        cpus=os.cpu_count(), time_min=10, mem_mb=4096
+        cpus=os.cpu_count(), time_min=60, mem_mb=32000
     params: p='htc', gres=''
     script:
         os.path.join(cebra_em_path, 'run_scripts', 'run_quantile_norm.py')
