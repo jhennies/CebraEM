@@ -62,9 +62,9 @@ def _apply_transform(x,
 
 
 def _transform_matrix_offset_center(matrix, x, y, z):
-    o_x = float(x) / 2 + 0.5
-    o_y = float(y) / 2 + 0.5
-    o_z = float(z) / 2 + 0.5
+    o_x = float(x) / 2  # + 0.5
+    o_y = float(y) / 2  # + 0.5
+    o_z = float(z) / 2  # + 0.5
     offset_matrix = np.array([[1, 0, 0, o_x],
                               [0, 1, 0, o_y],
                               [0, 0, 1, o_z],
@@ -271,8 +271,8 @@ def crop_and_scale(
     scale = input_res / output_res
 
     # I'm struggling to get this right!
-    # FIXME check this, why is this the best so far???
-    shift = rem_p0_dash / input_res * output_res
+    shift = rem_p0_dash  # / input_res * output_res
+    # FIXME Now it's nice for the membrane prediction but doesn't work for the supervoxels, why????!!?
 
     if verbose:
         print(f'input_res = {input_res}')
