@@ -53,10 +53,11 @@ elif run_type == 'gt_cubes' or run_type == 'val_cubes':
 
     name = 'gt' if run_type == 'gt_cubes' else 'val'
 
+    # TODO
     target_output = os.path.join(
             project_path,
             'snk_wf',
-            '{out}'.format(out='write_result_{dataset}_{idx}.json')
+            '{out}'.format(out='run_{dataset}_{idx}.json')
     )
 
     assert len(targets) == 1, 'targets for run_type = "gt_cubes" or "val_cubes" should be only "supervoxels"' \
@@ -82,7 +83,7 @@ elif run_type == 'gt_cubes' or run_type == 'val_cubes':
             cpus=1, time_min=10, mem_mb=1024
         params: p='htc', gres=''
         script:
-            os.path.join(src_path, 'inf_utils', 'extract_gt.py')
+            os.path.join(cebra_em_path, 'run_scripts','../run_scripts/run_extract_gt.py')
 
     include: os.path.join(project_path, 'snakemake', 'run_blocks.smk')
 

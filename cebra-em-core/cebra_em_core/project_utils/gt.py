@@ -3,12 +3,16 @@ from cebra_em_core.project_utils.project import get_current_project_path
 from cebra_em_core.project_utils.config import (
     get_config,
     get_config_filepath,
-    add_to_config_json
+    add_to_config_json,
+    absolute_path
 )
 from cebra_em_core.dataset.bdv_utils import bdv2pos
+from cebra_em_core.dataset.data import crop_and_scale
 
 import re
 import numpy as np
+from pybdv.metadata import get_data_path
+from pybdv.util import open_file, get_key
 
 
 def id2str(cube_id):
@@ -82,3 +86,102 @@ def init_gt_cube(
             }
         }
     )
+
+
+def extract_gt(
+        cube_id,
+        raw_fp, mem_fp, sv_fp,
+        val=False, project_path=None, verbose=False
+):
+
+    name = 'val' if val else 'gt'
+
+    config_sv = get_config('supervoxels', project_path=project_path)
+    config_raw = get_config('raw', project_path=project_path)
+    config_mem = get_config('membrane_prediction', project_path=project_path)
+    config_gt = get_config(name, project_path=project_path)
+
+    # Get the supervoxels resolution
+    output_res = config_sv['resolution']
+
+    # Get cube position and shape
+    position = config_gt[cube_id]['position']
+    shape = config_gt[cube_id]['shape']
+
+    # Extracting raw data (add 128 px halo for more context)
+    input_res = config_raw['resolution']
+    xcorr = config_raw['xcorr']
+    input_path = get_data_path(config_raw['xml_path'], True)
+    input_key = get_key(False, 0, 0, 0)
+    if config_gt[cube_id]['no_padding']:
+        raw_pos = np.array(position)
+        raw_shp = np.array(shape)
+    else:
+        raw_pos = np.array(position) - np.array((128,) * 3)
+        raw_shp = np.array(shape) + 2 * np.array((128,) * 3)
+    if verbose:
+        print('---')
+        print(f'input_path = {input_path}')
+        print(f'raw_pos = {raw_pos}')
+        print(f'input_key = {input_key}')
+        print(f'input_res = {input_res}')
+        print(f'output_res = {output_res}')
+        print(f'raw_shp = {raw_shp}')
+        print('---')
+    raw = crop_and_scale(
+        input_path=input_path,
+        position=raw_pos,
+        internal_path=input_key,
+        input_res=input_res,
+        output_res=output_res,
+        output_shape=raw_shp,
+        xcorr=xcorr,
+        verbose=verbose
+    )
+
+    with open_file(raw_fp, 'w') as f:
+        f.create_dataset('data', data=raw, compression='gzip')
+
+    # Extracting membrane prediction
+    input_res = config_mem['resolution']
+    input_path = get_data_path(absolute_path(config_mem['xml_path'], project_path=project_path), True)
+    input_key = get_key(False, 0, 0, 0)
+    if verbose:
+        print('---')
+        print(f'input_path = {input_path}')
+        print(f'position = {position}')
+        print(f'input_key = {input_key}')
+        print(f'input_res = {input_res}')
+        print(f'output_res = {output_res}')
+        print(f'shape = {shape}')
+        print('---')
+    mem = crop_and_scale(
+        input_path=input_path,
+        position=position,
+        internal_path=input_key,
+        input_res=input_res,
+        output_res=output_res,
+        output_shape=shape,
+        verbose=verbose
+    )
+
+    with open_file(mem_fp, 'w') as f:
+        f.create_dataset('data', data=mem, compression='gzip')
+
+    # Extracting supervoxels
+    input_res = config_sv['resolution']
+    input_path = get_data_path(absolute_path(config_sv['xml_path'], project_path=project_path), True)
+    input_key = get_key(False, 0, 0, 0)
+    sv = crop_and_scale(
+        input_path=input_path,
+        position=position,
+        internal_path=input_key,
+        input_res=input_res,
+        output_res=output_res,
+        output_shape=shape,
+        verbose=verbose
+    )
+
+    with open_file(sv_fp, 'w') as f:
+        f.create_dataset('data', data=sv, compression='gzip')
+

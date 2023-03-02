@@ -244,3 +244,38 @@ def prepare_run(
     # Prepare the snakefiles
     prepare_run_snakefile(targets=targets, project_path=project_path, verbose=verbose)
 
+
+def find_non_processed_items(items):
+
+    unprocessed = {}
+    for key, val in items.items():
+        if val['status'] == 'pending':
+            unprocessed[key] = val
+
+    return unprocessed
+
+
+def prepare_gt_extract(val=False, project_path=None, verbose=False):
+
+    name = 'val' if val else 'gt'
+
+    if verbose:
+        print(f'Running {name} extract!')
+
+    def _roi_from_gt_cube_position(item):
+        return list(item['position']) + list(item['shape'])
+
+    # Determine gt cubes that are not extracted yet and put them in the queue
+    queue = find_non_processed_items(get_config(name, project_path=project_path))
+
+    if verbose:
+        print(f'queue = {queue}')
+
+    # Determine the rois for each element in the queue
+    roi = [_roi_from_gt_cube_position(val) for key, val in queue.items()]
+
+    if verbose:
+        print(f'roi = {roi}')
+
+    prepare_run(f'{name}_cubes', roi=roi, misc=list(queue.keys()), project_path=project_path, verbose=verbose)
+

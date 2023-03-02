@@ -4,7 +4,7 @@ import snakemake
 from multiprocessing import Process
 import shutil
 
-from cebra_em.prepare_snakefiles import prepare_run
+from cebra_em.prepare_snakefiles import prepare_run, prepare_gt_extract
 from cebra_em_core.project_utils.project import (
     get_current_project_path,
     lock_project,
