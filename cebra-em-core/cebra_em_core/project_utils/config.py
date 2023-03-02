@@ -8,7 +8,6 @@ from cebra_em_core.project_utils.params import load_params
 
 def absolute_path(path, project_path=None):
     project_path = get_current_project_path(project_path=project_path)
-
     return path.format(project_path=project_path)
 
 
@@ -33,6 +32,7 @@ def get_config_filepath(image_name, project_path=None):
     with open(os.path.join(get_config_path(project_path=project_path), 'config_main.json'), 'r') as f:
         config_main = json.load(f)
     return absolute_path(config_main['configs'][image_name], project_path=project_path)
+
 
 
 def get_config(image_name, project_path=None):

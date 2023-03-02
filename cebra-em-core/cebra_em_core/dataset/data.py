@@ -275,13 +275,11 @@ def crop_and_scale(
     floor_p0_dash = np.floor(p0_dash).astype(int)
     rem_p0_dash = p0_dash - floor_p0_dash
     ceil_p1_dash = np.ceil(p1_dash).astype(int)
-    # rem_p1_dash = p1_dash - ceil_p1_dash
 
     input_shape = ceil_p1_dash - floor_p0_dash
-
     scale = input_res / output_res
 
-    # I'm struggling to get this right!
+    # This copes with scaling that leads to subpixel positions
     shift = rem_p0_dash
 
     if verbose:

@@ -8,7 +8,8 @@ setup(
     packages=['cebra_em'],
     scripts=[
         'bin/init_project.py',
-        'bin/run.py'
+        'bin/run.py',
+        'bin/init_gt.py'
     ],
     # url='',
     # license='',
