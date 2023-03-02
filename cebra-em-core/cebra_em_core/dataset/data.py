@@ -261,8 +261,8 @@ def crop_and_scale(
     p0_dash = p0 * output_res / input_res
     p1_dash = p1 * output_res / input_res
 
-    # TODO round p0_dash and p1_dash to two decimals
-    #  sometimes they are ever so slightly below the actual value: 0.999999999... instead of 1.0
+    # Round p0_dash and p1_dash to two decimals
+    #  sometimes they are ever so slightly below the actual value: e.g. 0.999999999... instead of 1.0
     #  which leads the floor operation below to land on the wrong value
     if verbose:
         print(f'p0_dash = {p0_dash}')
