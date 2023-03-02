@@ -261,6 +261,17 @@ def crop_and_scale(
     p0_dash = p0 * output_res / input_res
     p1_dash = p1 * output_res / input_res
 
+    # TODO round p0_dash and p1_dash to two decimals
+    #  sometimes they are ever so slightly below the actual value: 0.999999999... instead of 1.0
+    #  which leads the floor operation below to land on the wrong value
+    if verbose:
+        print(f'p0_dash = {p0_dash}')
+        print(f'p1_dash = {p1_dash}')
+    p0_dash = np.round(p0_dash, decimals=2)
+    p1_dash = np.round(p1_dash, decimals=2)
+    assert p0_dash * 100 == int(p0_dash * 100)
+    assert p1_dash * 100 == int(p1_dash * 100)
+
     floor_p0_dash = np.floor(p0_dash).astype(int)
     rem_p0_dash = p0_dash - floor_p0_dash
     ceil_p1_dash = np.ceil(p1_dash).astype(int)
@@ -271,8 +282,7 @@ def crop_and_scale(
     scale = input_res / output_res
 
     # I'm struggling to get this right!
-    shift = rem_p0_dash  # / input_res * output_res
-    # FIXME Now it's nice for the membrane prediction but doesn't work for the supervoxels, why????!!?
+    shift = rem_p0_dash
 
     if verbose:
         print(f'input_res = {input_res}')
@@ -287,15 +297,6 @@ def crop_and_scale(
         print(f'input_shape = {input_shape}')
         print(f'scale = {scale}')
         print(f'shift = {shift}')
-
-    # ceil_p1_dash = np.ceil(p1_dash).astype(int)
-    #
-    # input_shape = np.max([p1 - p0, ceil_p1_dash - floor_p0_dash], axis=0)
-    #
-    # scale = input_res / output_res
-    #
-    # shift = 0.5 / scale * (input_shape - scale * input_shape) \
-    #     + (p0_dash - floor_p0_dash)
 
     # Load raw data
     raw = load_data(

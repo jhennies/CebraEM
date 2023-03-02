@@ -1,12 +1,8 @@
 
-print(f'bi0')
 import bioimageio.core
-print(f'bi1')
 import xarray as xr
-print(f'bi2')
 from cebra_em_core.misc.repo import get_repo_path
 import os
-print(f'bi-1')
 
 
 def run_cebra_net(
