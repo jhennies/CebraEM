@@ -9,7 +9,9 @@ setup(
     scripts=[
         'bin/init_project.py',
         'bin/run.py',
-        'bin/init_gt.py'
+        'bin/init_gt.py',
+        'bin/link_gt.py',
+        'bin/log_gt.py'
     ],
     # url='',
     # license='',

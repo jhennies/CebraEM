@@ -255,9 +255,9 @@ def find_non_processed_items(items):
     return unprocessed
 
 
-def prepare_gt_extract(val=False, project_path=None, verbose=False):
+def prepare_gt_extract(project_path=None, verbose=False):
 
-    name = 'val' if val else 'gt'
+    name = 'gt'
 
     if verbose:
         print(f'Running {name} extract!')

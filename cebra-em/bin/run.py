@@ -168,10 +168,7 @@ def run(
         # Prepare snakefile(s)
         if 'gt_cubes' in targets:
             targets.remove('gt_cubes')
-            prepare_gt_extract(val=False, project_path=project_path, verbose=verbose)
-        elif 'val_cubes' in targets:
-            targets.remove('val_cubes')
-            prepare_gt_extract(val=True, project_path=project_path, verbose=verbose)
+            prepare_gt_extract(project_path=project_path, verbose=verbose)
         else:
             # Assuming 'membrane_prediction', 'supervoxels', or a segmentation ID here
             prepare_run(

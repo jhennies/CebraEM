@@ -32,8 +32,12 @@ if __name__ == '__main__':
         raw_fp=outputs[0],
         mem_fp=outputs[1],
         sv_fp=outputs[2],
-        val=run_type == 'val_cubes',
         project_path=project_path,
         verbose=verbose
     )
+
+    # _______________________________________________________________________________
+    # Update the gt config file
+
+
 

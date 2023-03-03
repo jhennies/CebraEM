@@ -5,7 +5,6 @@ def init_gt(
     position=None,
     bdv_position=None,
     no_padding=False,
-    val=False,
     verbose=False
 ):
 
@@ -17,7 +16,6 @@ def init_gt(
         print(f'position = {position}')
         print(f'bdv_position = {bdv_position}')
         print(f'no_padding = {no_padding}')
-        print(f'val = {val}')
 
     # Initialize the ground truth cube
     from cebra_em_core.project_utils.gt import init_gt_cube
@@ -27,7 +25,6 @@ def init_gt(
         position=position,
         bdv_position=bdv_position,
         no_padding=no_padding,
-        val=val,
         verbose=verbose
     )
 
@@ -38,7 +35,14 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Initializes a ground truth cube',
+        description='Initializes a ground truth cube at a certain position in the dataset.\n\n'
+                    'Print existing ground truth cube information: `log_gt [args]`\n\n'
+                    'Next steps (not necessarily in this specific order!):\n'
+                    '  - Initialize additional ground truth cubes (re-run this function with different positions)\n'
+                    '  - Extract initialized ground truth cubes for annotation:  `run.py -t gt_cubes`\n'
+                    '  - Annotate ground truth cubes with CebraANN:              `napari -w cebra-ann`\n'
+                    '  - Initialize a segmentation:                              `init_segmentation.py [args]`\n'
+                    '  - Link ground truth cubes to a segmentation:              `link_gt.py [args]`\n',
         formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument('-p', '--project_path', type=str, default=None,
@@ -56,8 +60,6 @@ if __name__ == '__main__':
                               '\'(x.xxxx, y.yyyy, z.zzzz)\'\n'))
     parser.add_argument('--no_padding', action='store_true',
                         help='Switch off padding of raw data')
-    parser.add_argument('--val', action='store_true',
-                        help='Add this cube as validation cube')
     parser.add_argument('-v', '--verbose', action='store_true')
 
     args = parser.parse_args()
@@ -66,7 +68,6 @@ if __name__ == '__main__':
     position = args.position
     bdv_position = args.bdv_position
     no_padding = args.no_padding
-    val = args.val
     verbose = args.verbose
 
     # ----------------------------------------------------
@@ -77,6 +78,5 @@ if __name__ == '__main__':
         position=position,
         bdv_position=bdv_position,
         no_padding=no_padding,
-        val=val,
         verbose=verbose
     )

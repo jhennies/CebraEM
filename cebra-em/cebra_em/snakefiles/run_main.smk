@@ -49,9 +49,9 @@ if run_type == 'run':
 
     include: os.path.join(project_path, 'snakemake', 'run_blocks.smk')
 
-elif run_type == 'gt_cubes' or run_type == 'val_cubes':
+elif run_type == 'gt_cubes':
 
-    name = 'gt' if run_type == 'gt_cubes' else 'val'
+    name = 'gt'
 
     # TODO
     target_output = os.path.join(
@@ -60,9 +60,9 @@ elif run_type == 'gt_cubes' or run_type == 'val_cubes':
             '{out}'.format(out='run_{dataset}_{idx}.json')
     )
 
-    assert len(targets) == 1, 'targets for run_type = "gt_cubes" or "val_cubes" should be only "supervoxels"' \
+    assert len(targets) == 1, 'targets for run_type = "gt_cubes" should be only "supervoxels"' \
                               f'instead it is {targets}'
-    assert targets[0] == 'supervoxels', 'targets for run_type = "gt_cubes" or "val_cubes" should be only "supervoxels"' \
+    assert targets[0] == 'supervoxels', 'targets for run_type = "gt_cubes" should be only "supervoxels"' \
                                         f'instead it is {targets}'
 
     # The ground truth cube ids as stored in the miscellaneous field of the run json
