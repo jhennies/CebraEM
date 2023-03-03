@@ -148,6 +148,68 @@ def get_dataset_path(dataset_name, project_path=None, relpath=False):
     )
 
 
+def _make_empty_dataset(
+        image_name,
+        shape,
+        dataset_name,
+        resolution,
+        source_type='segmentation',
+        contrast_limits=None,
+        project_path=None,
+        verbose=False
+):
+
+    dataset_path = get_dataset_path(dataset_name, project_path=project_path, relpath=True)
+    if verbose:
+        print(f'dataset_path = {dataset_path}')
+
+    images_path = os.path.join(dataset_path, 'images', 'bdv-n5')
+    # Add image name and replace the project location
+    image_data_path = absolute_path(os.path.join(images_path, f'{image_name}.n5'), project_path=project_path)
+
+    print('Making an empty dataset ...')
+
+    create_empty_dataset(
+        image_data_path,
+        0, 0,
+        shape,
+        data_dtype='uint64' if source_type == 'segmentation' else 'uint8',
+        chunks=None,
+        scale_factors=[[2, 2, 2], [2, 2, 2], [4, 4, 4]],
+        resolution=resolution,
+        unit='micrometer'
+    )
+
+    # The target xml file in the new Mobie project
+    xml_rel_path = os.path.join(images_path, f'{image_name}.xml')
+    xml_path = absolute_path(xml_rel_path, project_path=project_path)
+    _update_image_name(xml_path, image_name)
+
+    if source_type == 'segmentation':
+        # Add max ID
+        with open_file(image_data_path, 'a') as f:
+            f[get_key(False, 0, 0, 0)].attrs['maxId'] = 0
+
+    view = require_dataset_and_view(
+        root=get_mobie_project_path(project_path, relpath=False),
+        dataset_name=dataset_name,
+        file_format='bdv.n5',
+        source_type=source_type,
+        source_name=image_name,
+        menu_name=None,
+        view=None,
+        is_default_dataset=False,
+        contrast_limits=contrast_limits
+    )
+
+    add_source_to_dataset(
+        absolute_path(dataset_path, project_path=project_path),
+        source_type, image_name, xml_path, overwrite=True, view=view
+    )
+
+    return xml_rel_path
+
+
 def init_membrane_prediction(
         dataset_name,
         project_path=None,
@@ -171,42 +233,18 @@ def init_membrane_prediction(
     # Make an empty dataset
     mem_name = 'em-membrane_prediction'
     images_rel_path = os.path.join(dataset_rel_path, 'images', 'bdv-n5')
-    mem_data_path = absolute_path(os.path.join(images_rel_path, f'{mem_name}.n5'), project_path=project_path)
+    mem_shape = (np.array(raw_shape) * np.array(raw_resolution) / np.array(mem_resolution)).astype(int).tolist()
 
     print('Making an empty membrane prediction ...')
-    mem_shape = (np.array(raw_shape) * np.array(raw_resolution) / np.array(mem_resolution)).astype(int).tolist()
-    create_empty_dataset(
-        mem_data_path,
-        0, 0,
+    xml_rel_path = _make_empty_dataset(
+        mem_name,
         mem_shape,
-        data_dtype='uint8',
-        chunks=None,
-        scale_factors=[[2, 2, 2], [2, 2, 2], [4, 4, 4]],
-        resolution=mem_resolution,
-        unit='micrometer',
+        dataset_name,
+        mem_resolution,
+        'image',
+        contrast_limits=[0, 255],
+        project_path=project_path,
         verbose=verbose
-    )
-
-    # The target xml file in the new Mobie project
-    xml_rel_path = os.path.join(images_rel_path, f'{mem_name}.xml')
-    xml_path = absolute_path(xml_rel_path, project_path=project_path)
-    _update_image_name(xml_path, mem_name)
-
-    view = require_dataset_and_view(
-        root=get_mobie_project_path(project_path, relpath=False),
-        dataset_name=dataset_name,
-        file_format='bdv.n5',
-        source_type='image',
-        source_name=mem_name,
-        menu_name=None,
-        view=None,
-        is_default_dataset=False,
-        contrast_limits=[0, 255]
-    )
-
-    add_source_to_dataset(
-        absolute_path(dataset_rel_path, project_path=project_path),
-        'image', mem_name, xml_path, overwrite=True, view=view
     )
 
     # _______________________________________________________________________________
@@ -259,46 +297,17 @@ def init_supervoxels(
     # Make an empty dataset
     sv_name = 'em-supervoxels'
     images_rel_path = os.path.join(dataset_rel_path, 'images', 'bdv-n5')
-    sv_data_path = os.path.join(absolute_path(images_rel_path, project_path=project_path), f'{sv_name}.n5')
+    sv_shape = (np.array(raw_shape) * np.array(raw_resolution) / np.array(sv_resolution)).astype(int).tolist()
 
     print('Making an empty supervoxel dataset ...')
-    sv_shape = (np.array(raw_shape) * np.array(raw_resolution) / np.array(sv_resolution)).astype(int).tolist()
-    create_empty_dataset(
-        sv_data_path,
-        0, 0,
+    xml_rel_path = _make_empty_dataset(
+        sv_name,
         sv_shape,
-        data_dtype='uint64',
-        chunks=None,
-        scale_factors=[[2, 2, 2], [2, 2, 2], [4, 4, 4]],
-        resolution=sv_resolution,
-        unit='micrometer',
+        dataset_name,
+        sv_resolution,
+        'segmentation',
+        project_path=project_path,
         verbose=verbose
-    )
-
-    # The target xml file in the new Mobie project
-    xml_rel_path = os.path.join(images_rel_path, f'{sv_name}.xml')
-    xml_path = absolute_path(xml_rel_path, project_path=project_path)
-    _update_image_name(xml_path, sv_name)
-
-    # Add max ID
-    with open_file(sv_data_path, 'a') as f:
-        f[get_key(False, 0, 0, 0)].attrs['maxId'] = 0
-
-    view = require_dataset_and_view(
-        root=get_mobie_project_path(project_path, relpath=False),
-        dataset_name=dataset_name,
-        file_format='bdv.n5',
-        source_type='segmentation',
-        source_name=sv_name,
-        menu_name=None,
-        view=None,
-        is_default_dataset=False,
-        contrast_limits=[0, 255]
-    )
-
-    add_source_to_dataset(
-        absolute_path(dataset_rel_path, project_path=project_path),
-        'segmentation', sv_name, xml_path, overwrite=True, view=view
     )
 
     # _______________________________________________________________________________
@@ -403,3 +412,102 @@ def init_mask(dataset_folder, mask_xml_path, image_name, project_path=None, verb
     )
 
     return mask_resolution, mask_shape
+
+
+def init_segmentation_map(
+        seg_name,
+        dataset_name,
+        project_path=None,
+        verbose=False
+):
+
+    config_seg_fp = get_config_filepath(seg_name, project_path=project_path)
+    config_seg = get_config(seg_name, project_path=project_path)
+    seg_resolution = config_seg['resolution']
+    config_raw = get_config('raw', project_path=project_path)
+    raw_resolution = config_raw['resolution']
+    raw_shape = config_raw['shape']
+    config_sv = get_config('supervoxels', project_path=project_path)
+    sv_resolution = config_sv['resolution']
+
+    if seg_resolution is not None and np.abs(seg_resolution).sum() == 0:
+        seg_resolution = None
+    if seg_resolution is None:
+        seg_resolution = sv_resolution
+
+    # _______________________________________________________________________________
+    # Make an empty dataset
+    seg_name_hyph = seg_name.replace('_', '-', 1)
+    stitched_name_hyph = f'{seg_name_hyph}_stitch'
+    seg_shape = (np.array(raw_shape) * np.array(raw_resolution) / np.array(seg_resolution)).astype(int).tolist()
+
+    # The non-stitched dataset
+
+    xml_rel_path = _make_empty_dataset(
+        seg_name_hyph,
+        seg_shape,
+        dataset_name,
+        seg_resolution,
+        project_path=project_path,
+        verbose=verbose
+    )
+
+    # The final stitched dataset
+    stitched_xml_rel_path = _make_empty_dataset(
+        stitched_name_hyph,
+        seg_shape,
+        dataset_name,
+        seg_resolution,
+        project_path=project_path,
+        verbose=verbose
+    )
+
+    # Not adding the default table until it is actually used!
+    # # Add the default table
+    # make_table(os.path.join(data_structure_folder, 'tables', seg_name, 'default.csv'))
+
+    # _______________________________________________________________________________
+    # Update the segmentation config json
+    add_to_config_json(
+        config_seg_fp,
+        {
+            'resolution': seg_resolution,
+            'shape': seg_shape,
+            'dep_datasets': [  # The order here is super critical, only the last one is used for Snakemake!
+                'raw',
+                'membrane_prediction',
+                'supervoxels'
+            ],
+            'xml_path': xml_rel_path,
+            "data_writing": {
+                "type": "segmentation",
+                "stitch_method": "crop",
+                "stitch_kwargs": {},
+                "background_value": 0,
+                "downscale_mode": "nearest",
+                "unique_labels": True,
+                "dtype": "uint64"
+            },
+            'add_dependencies': [
+                {
+                    'rule_def': 'train_segmentation.smk',
+                    'output': [
+                        f'train_{seg_name}_rf.pkl',
+                        f'train_{seg_name}_lrf.pkl'
+                    ]
+                }
+            ],
+            'add_downstream': [
+                {
+                    'rule_def': 'stitch_segmentation.smk',
+                    'output': "apply_mapping_{dataset}_{idx}.done"
+                }
+            ],
+            'prepare': 'segmentation',
+            'stitched_dataset': {
+                'name': stitched_name_hyph,
+                'xml_path': stitched_xml_rel_path
+            }
+        },
+        verbose=verbose
+    )

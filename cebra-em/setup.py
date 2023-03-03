@@ -11,7 +11,8 @@ setup(
         'bin/run.py',
         'bin/init_gt.py',
         'bin/link_gt.py',
-        'bin/log_gt.py'
+        'bin/log_gt.py',
+        'bin/init_segmentation.py'
     ],
     # url='',
     # license='',

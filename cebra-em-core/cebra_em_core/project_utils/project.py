@@ -8,7 +8,7 @@ def assert_valid_project(project_path):
 
     proj_json = os.path.join(project_path, 'project.json')
     if not os.path.isfile(proj_json):
-        print('Not a valid project location: No project.json found')
+        print(f'Not a valid project location: {project_path}')
         raise RuntimeError('Not a valid project location: No project.json found')
     with open(proj_json) as f:
         proj_info = json.load(f)

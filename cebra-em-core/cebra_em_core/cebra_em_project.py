@@ -19,6 +19,7 @@ from cebra_em_core.dataset.mobie_utils import (
     init_membrane_prediction,
     init_supervoxels,
     init_mask,
+    init_segmentation_map
 )
 from cebra_em_core.version import __version__
 
@@ -252,6 +253,85 @@ def init_project(
     print('')
     print('Initializing dependencies ...')
     init_all_dependencies(project_path=project_path, n_workers=max_workers, verbose=verbose)
+
+
+def init_segmentation_parameters(
+        seg_name,
+        params=None,
+        project_path=None,
+        verbose=False
+):
+
+    if verbose:
+        print(f'project_path = {project_path}')
+
+    # Copy the default parameters
+    copy_default_params(
+        params=('segmentation',),
+        target_names=(seg_name,),
+        project_path=project_path,
+        verbose=verbose
+    )
+
+    # Query the parameters (if params == None)
+    query_parameters({seg_name: params})
+
+
+def init_segmentation(
+        organelle, suffix,
+        params=None,
+        project_path=None,
+        max_workers=1,
+        verbose=False
+):
+    """
+    Initializes a segmentation
+
+    :param organelle: Name of the target organelle
+    :param suffix: This string is appended to form the segmentation image ID.
+        For example:
+            organelle="mito"
+            suffix="iter01"
+        Yields segmentation_id = "mito_iter01"
+    :param params: dictionary or json file containing a dictionary with parameters for segmentation computation
+        None (default): the user will be queried for parameters
+        "suppress_query": a default set will be used without user query
+            (see inf_proj/params/segmentation_defaults.json)
+        "some_file.json": This file has to define ALL required parameters
+            (see inf_proj/params/segmentation_defaults.json)
+    :param project_path: Path of the project
+    :param max_workers: The maximum amount of parallel workers used while setting up the segmentation    :param verbose:
+
+    :return:
+    """
+
+    if verbose:
+        print(f'project_path = {project_path}')
+
+    seg_name = str.join('_', [organelle, suffix])
+
+    # Copy the default parameters
+    init_segmentation_parameters(
+        seg_name, params=params, project_path=project_path, verbose=verbose
+    )
+
+    # Initialize the config file
+    init_image_config(
+        seg_name, project_path=project_path
+    )
+
+    # Initialize the image
+    init_segmentation_map(
+        seg_name, 'CebraINF',
+        project_path=project_path,
+        verbose=verbose
+    )
+
+    # Compute position grid for each dataset
+    compute_all_task_positions(images=(seg_name,), project_path=project_path, verbose=verbose)
+
+    # Initialize the dependencies for each image
+    init_all_dependencies(images=(seg_name,), project_path=project_path, n_workers=max_workers, verbose=verbose)
 
 
 
