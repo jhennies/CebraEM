@@ -1,5 +1,6 @@
 
 import os
+import numpy as np
 from cebra_em_core.project_utils.project import make_project_structure
 from cebra_em_core.project_utils.params import copy_default_params, query_parameters
 from cebra_em_core.project_utils.config import (
@@ -9,7 +10,9 @@ from cebra_em_core.project_utils.config import (
     init_image_config,
     get_config,
     get_mask_xml,
-    set_version
+    set_version,
+    add_to_config_json,
+    get_config_filepath
 )
 from cebra_em_core.project_utils.tasks import compute_task_positions
 from cebra_em_core.project_utils.dependencies import init_dependencies
@@ -320,10 +323,37 @@ def init_segmentation(
         seg_name, project_path=project_path
     )
 
-    # Initialize the image
-    init_segmentation_map(
-        seg_name, 'CebraINF',
-        project_path=project_path,
+    # Update the segmentation config json
+    # FIXME this should go into a function somewhere
+    config_seg = get_config(seg_name, project_path=project_path)
+    seg_resolution = config_seg['resolution']
+    config_raw = get_config('raw', project_path=project_path)
+    raw_resolution = config_raw['resolution']
+    raw_shape = config_raw['shape']
+    config_seg_fp = get_config_filepath(seg_name, project_path=project_path)
+    seg_shape = (
+            np.array(raw_shape) * np.array(raw_resolution) / np.array(seg_resolution).astype(float)
+    ).astype(int).tolist()
+    add_to_config_json(
+        config_seg_fp,
+        {
+            'shape': seg_shape,
+            'dep_datasets': [  # The order here is super critical, only the last one is used for Snakemake!
+                'raw',
+                'membrane_prediction',
+                'supervoxels'
+            ],
+            'add_dependencies': [
+                {
+                    'rule_def': 'train_segmentation.smk',
+                    'output': [
+                        f'train_{seg_name}_rf.pkl',
+                        f'train_{seg_name}_nrf.pkl'
+                    ]
+                }
+            ],
+            # 'prepare': 'segmentation'  # FIXME what's this?
+        },
         verbose=verbose
     )
 

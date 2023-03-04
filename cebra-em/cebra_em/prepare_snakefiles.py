@@ -127,7 +127,7 @@ def prepare_run_snakefile(targets, project_path, verbose=False):
                 for output in outputs:
                     additional_inp_str += f'\n        os.path.join(project_path, "snk_wf", "{output}"),'
 
-                with open(os.path.join('inf_snake_utils', f'{rule_def}'), mode='r') as f:
+                with open(os.path.join(get_repo_path(), 'snakefiles', f'{rule_def}'), mode='r') as f:
                     add_block = f.read()
 
                 add_block.replace('<priority>', str(priority + 9))

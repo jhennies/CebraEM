@@ -239,7 +239,6 @@ class CebraAnnWidget(QWidget):
                     if 'semantics_' in [lyr.name[:10] for lyr in viewer.layers.selection]:
                         viewer.layers.selection = {viewer.layers['instances']}
 
-
         @self.viewer.bind_key('Control-E')
         def ctrl_e_pressed(viewer):
 
@@ -269,7 +268,6 @@ class CebraAnnWidget(QWidget):
             viewer.camera.zoom = current_zoom
 
             viewer.dims.set_current_step(current_order[-1], current_pos[current_order[-1]])
-
 
     def _btn_load_project_onclicked(self, value: bool):
 

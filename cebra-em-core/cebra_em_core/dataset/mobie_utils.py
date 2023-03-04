@@ -438,8 +438,10 @@ def init_segmentation_map(
     # _______________________________________________________________________________
     # Make an empty dataset
     seg_name_hyph = seg_name.replace('_', '-', 1)
-    stitched_name_hyph = f'{seg_name_hyph}_stitch'
-    seg_shape = (np.array(raw_shape) * np.array(raw_resolution) / np.array(seg_resolution)).astype(int).tolist()
+    # stitched_name_hyph = f'{seg_name_hyph}_stitch'
+    seg_shape = (
+            np.array(raw_shape) * np.array(raw_resolution) / np.array(seg_resolution).astype(float)
+    ).astype(int).tolist()
 
     # The non-stitched dataset
 
@@ -452,15 +454,15 @@ def init_segmentation_map(
         verbose=verbose
     )
 
-    # The final stitched dataset
-    stitched_xml_rel_path = _make_empty_dataset(
-        stitched_name_hyph,
-        seg_shape,
-        dataset_name,
-        seg_resolution,
-        project_path=project_path,
-        verbose=verbose
-    )
+    # # The final stitched dataset
+    # stitched_xml_rel_path = _make_empty_dataset(
+    #     stitched_name_hyph,
+    #     seg_shape,
+    #     dataset_name,
+    #     seg_resolution,
+    #     project_path=project_path,
+    #     verbose=verbose
+    # )
 
     # Not adding the default table until it is actually used!
     # # Add the default table
@@ -490,24 +492,13 @@ def init_segmentation_map(
             },
             'add_dependencies': [
                 {
-                    'rule_def': 'train_segmentation.smk',
+                    'rule_def': 'create_segmentation_map.smk',
                     'output': [
-                        f'train_{seg_name}_rf.pkl',
-                        f'train_{seg_name}_lrf.pkl'
+                        f'created_{seg_name}_map.json'
                     ]
                 }
             ],
-            'add_downstream': [
-                {
-                    'rule_def': 'stitch_segmentation.smk',
-                    'output': "apply_mapping_{dataset}_{idx}.done"
-                }
-            ],
-            'prepare': 'segmentation',
-            'stitched_dataset': {
-                'name': stitched_name_hyph,
-                'xml_path': stitched_xml_rel_path
-            }
+            'prepare': 'segmentation'
         },
         verbose=verbose
     )

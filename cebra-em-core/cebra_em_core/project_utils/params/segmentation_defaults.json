@@ -6,8 +6,7 @@
     "anchors": [0.1, 0.9]
   },
   "mc_args": {
-    "node_classification": true,
-    "beta": 0.5
+    "betas": [0.5]
   },
   "learning_kwargs": {
     "ignore_label": null,

@@ -206,9 +206,9 @@ def _validate_inputs(cube_id, organelle_id, image_id, project_path=None):
     assert cube_id in config_gt.keys(), 'Specified cube_id does not exist!'
 
     annotation_folder = absolute_path(config_main['gt_path'], project_path=project_path)
-    available_annotations = [os.path.split(x)[1] for x in glob(os.path.join(annotation_folder, cube_id, '*/'))]
+    available_annotations = [os.path.split(x)[1] for x in glob(os.path.join(annotation_folder, cube_id, '*.h5'))]
 
-    if organelle_id not in available_annotations:
+    if f'{organelle_id}.h5' not in available_annotations:
         print(f'The specified annotation "{organelle_id}" in cube "{cube_id}" is not available.')
 
     assert image_id in config_main['configs'].keys(), \
@@ -317,7 +317,7 @@ def get_associated_gt_cubes(image, project_path=None):
                             'cube_id': cube_id,
                             'annotated': os.path.exists(
                                 os.path.join(
-                                    get_absolute_filepath('main', 'gt_path', project_path=project_path),
+                                    absolute_path(get_config('main', project_path)['gt_path'], project_path),
                                     id2str(cube_id), f'{link["organelle"]}.h5'
                                 )
                             )
@@ -328,7 +328,7 @@ def get_associated_gt_cubes(image, project_path=None):
                             'cube_id': cube_id,
                             'annotated': os.path.exists(
                                 os.path.join(
-                                    get_absolute_filepath('main', 'gt_path', project_path=project_path),
+                                    absolute_path(get_config('main', project_path)['gt_path'], project_path),
                                     id2str(cube_id), f'{link["organelle"]}.h5'
                                 )
                             )
@@ -358,7 +358,7 @@ def log_gt_cube(cube_id, status, position, shape, links=None, project_path=None)
                 gt_type = 'VAL  '
             is_annotated = os.path.exists(
                 os.path.join(
-                    get_absolute_filepath('main', 'gt_path', project_path=project_path),
+                    absolute_path(get_config('main', project_path)['gt_path'], project_path),
                     id2str(cube_id), f'{link["organelle"]}.h5'
                 )
             )

@@ -4,7 +4,7 @@ import json
 import numpy as np
 from cebra_em_core.project_utils.project import get_current_project_path
 from cebra_em_core.project_utils.config import get_config
-# from cebra_em_core.project_utils.gt import get_associated_gt_cubes
+from cebra_em_core.project_utils.gt import get_associated_gt_cubes
 from cebra_em.misc.repo import get_repo_path
 from cebra_em.run_utils.run_specs import get_run_json
 import pickle  # Required in run_block.smk for loading of dependencies

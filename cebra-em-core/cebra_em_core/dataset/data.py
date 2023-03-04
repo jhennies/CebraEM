@@ -258,8 +258,9 @@ def crop_and_scale(
 
     p0 = position
     p1 = position + output_shape
-    p0_dash = p0 * output_res / input_res
-    p1_dash = p1 * output_res / input_res
+    # TODO look at the division again
+    p0_dash = p0 * output_res / input_res.astype(float)
+    p1_dash = p1 * output_res / input_res.astype(float)
 
     # Round p0_dash and p1_dash to two decimals
     #  sometimes they are ever so slightly below the actual value: e.g. 0.999999999... instead of 1.0
