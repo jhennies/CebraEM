@@ -22,30 +22,68 @@ verbose = run_info['verbose']
 
 if run_type == 'run':
 
+    print(f'len(targets) = {len(targets)}')
+
     target_outputs = []
     for target in targets:
         config_target = get_config(target)
+        ext = config_target['extension'] if 'extension' in config_target else 'json'
         target_outputs.append(
             os.path.join(
                 project_path,
                 'snk_wf',
-                '{out}'.format(out='run_{dataset}_{idx}.json')
+                '{out}'.format(out='run_{dataset}_{idx}.' + f'{ext}')
             )
         )
+    print(f'target_outputs = {target_outputs}')
+    print(f'targets = {targets}')
 
-    if len(targets) == 1:
-        rule all:
-            input:
-                expand(target_outputs[0], dataset=targets[0], idx=indices[targets[0]])
-            params: p='htc', gres=''
-    # elif len(targets) == 2:
-    #     rule all:
-    #         input:
-    #             expand(target_outputs[0],dataset=targets[0],idx=indices[targets[0]]),
-    #             expand(target_outputs[1],dataset=targets[1],idx=indices[targets[1]])
-    #         params: p='htc',gres=''
-    else:
-        raise NotImplementedError('Only implemented for one target at a time')
+    def _expand_inputs(wildcards):
+        inp_list = []
+        for idx in indices[targets[0]]:
+            # print(f'idx = {idx}')
+            for target in targets:
+                config_target = get_config(target)
+                # print(f'target = {target}')
+                if 'add_downstream' in config_target:
+                    if 'param' in config_target['add_downstream'][0]:
+                        param_id = str.split(config_target['add_downstream'][0]['param'], ':')
+                        param_val = config_target
+                        for pid in param_id:
+                            param_val = param_val[pid]
+                    if type(param_val) == list:
+                        for pv in param_val:
+                            inp_list.append(
+                                os.path.join(
+                                    project_path,
+                                    'snk_wf',
+                                    config_target['add_downstream'][0]['output'].format(param=pv, dataset=target, idx=idx)
+                                )
+                            )
+                    else:
+                        inp_list.append(
+                            os.path.join(
+                                project_path,
+                                'snk_wf',
+                                config_target['add_downstream'][0]['output'].format(param=param_val,dataset=target,idx=idx)
+                            )
+                        )
+                else:
+                    inp_list.append(
+                        os.path.join(
+                            project_path,
+                            'snk_wf',
+                            f'run_{target}_{idx}.' + f'{ext}'
+                        )
+                    )
+        # for x in sorted(inp_list):
+        #     print(x)
+        return inp_list
+
+    rule all:
+        input:
+            _expand_inputs
+        params: p='htc', gres=''
 
     include: os.path.join(project_path, 'snakemake', 'run_blocks.smk')
 
@@ -53,7 +91,6 @@ elif run_type == 'gt_cubes':
 
     name = 'gt'
 
-    # TODO
     target_output = os.path.join(
             project_path,
             'snk_wf',

@@ -33,7 +33,7 @@ rule run_<name>:
     input: <additional_input>
         _make_dependencies_<name>
     output:
-        os.path.join(project_path, "snk_wf", "run_<name>_{idx}.json")
+        os.path.join(project_path, "snk_wf", "run_<name>_{idx}.<extension>")
     resources:
         gpu=resources_<name>['gpus'],
         cpus=resources_<name>['cpus'],

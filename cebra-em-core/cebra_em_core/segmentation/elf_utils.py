@@ -13,9 +13,13 @@ import nifty.graph.rag as nrag
 from elf.segmentation.workflows import (
     FEATURE_NAMES,
     DEFAULT_RF_KWARGS,
-    _compute_features
+    _compute_features,
+    _load_rf
 )
 import elf.segmentation.learning as elf_learn
+import elf.segmentation.features as elf_feats
+import elf.segmentation.multicut as elf_mc
+from elf.segmentation.workflows import _mask_edges, _get_solver
 
 DEFAULT_NRF_KWARGS = {'n_estimators': 200, 'max_depth': 10}
 
@@ -179,3 +183,119 @@ def edge_and_node_training(
 
     return rf, nrf
 
+
+def predict_node_classification_mc_wf(
+        raw, boundaries, watershed,
+        rf, nrf,
+        mask=None,
+        feature_names=FEATURE_NAMES,
+        rel_resolution=(1., 1., 1.),
+        n_threads=None
+):
+    """ Semantic instance segmentation for objects of two classes (one background and multiple foreground) """
+
+    if mask is not None:
+        print('Applying mask ...')
+        assert 0 not in watershed
+        watershed[mask == 0] = 0
+
+    print(f'raw.dtype = {raw.dtype}')
+    print(f'boundaries.dtype = {boundaries.dtype}')
+    print(f'watershed.dtype = {watershed.dtype}')
+
+    print(f"Compute rag and features for local edges with resolution={rel_resolution} ...")
+    rag, features = _compute_features(raw.astype('float32'), boundaries.astype('float32'), watershed.astype('float32'), feature_names, False, n_threads)
+    boundaries = None
+    del boundaries
+    print("Predict edges for 3d watershed ...")
+    rf = _load_rf(rf, False)
+    edge_probs = elf_learn.predict_edge_random_forest(rf, features, n_threads)
+    z_edges = None
+    # Cleanup
+    rf = None
+    features = None
+    del rf, features
+
+    print("Compute node features and adapt costs")
+    nrf = _load_rf(nrf, False)
+    node_features = compute_node_features(raw.astype('float32'), watershed.astype('uint32'))
+    node_probs = elf_learn.predict_edge_random_forest(nrf, node_features, n_threads)
+
+    print("Compute edge sizes ...")
+    # FIXME redundant computation of boundary mean here
+    edge_sizes = elf_feats.compute_boundary_mean_and_length(rag, raw.astype('float32'), n_threads)[:, 1]
+
+    return dict(
+        watershed=watershed,
+        edge_probs=edge_probs,
+        node_probs=node_probs,
+        edge_sizes=edge_sizes
+    )
+
+
+def _assign_classes(seg, classes, beta):
+
+    ids = np.unique(seg)
+    max_id = seg.max()
+    for idx in ids:
+        if idx > 0 and classes[seg == idx].mean() < (1 - beta):
+            seg[seg == idx] = 0
+        elif idx == 0 and classes[seg == idx].mean() >= (1 - beta):
+            seg[seg == 0] = max_id + 1
+            max_id += 1
+
+    seg = vigra.analysis.relabelConsecutive(seg, keep_zeros=True)[0]
+
+    return seg
+
+
+def node_classification_mc_wf(
+        watershed, edge_probs, node_probs,
+        edge_sizes,
+        multicut_solver,
+        beta,
+        beta_nodes=None,
+        mask=None,
+        solver_kwargs={},
+        n_threads=None
+):
+
+    beta_nodes = beta if beta_nodes is None else beta_nodes
+
+    # derive the edge costs from random forst probabilities
+    print("Compute edge costs ...")
+    edge_costs = elf_mc.compute_edge_costs(edge_probs, edge_sizes=edge_sizes, beta=beta)
+    edge_probs = None
+    del edge_probs
+
+    rag = elf_feats.compute_rag(watershed, n_threads=n_threads)
+
+    if mask is not None:
+        edge_costs = _mask_edges(rag, edge_costs)
+
+    # compute multicut and project to pixels
+    # we pass the watershed to the solver as well, because it is needed for
+    # the blockwise-multicut solver
+    print(f'edge_costs.dtype = {edge_costs.dtype}')
+    print(f'watershed.dtype = {watershed.dtype}')
+
+    # get the multicut solver
+    solver = _get_solver(multicut_solver)
+
+    print("Run multicut solver ...")
+    node_labels = solver(graph=rag, costs=edge_costs,
+                         n_threads=n_threads, segmentation=watershed.astype('uint32'), **solver_kwargs)
+    edge_costs = None
+    watershed = None
+    del edge_costs, watershed
+
+    print("Project to volume ...")
+    seg = elf_feats.project_node_labels_to_pixels(rag, node_labels, n_threads)
+    classes = elf_feats.project_node_labels_to_pixels(rag, node_probs, n_threads)
+
+    seg = _assign_classes(seg, classes, beta_nodes)
+
+    if mask is not None:
+        seg[mask == 0] = 0
+
+    return seg

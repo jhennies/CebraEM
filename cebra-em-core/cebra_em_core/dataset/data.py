@@ -8,13 +8,25 @@ from cebra_em_core.dataset.alignment import xcorr_on_volume
 from concurrent.futures import ThreadPoolExecutor
 
 
-def crop_zero_padding_3d(dat, return_as_arrays=False):
+def crop_zero_padding_3d(dat, return_as_arrays=False, add_halo=None):
+
+    max_shape = np.array(dat.shape)
     # argwhere will give you the coordinates of every non-zero point
     true_points = np.argwhere(dat)
-    # take the smallest points and use them as the top left of your crop
-    top_left = true_points.min(axis=0)
-    # take the largest points and use them as the bottom right of your crop
-    bottom_right = true_points.max(axis=0)
+
+    if add_halo is None:
+        # take the smallest points and use them as the top left of your crop
+        top_left = true_points.min(axis=0)
+        # take the largest points and use them as the bottom right of your crop
+        bottom_right = true_points.max(axis=0)
+    else:
+        # take the smallest points and use them as the top left of your crop
+        top_left = true_points.min(axis=0) - add_halo
+        top_left[top_left < 0] = 0
+        # take the largest points and use them as the bottom right of your crop
+        bottom_right = true_points.max(axis=0) + add_halo
+        bottom_right[bottom_right > max_shape] = max_shape[bottom_right > max_shape]
+
     # generate bounds
     bounds = np.s_[top_left[0]:bottom_right[0] + 1,  # plus 1 because slice isn't
                    top_left[1]:bottom_right[1] + 1,  # inclusive

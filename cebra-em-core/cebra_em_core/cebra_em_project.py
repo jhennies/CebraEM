@@ -1,6 +1,7 @@
 
 import os
 import numpy as np
+from shutil import copy
 from cebra_em_core.project_utils.project import make_project_structure
 from cebra_em_core.project_utils.params import copy_default_params, query_parameters
 from cebra_em_core.project_utils.config import (
@@ -12,7 +13,8 @@ from cebra_em_core.project_utils.config import (
     get_mask_xml,
     set_version,
     add_to_config_json,
-    get_config_filepath
+    get_config_filepath,
+    get_config_path
 )
 from cebra_em_core.project_utils.tasks import compute_task_positions
 from cebra_em_core.project_utils.dependencies import init_dependencies
@@ -352,6 +354,14 @@ def init_segmentation(
                     ]
                 }
             ],
+            'add_downstream': [
+                {
+                    'rule_def': 'run_multicut.smk',
+                    'output': "run_multicut_{dataset}_{beta}_{idx}.json"
+                }
+            ],
+            'run_script': 'predict_segmentation.py',
+            'extension': 'pkl'
             # 'prepare': 'segmentation'  # FIXME what's this?
         },
         verbose=verbose
@@ -364,4 +374,39 @@ def init_segmentation(
     init_all_dependencies(images=(seg_name,), project_path=project_path, n_workers=max_workers, verbose=verbose)
 
 
+def init_beta_map(
+        name,
+        base_segmentation,
+        beta,
+        project_path=None,
+        verbose=False
+):
+
+    if verbose:
+        print(f'name = {name}')
+        print(f'base_segmentation = {base_segmentation}')
+
+    # Make an entry in the main config
+    config_bm_fp = os.path.join(get_config_path(project_path=project_path), f'config_{name}.json')
+    config_bm_rel = os.path.join(get_config_path(relpath=True, project_path=project_path), f'config_{name}.json')
+    config_main_fp = get_config_filepath('main', project_path=project_path)
+    add_to_config_json(config_main_fp, {'configs': {name: '{project_path}' + config_bm_rel}})
+
+    # Copy the config from the main segmentation
+    base_seg_config_fp = get_config_filepath(base_segmentation, project_path=project_path)
+    copy(base_seg_config_fp, config_bm_fp)
+
+    # Adapt a few settings
+    add_to_config_json(
+        config_bm_fp,
+        {
+            'mc_args': {'beta': beta},
+            'run_script': 'run_multicut.py'
+        }
+    )
+
+    # Initialize the Mobie project
+    init_segmentation_map(
+        name, 'CebraINF', project_path=project_path, verbose=verbose
+    )
 

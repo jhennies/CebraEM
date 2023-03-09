@@ -490,15 +490,8 @@ def init_segmentation_map(
                 "unique_labels": True,
                 "dtype": "uint64"
             },
-            'add_dependencies': [
-                {
-                    'rule_def': 'create_segmentation_map.smk',
-                    'output': [
-                        f'created_{seg_name}_map.json'
-                    ]
-                }
-            ],
-            'prepare': 'segmentation'
+            'add_dependencies': [],
+            # 'prepare': 'segmentation'
         },
         verbose=verbose
     )
