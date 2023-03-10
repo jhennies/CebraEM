@@ -76,8 +76,8 @@ if run_type == 'run':
                             f'run_{target}_{idx}.' + f'{ext}'
                         )
                     )
-        # for x in sorted(inp_list):
-        #     print(x)
+        for x in sorted(inp_list):
+            print(x)
         return inp_list
 
     rule all:

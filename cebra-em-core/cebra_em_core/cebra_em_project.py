@@ -357,7 +357,8 @@ def init_segmentation(
             'add_downstream': [
                 {
                     'rule_def': 'run_multicut.smk',
-                    'output': "run_multicut_{dataset}_{beta}_{idx}.json"
+                    'output': "run_multicut_{dataset}_{param}_{idx}.json",
+                    'param': 'mc_args:betas'
                 }
             ],
             'run_script': 'predict_segmentation.py',
@@ -386,27 +387,31 @@ def init_beta_map(
         print(f'name = {name}')
         print(f'base_segmentation = {base_segmentation}')
 
-    # Make an entry in the main config
-    config_bm_fp = os.path.join(get_config_path(project_path=project_path), f'config_{name}.json')
-    config_bm_rel = os.path.join(get_config_path(relpath=True, project_path=project_path), f'config_{name}.json')
-    config_main_fp = get_config_filepath('main', project_path=project_path)
-    add_to_config_json(config_main_fp, {'configs': {name: '{project_path}' + config_bm_rel}})
+    # # Make an entry in the main config
+    # config_bm_fp = os.path.join(get_config_path(project_path=project_path), f'config_{name}.json')
+    # config_bm_rel = os.path.join(get_config_path(relpath=True, project_path=project_path), f'config_{name}.json')
+    # config_main_fp = get_config_filepath('main', project_path=project_path)
+    # add_to_config_json(config_main_fp, {'configs': {name: '{project_path}' + config_bm_rel}})
+    #
+    # # Copy the config from the main segmentation
+    # base_seg_config_fp = get_config_filepath(base_segmentation, project_path=project_path)
+    # copy(base_seg_config_fp, config_bm_fp)
+    #
+    # # Adapt a few settings
+    # add_to_config_json(
+    #     config_bm_fp,
+    #     {
+    #         'mc_args': {'beta': beta},
+    #         'run_script': 'run_multicut.py'
+    #     }
+    # )
 
-    # Copy the config from the main segmentation
-    base_seg_config_fp = get_config_filepath(base_segmentation, project_path=project_path)
-    copy(base_seg_config_fp, config_bm_fp)
-
-    # Adapt a few settings
-    add_to_config_json(
-        config_bm_fp,
-        {
-            'mc_args': {'beta': beta},
-            'run_script': 'run_multicut.py'
-        }
-    )
+    config_seg = get_config(base_segmentation, project_path=project_path)
+    if 'segmentations' in config_seg and name in config_seg['segmentations']:
+        return
 
     # Initialize the Mobie project
     init_segmentation_map(
-        name, 'CebraINF', project_path=project_path, verbose=verbose
+        name, base_segmentation, 'CebraINF', beta, project_path=project_path, verbose=verbose
     )
 

@@ -16,7 +16,7 @@ rule train_<name>:
         expand(os.path.join(project_path, "gt", "{cube_id}", "{inp}.h5"), cube_id=train_cubes.keys(), inp=['raw', 'mem', 'sv'])
     output:
         os.path.join(project_path, "snk_wf", "train_<name>_rf.pkl"),
-        os.path.join(project_path, "snk_wf", "train_<name>_lrf.pkl")
+        os.path.join(project_path, "snk_wf", "train_<name>_nrf.pkl")
     threads: n_workers
     resources:
         cpus=n_workers, mem_mb=16000, time_min=60, gpus=0

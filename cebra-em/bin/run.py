@@ -182,7 +182,7 @@ def run(
         beta_targets.extend([f'{target}_b{str.replace(str(beta), ".", "_")}' for beta in betas])
         # Initialize the beta maps (if they don't exist yet)
         from cebra_em_core.cebra_em_project import init_beta_map
-        for idx, bm in enumerate(beta_targets[1:]):
+        for idx, bm in enumerate(beta_targets):
             try:
                 # Requesting a config that doesn't exist raises a KeyError
                 get_config(bm, project_path=project_path)
@@ -190,7 +190,7 @@ def run(
                 print(f'Initializing {bm} with beta = {betas[idx]} ...')
                 init_beta_map(
                     bm,
-                    beta_targets[0],
+                    target,
                     betas[idx],
                     project_path=project_path,
                     verbose=verbose

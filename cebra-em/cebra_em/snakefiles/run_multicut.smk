@@ -4,7 +4,7 @@ rule run_multicut_<name>:
     input:
         os.path.join(project_path, "snk_wf", "run_<name>_{idx}.pkl")
     output:
-        os.path.join(project_path, "snk_wf", "run_multicut_{beta}_<name>_{idx}.json")
+        os.path.join(project_path, "snk_wf", "run_multicut_<name>_{beta}_{idx}.json")
     resources:
         cpus=1, mem_mb=1024, time_min=10, gpus=0
     params:

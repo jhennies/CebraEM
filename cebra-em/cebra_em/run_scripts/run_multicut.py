@@ -76,6 +76,7 @@ if __name__ == '__main__':
 
     verbose = run_json['verbose']
 
+    base_dataset = snakemake.params['image_name']
     dataset = f"{snakemake.params['image_name']}_b{str.replace(str(beta), '.', '_')}"
     idx = int(snakemake.wildcards['idx'])
 
@@ -83,14 +84,16 @@ if __name__ == '__main__':
     print(f'idx = {idx}')
 
     # # Config and run settings of this dataset
-    config_ds = get_config(dataset, project_path)
+    config_ds = get_config(base_dataset, project_path)['segmentations'][dataset]
     ds_xml_path = absolute_path(config_ds['xml_path'], project_path=project_path)
     ds_path = get_data_path(ds_xml_path, return_absolute_path=True)
     target_resolution = config_ds['resolution']
-    positions_fp = absolute_path(config_ds['positions'])
-    halo = config_ds['halo']
-    batch_shape = config_ds['batch_shape']
     data_writing = config_ds['data_writing']
+
+    config_base_ds = get_config(base_dataset, project_path)
+    positions_fp = absolute_path(config_base_ds['positions'])
+    halo = config_base_ds['halo']
+    batch_shape = config_base_ds['batch_shape']
 
     # Add the mask to the dependencies
     try:
@@ -134,7 +137,7 @@ if __name__ == '__main__':
 
     # _______________________________________________________________________________
     # Save the result
-    positions_fp = absolute_path(config_ds['positions'], project_path=project_path)
+    positions_fp = absolute_path(config_base_ds['positions'], project_path=project_path)
     with open(positions_fp, 'rb') as f:
         pos = pickle.load(f)[idx]
 

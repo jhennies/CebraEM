@@ -416,13 +416,15 @@ def init_mask(dataset_folder, mask_xml_path, image_name, project_path=None, verb
 
 def init_segmentation_map(
         seg_name,
+        base_name,
         dataset_name,
+        beta,
         project_path=None,
         verbose=False
 ):
 
-    config_seg_fp = get_config_filepath(seg_name, project_path=project_path)
-    config_seg = get_config(seg_name, project_path=project_path)
+    config_seg_fp = get_config_filepath(base_name, project_path=project_path)
+    config_seg = get_config(base_name, project_path=project_path)
     seg_resolution = config_seg['resolution']
     config_raw = get_config('raw', project_path=project_path)
     raw_resolution = config_raw['resolution']
@@ -473,25 +475,56 @@ def init_segmentation_map(
     add_to_config_json(
         config_seg_fp,
         {
-            'resolution': seg_resolution,
-            'shape': seg_shape,
-            'dep_datasets': [  # The order here is super critical, only the last one is used for Snakemake!
-                'raw',
-                'membrane_prediction',
-                'supervoxels'
-            ],
-            'xml_path': xml_rel_path,
-            "data_writing": {
-                "type": "segmentation",
-                "stitch_method": "crop",
-                "stitch_kwargs": {},
-                "background_value": 0,
-                "downscale_mode": "nearest",
-                "unique_labels": True,
-                "dtype": "uint64"
-            },
-            'add_dependencies': [],
-            # 'prepare': 'segmentation'
+            'segmentations': {
+                seg_name: {
+                    'beta': beta,
+                    'resolution': seg_resolution,
+                    'shape': seg_shape,
+                    'dep_datasets': [  # The order here is super critical, only the last one is used for Snakemake!
+                        'raw',
+                        'membrane_prediction',
+                        'supervoxels'
+                    ],
+                    'xml_path': xml_rel_path,
+                    "data_writing": {
+                        "type": "segmentation",
+                        "stitch_method": "crop",
+                        "stitch_kwargs": {},
+                        "background_value": 0,
+                        "downscale_mode": "nearest",
+                        "unique_labels": True,
+                        "dtype": "uint64"
+                    },
+                    'add_dependencies': [],
+                    # 'prepare': 'segmentation'
+                }
+            }
         },
         verbose=verbose
     )
+
+    # add_to_config_json(
+    #     config_seg_fp,
+    #     {
+    #         'resolution': seg_resolution,
+    #         'shape': seg_shape,
+    #         'dep_datasets': [  # The order here is super critical, only the last one is used for Snakemake!
+    #             'raw',
+    #             'membrane_prediction',
+    #             'supervoxels'
+    #         ],
+    #         'xml_path': xml_rel_path,
+    #         "data_writing": {
+    #             "type": "segmentation",
+    #             "stitch_method": "crop",
+    #             "stitch_kwargs": {},
+    #             "background_value": 0,
+    #             "downscale_mode": "nearest",
+    #             "unique_labels": True,
+    #             "dtype": "uint64"
+    #         },
+    #         'add_dependencies': [],
+    #         # 'prepare': 'segmentation'
+    #     },
+    #     verbose=verbose
+    # )
