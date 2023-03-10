@@ -1,0 +1,14 @@
+{
+  "quantile_norm": {
+    "quantiles": [0.1, 0.9],
+    "anchors": [0.1, 0.9]
+  },
+  "model_overlap": 32,
+  "model": null,
+  "resources": {
+    "cpus": 1,
+    "mem_mb": 2048,
+    "time_min": 30,
+    "gpus": 1
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "batch_shape": [384, 384, 384],
+  "halo": [64, 64, 64],
+  "quantile_norm": {
+    "quantiles": [0.1, 0.9],
+    "anchors": [0.1, 0.9]
+  },
+  "mc_args": {
+    "betas": [0.5]
+  },
+  "learning_kwargs": {
+    "ignore_label": null,
+    "n_estimators": 200,
+    "max_depth": 50,
+    "n_jobs": 16,
+    "verbose": 1
+  },
+  "node_learning_kwargs": {
+    "n_estimators": 200,
+    "max_depth": 50,
+    "n_jobs": 16,
+    "verbose": 1
+  },
+  "resources": {
+    "cpus": 1,
+    "mem_mb": 8192,
+    "time_min": 120,
+    "gpus": 0
+  }
+}

@@ -14,5 +14,4 @@ if __name__ == '__main__':
 	else:
 		raise NotImplementedError(f'Workflow not implemented for {sys.platform}')
 
-	if __name__ == "__main__":
-		custom_pytorch()
+	custom_pytorch()

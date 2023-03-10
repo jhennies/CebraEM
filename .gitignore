@@ -135,6 +135,7 @@ dmypy.json
 # Specifics to this project
 .current_project
 default_weights.pyt
+*pytorch_state_dict.zip
 
 # Packed environments
 *.tar.gz
@@ -147,3 +148,4 @@ log/
 
 # Misc
 run_validate*
+ext_packages/

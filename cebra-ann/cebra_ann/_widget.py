@@ -21,7 +21,7 @@ from qtpy.QtWidgets import (
 from PyQt5.QtCore import Qt
 from napari.utils.notifications import show_info
 from ._project import validate_project, AnnProject
-from ._data import crop_to_same_shape
+from ._data import crop_to_same_shape, segmentation_cleanup
 from ._multicut import supervoxel_merging
 from ._funcs import get_disk_positions, assert_3d
 from ._dialogs import QModifyLayerDialog, QCebraNetDialog, QSupervoxelsDialog
@@ -135,25 +135,46 @@ class CebraAnnWidget(QWidget):
         self.grp_pre_merging.setLayout(layout_pre_merging)
         layout.addWidget(self.grp_pre_merging)
 
-        # Instance segmentation
+        # - INSTANCE SEGMENTATION -
+        layout_instances = QFormLayout()
+        #   Line brush size
         self.sld_brush_size = QSliderLabelEdit(
             5, (1, MAX_BRUSH_SIZE), 1,
             decimals=None,
             maximum_line_edit_width=75
         )
+        layout_brush_size_row = QHBoxLayout()
+        layout_brush_size_row.addWidget(self.sld_brush_size)
+        layout_instances.addRow(QLabel('Brush size: '), layout_brush_size_row)
+        #   Line Clean-up
+        self.chk_merge_small = QCheckBox('Merge Small')
+        self.chk_merge_small.setChecked(True)
+        self.lne_merge_small = QLineEdit('48')
+        self.chk_connected_components = QCheckBox('Conn-comp')
+        self.chk_connected_components.setChecked(True)
+        layout_clean_up = QHBoxLayout()
+        layout_clean_up.addWidget(self.chk_merge_small)
+        layout_clean_up.addWidget(self.lne_merge_small)
+        layout_clean_up.addWidget(self.chk_connected_components)
+        layout_instances.addRow(QLabel('Clean-up: '), layout_clean_up)
+        #   Line Actions
+        self.btn_clean_up = QPushButton('Run clean-up')
         self.btn_instances = QPushButton('Start')
-        self.sld_brush_size.sld.valueChanged.connect(self._sld_brush_size_onvaluechanged)
-        # self.lne_brush_size.editingFinished.connect(self._lne_brush_size_oneditingfinished)
-        self.btn_instances.clicked.connect(self._btn_instances_onclicked)
-        layout_instances_row = QHBoxLayout()
-        layout_instances_row.addWidget(self.sld_brush_size)
-        layout_instances_row.addWidget(self.btn_instances)
-        layout_instances = QFormLayout()
-        layout_instances.addRow(QLabel('Brush size: '), layout_instances_row)
+        layout_actions_instances = QHBoxLayout()
+        layout_actions_instances.addWidget(self.btn_clean_up)
+        layout_actions_instances.addWidget(self.btn_instances)
+        layout_instances.addRow(QLabel('Actions: '), layout_actions_instances)
+        #   Add the group
         self.grp_instances = QGroupBox('Instance segmentation')
         self.grp_instances.setLayout(layout_instances)
         layout.addWidget(self.grp_instances)
+        #   Callbacks
+        self.sld_brush_size.sld.valueChanged.connect(self._sld_brush_size_onvaluechanged)
+        self.btn_instances.clicked.connect(self._btn_instances_onclicked)
+        self.btn_clean_up.clicked.connect(self._btn_clean_up_onclicked)
 
+        # TODO Remove the single/multi logic?
+        #   Instead add a "merge all instances" button
         # Semantic segmentation
         self.cmb_organelle = QComboBox()
         self.cmb_organelle.addItems(['< other >'] + [org for org in ORGANELLES.keys()])
@@ -217,6 +238,36 @@ class CebraAnnWidget(QWidget):
                     print([lyr.name[10:] for lyr in viewer.layers.selection])
                     if 'semantics_' in [lyr.name[:10] for lyr in viewer.layers.selection]:
                         viewer.layers.selection = {viewer.layers['instances']}
+
+        @self.viewer.bind_key('Control-E')
+        def ctrl_e_pressed(viewer):
+
+            # (0, 1, 2) -> (2, 0, 1)
+            # (2, 0, 1) -> (1, 2, 0)
+            # (1, 2, 0) -> (0, 1, 2)
+
+            # Get current order and current pointer location
+            current_pos = np.array(viewer.cursor.position)
+            current_zoom = viewer.camera.zoom
+            current_disp_dim = list(viewer.dims.displayed)
+            print(np.array(viewer.camera.center))
+            offset_vector = current_pos[current_disp_dim] - np.array(viewer.camera.center[1:])
+
+            current_order = viewer.dims.order
+
+            if current_order == (0, 1, 2):
+                viewer.dims.order = (2, 0, 1)
+            elif current_order == (2, 0, 1):
+                viewer.dims.order = (1, 2, 0)
+            elif current_order == (1, 2, 0):
+                viewer.dims.order = (0, 1, 2)
+
+            displayed = list(viewer.dims.displayed)
+
+            viewer.camera.center = current_pos[displayed] - offset_vector
+            viewer.camera.zoom = current_zoom
+
+            viewer.dims.set_current_step(current_order[-1], current_pos[current_order[-1]])
 
     def _btn_load_project_onclicked(self, value: bool):
 
@@ -496,6 +547,7 @@ class CebraAnnWidget(QWidget):
                 self._project.raw is not None and self._project.mem is not None and self._project.sv is not None)
             self.grp_instances.setEnabled(
                 self._project.raw is not None and self._project.sv is not None)
+            self.btn_clean_up.setEnabled(self._project.instance_seg_running)
             self.grp_semantics.setEnabled(self._project.instances is not None)
 
         # Key bindings etc.
@@ -759,6 +811,36 @@ class CebraAnnWidget(QWidget):
     def _btn_instances_onclicked(self, value: bool):
 
         self._start_instance_segmentation()
+
+    def _btn_clean_up_onclicked(self, value: bool):
+
+        # Get the parameters
+        merge_small = self.chk_merge_small.isChecked()
+        merge_small_size = int(self.lne_merge_small.text())
+        conn_comp = self.chk_connected_components.isChecked()
+
+        # Extract the relevant maps
+        input_layer_data = {
+            layer.name: layer.data
+            for layer in self.viewer.layers if layer.name[:9] == 'semantics' or layer.name == 'instances'
+        }
+        sv = self.viewer.layers['sv'].data
+
+        # Do the cleanup
+        result_layer_data, sv = segmentation_cleanup(
+            input_layer_data, sv,
+            merge_small=merge_small, fill_holes=False, conn_comp=conn_comp,
+            merge_small_size=merge_small_size,
+            verbose=False
+        )
+        # Clearing undo list
+        self._reset_history()
+
+        # Write back
+        for k, v in result_layer_data.items():
+            self.viewer.layers[k].data = v
+            self.viewer.layers[k].refresh()
+        self.viewer.layers['sv'].data = sv
 
     def _cb_instance_segmentation(self):
         # The instance segmentation uses layers.data_setitem() to include the napari history for proper undos.
@@ -1087,6 +1169,14 @@ class CebraAnnWidget(QWidget):
                 layer.refresh()
                 inst_layer.refresh()
 
-            # FIXME: This is supposed to be an intermediate solution until I figure out a better way
-            # Reset the history of the instances layer to make sure no CTRL+Z surpasses this event
-            self.viewer.layers['instances']._reset_history()
+            self._reset_history()
+
+    def _reset_history(self):
+
+        # FIXME: This is supposed to be an intermediate solution until I figure out a better way
+        # Reset the history of the instances layer to make sure no CTRL+Z surpasses this event
+        for layer in self.viewer.layers:
+            try:
+                layer._reset_history()
+            except:
+                pass

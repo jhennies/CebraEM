@@ -2,23 +2,28 @@
 
 TORCH=true
 NAME=cebra-em-env
+CONDA=conda
 
-while getopts :htn: opt; do
+while getopts :htmn: opt; do
   case $opt in
     h)
       echo ""
-      echo "Usage: ./install.sh [-h] [-n] [-t] PACKAGE"
+      echo "Usage: ./install.sh [-h] [-t] [-m] [-n NAME] PACKAGE"
       echo ""
       echo "  -h    Help"
       echo "  -t    Do not install pytorch"
+      echo "  -m    Use mamba instead of conda"
       echo "  -n    Environment name"
       echo ""
-      echo "  PACKAGE: The name of the package to install: [\"ann\", \"inf\", \"core\", \"all\"]"
+      echo "  PACKAGE: The name of the package to install: [\"ann\", \"em\", \"core\", \"all\"]"
       echo ""
       exit 0
       ;;
     t)
       TORCH=false
+      ;;
+    m)
+      CONDA=mamba
       ;;
     n)
       NAME=$OPTARG
@@ -46,7 +51,7 @@ fi
 source activate base
 
 # Always create an environment with python, elf and vigra
-conda create -y -n "$NAME" -c conda-forge python=3.9 python-elf vigra || exit 1
+"$CONDA" create -y -n "$NAME" -c conda-forge python=3.9 python-elf pybdv mobie_utils=0.3 vigra bioimageio.core || exit 1
 conda activate "$NAME" || exit 1
 conda list
 # And always install the cebra-em-core package
@@ -56,14 +61,25 @@ pip install -e ./cebra-em-core/ || exit 1
 if [ "$PACKAGE" == ann ] || [ "$PACKAGE" == all ]; then
   pip install -e ./cebra-ann/ || exit 1
 fi
-if [ "$PACKAGE" == inf ] || [ "$PACKAGE" == all ]; then
-  pip install -e ./cebra-inf/ || exit 1
+if [ "$PACKAGE" == em ] || [ "$PACKAGE" == all ]; then
+  pip install -e ./cebra-em/ || exit 1
 fi
+
+# Numba makes problems, so upgrading to version 0.54
+"$CONDA" install -y -c conda-forge numba=0.54
 
 # Install torch by default
 if [ "$TORCH" == true ]; then
   install_torch.py || exit 1
 fi
+
+## Install pybdv
+#mkdir ext_packages
+#cd ext_packages || exit 1
+#git clone https://github.com/jhennies/pybdv.git
+#cd pybdv || exit 1
+#git checkout bdv_dataset_with_stiching
+#python setup.py install
 
 echo ""
 echo "Installation successful!"
