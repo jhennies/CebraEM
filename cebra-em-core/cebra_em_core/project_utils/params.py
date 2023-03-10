@@ -4,7 +4,7 @@ import os
 from shutil import copy
 import json
 from cebra_em_core.misc.repo import get_repo_path
-from cebra_em_core.project_utils.project import assert_valid_project
+from cebra_em_core.project_utils.project import get_current_project_path
 
 
 if sys.platform == 'linux':
@@ -16,9 +16,7 @@ else:
 
 
 def get_params_path(image_name, project_path=None):
-    if project_path is None:
-        project_path = '../misc'
-    assert_valid_project(project_path)
+    project_path = get_current_project_path(project_path=project_path)
     return os.path.join(project_path, 'params', f'{image_name}.json')
 
 
@@ -42,6 +40,8 @@ def copy_default_params(
     for idx, param in enumerate(params):
 
         dst = get_params_path(target_names[idx], project_path=project_path)
+        if verbose:
+            print(f'dst = {dst}')
         if not os.path.exists(dst):
             src = os.path.join(defaults_path, f'{param}_defaults.json')
             copy(src, dst)

@@ -8,13 +8,25 @@ from cebra_em_core.dataset.alignment import xcorr_on_volume
 from concurrent.futures import ThreadPoolExecutor
 
 
-def crop_zero_padding_3d(dat, return_as_arrays=False):
+def crop_zero_padding_3d(dat, return_as_arrays=False, add_halo=None):
+
+    max_shape = np.array(dat.shape)
     # argwhere will give you the coordinates of every non-zero point
     true_points = np.argwhere(dat)
-    # take the smallest points and use them as the top left of your crop
-    top_left = true_points.min(axis=0)
-    # take the largest points and use them as the bottom right of your crop
-    bottom_right = true_points.max(axis=0)
+
+    if add_halo is None:
+        # take the smallest points and use them as the top left of your crop
+        top_left = true_points.min(axis=0)
+        # take the largest points and use them as the bottom right of your crop
+        bottom_right = true_points.max(axis=0)
+    else:
+        # take the smallest points and use them as the top left of your crop
+        top_left = true_points.min(axis=0) - add_halo
+        top_left[top_left < 0] = 0
+        # take the largest points and use them as the bottom right of your crop
+        bottom_right = true_points.max(axis=0) + add_halo
+        bottom_right[bottom_right > max_shape] = max_shape[bottom_right > max_shape]
+
     # generate bounds
     bounds = np.s_[top_left[0]:bottom_right[0] + 1,  # plus 1 because slice isn't
                    top_left[1]:bottom_right[1] + 1,  # inclusive
@@ -62,9 +74,9 @@ def _apply_transform(x,
 
 
 def _transform_matrix_offset_center(matrix, x, y, z):
-    o_x = float(x) / 2 + 0.5
-    o_y = float(y) / 2 + 0.5
-    o_z = float(z) / 2 + 0.5
+    o_x = float(x) / 2  # + 0.5
+    o_y = float(y) / 2  # + 0.5
+    o_z = float(z) / 2  # + 0.5
     offset_matrix = np.array([[1, 0, 0, o_x],
                               [0, 1, 0, o_y],
                               [0, 0, 1, o_z],
@@ -190,7 +202,8 @@ def load_with_zero_padding(dataset, starts, ends, shape, verbose=False):
 def load_data(
         input_path,
         internal_path,
-        pos, shape,
+        pos,
+        shape,
         xcorr=False,
         verbose=False
 ):
@@ -257,18 +270,44 @@ def crop_and_scale(
 
     p0 = position
     p1 = position + output_shape
-    p0_dash = p0 * output_res / input_res
-    p1_dash = p1 * output_res / input_res
+    # TODO look at the division again
+    p0_dash = p0 * output_res / input_res.astype(float)
+    p1_dash = p1 * output_res / input_res.astype(float)
+
+    # Round p0_dash and p1_dash to two decimals
+    #  sometimes they are ever so slightly below the actual value: e.g. 0.999999999... instead of 1.0
+    #  which leads the floor operation below to land on the wrong value
+    if verbose:
+        print(f'p0_dash = {p0_dash}')
+        print(f'p1_dash = {p1_dash}')
+    p0_dash = np.round(p0_dash, decimals=2)
+    p1_dash = np.round(p1_dash, decimals=2)
+    assert (p0_dash * 100 == (p0_dash * 100).astype(int)).all()
+    assert (p1_dash * 100 == (p1_dash * 100).astype(int)).all()
 
     floor_p0_dash = np.floor(p0_dash).astype(int)
+    rem_p0_dash = p0_dash - floor_p0_dash
     ceil_p1_dash = np.ceil(p1_dash).astype(int)
 
-    input_shape = np.max([p1 - p0, ceil_p1_dash - floor_p0_dash], axis=0)
-
+    input_shape = ceil_p1_dash - floor_p0_dash
     scale = input_res / output_res
 
-    shift = 0.5 / scale * (input_shape - scale * input_shape) \
-        + (p0_dash - floor_p0_dash)
+    # This copes with scaling that leads to subpixel positions
+    shift = rem_p0_dash
+
+    if verbose:
+        print(f'input_res = {input_res}')
+        print(f'output_res = {output_res}')
+        print(f'p0 = {p0}')
+        print(f'p1 = {p1}')
+        print(f'p0_dash = {p0_dash}')
+        print(f'p1_dash = {p1_dash}')
+        print(f'floor_p0_dash = {floor_p0_dash}')
+        print(f'rem_p0_dash = {rem_p0_dash}')
+        print(f'ceil_p1_dash = {ceil_p1_dash}')
+        print(f'input_shape = {input_shape}')
+        print(f'scale = {scale}')
+        print(f'shift = {shift}')
 
     # Load raw data
     raw = load_data(
@@ -281,7 +320,7 @@ def crop_and_scale(
     )
     if scale_result:
         if np.sum(scale != 1) or np.sum(shift != 0):
-            raw = scale_and_shift(raw, scale, shift, order=order, verbose=verbose)
+            raw = scale_and_shift(raw, scale, shift, scale_im_size=True, order=order, verbose=verbose)
             raw = raw[:output_shape[0], :output_shape[1], :output_shape[2]]
 
     assert np.sum(np.array(raw.shape) - np.array(output_shape)) == 0, (

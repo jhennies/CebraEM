@@ -4,13 +4,14 @@ import snakemake
 from multiprocessing import Process
 import shutil
 
-from cebra_em.prepare_snakefiles import prepare_run
+from cebra_em.prepare_snakefiles import prepare_run, prepare_gt_extract
 from cebra_em_core.project_utils.project import (
     get_current_project_path,
     lock_project,
     unlock_project
 )
 from cebra_em.misc.repo import get_repo_path
+from cebra_em_core.project_utils.config import get_config
 
 
 def _snakemake(*args, **kwargs):
@@ -69,7 +70,7 @@ def run_snakemake(project_path, verbose=False, return_thread=False, **kwargs):
 
 def run(
         project_path=None,
-        targets=('membrane_prediction',),
+        target='membrane_prediction',
         roi=None,
         unit='px',
         cores=None,
@@ -97,13 +98,10 @@ def run(
 
     if verbose:
         print(f'project_path = {project_path}')
-        print(f'targets = {targets}')
+        print(f'target = {target}')
         print(f'roi = {roi}')
         print(f'unit = {unit}')
         print(f'dryrun = {dryrun}')
-
-    if return_thread:
-        assert len(targets) == 1, 'Can only start computation of one target if thread handle is to be returned!'
 
     lock_fp, lock_status = lock_project(project_path=project_path)
     if lock_status == 'is_locked_error':
@@ -124,69 +122,93 @@ def run(
         for wb in write_blocks:
             os.remove(wb)
 
-    while len(targets) > 0:
+    kwargs = dict(
+        resources={
+            'gpu': 1
+        },
+        cores=cores,
+        unlock=unlock,
+        quiet=quiet,
+        dryrun=dryrun
+    )
 
-        kwargs = dict(
-            resources={
-                'gpu': 1
-            },
-            cores=cores,
-            unlock=unlock,
-            quiet=quiet,
-            dryrun=dryrun
+    if cluster is not None:
+        if not os.path.exists(os.path.join(project_path, 'log')):
+            os.mkdir(os.path.join(project_path, 'log'))
+        if cluster == 'slurm':
+            kwargs['resources']['gpu'] = gpus
+            # kwargs['resources']['membrane_prediction_writer'] = 64  # In theory writing in parallel works
+            # kwargs['resources']['supervoxels_writer'] = 64
+            kwargs['cluster'] = (
+                "sbatch "
+                "-p {params.p} {params.gres} "
+                "-t {resources.time_min} "
+                "--mem={resources.mem_mb} "
+                "-c {resources.cpus} "
+                "-o log/{rule}_{wildcards}d.%N.%j.out "
+                "-e log/{rule}_{wildcards}d.%N.%j.err "
+                "--mail-type=FAIL "
+                f"--mail-user={os.environ['MAIL']} "
+                f"-A {os.environ['GROUP']} "
+                f"--qos={qos}")
+            kwargs['nodes'] = cores
+            kwargs['restart_times'] = restart_times
+        else:
+            raise RuntimeError(f'Not supporting cluster = {cluster}')
+
+    if rerun:
+        kwargs['forcerun'] = [f'run_{target}']
+    if qos == 'low':
+        kwargs['force_incomplete'] = True
+
+    # Prepare snakefile(s)
+    if target == 'gt_cubes':
+        prepare_gt_extract(project_path=project_path, verbose=verbose)
+    elif target in ['membrane_prediction', 'supervoxels']:
+        prepare_run(
+            [target],
+            roi=roi,
+            unit=unit,
+            project_path=project_path,
+            verbose=verbose)
+    else:
+        # --- Assuming a segmentation! ---
+        # # Make a target list since we need multiple targets here
+        # targets = [target]
+        # Generate the beta target maps
+        beta_targets = []
+        config_seg = get_config(target, project_path=project_path)
+        betas = config_seg['mc_args']['betas']
+        beta_targets.extend([f'{target}_b{str.replace(str(beta), ".", "_")}' for beta in betas])
+        # Initialize the beta maps (if they don't exist yet)
+        from cebra_em_core.cebra_em_project import init_beta_map
+        for idx, bm in enumerate(beta_targets):
+            try:
+                # Requesting a config that doesn't exist raises a KeyError
+                get_config(bm, project_path=project_path)
+            except KeyError:
+                print(f'Initializing {bm} with beta = {betas[idx]} ...')
+                init_beta_map(
+                    bm,
+                    target,
+                    betas[idx],
+                    project_path=project_path,
+                    verbose=verbose
+                )
+        # Prepare the run
+        prepare_run(
+            [target],
+            roi=roi,
+            unit=unit,
+            project_path=project_path,
+            verbose=verbose
         )
 
-        if cluster is not None:
-            if not os.path.exists(os.path.join(project_path, 'log')):
-                os.mkdir(os.path.join(project_path, 'log'))
-            if cluster == 'slurm':
-                kwargs['resources']['gpu'] = gpus
-                # kwargs['resources']['membrane_prediction_writer'] = 64  # In theory writing in parallel works
-                # kwargs['resources']['supervoxels_writer'] = 64
-                kwargs['cluster'] = (
-                    "sbatch "
-                    "-p {params.p} {params.gres} "
-                    "-t {resources.time_min} "
-                    "--mem={resources.mem_mb} "
-                    "-c {resources.cpus} "
-                    "-o log/{rule}_{wildcards}d.%N.%j.out "
-                    "-e log/{rule}_{wildcards}d.%N.%j.err "
-                    "--mail-type=FAIL "
-                    f"--mail-user={os.environ['MAIL']} "
-                    f"-A {os.environ['GROUP']} "
-                    f"--qos={qos}")
-                kwargs['nodes'] = cores
-                kwargs['restart_times'] = restart_times
-            else:
-                raise RuntimeError(f'Not supporting cluster = {cluster}')
-
-        if rerun:
-            kwargs['forcerun'] = [f'run_{target}' for target in targets]
-        if qos == 'low':
-            kwargs['force_incomplete'] = True
-
-        # Prepare snakefile(s)
-        if 'gt_cubes' in targets:
-            targets.remove('gt_cubes')
-            prepare_gt_extract(val=False, project_path=project_path, verbose=verbose)
-        elif 'val_cubes' in targets:
-            targets.remove('val_cubes')
-            prepare_gt_extract(val=True, project_path=project_path, verbose=verbose)
-        else:
-            # Assuming 'membrane_prediction', 'supervoxels', or a segmentation ID here
-            prepare_run(
-                targets,
-                roi=roi,
-                unit=unit,
-                project_path=project_path,
-                verbose=verbose)
-            targets = []
-
-        # Run snakemake
-        if return_thread:
-            return run_snakemake(project_path, verbose=verbose, return_thread=return_thread, **kwargs)
-        else:
-            run_snakemake(project_path, verbose=verbose, **kwargs)
+    # Run snakemake
+    if return_thread:
+        return run_snakemake(project_path, verbose=verbose, return_thread=return_thread, **kwargs)
+    else:
+        run_snakemake(project_path, verbose=verbose, **kwargs)
 
     unlock_project(project_path=project_path)
     return 0
@@ -203,7 +225,7 @@ if __name__ == '__main__':
     )
     parser.add_argument('-p', '--project_path', type=str, default=None,
                         help='Path of the project, the current path by default')
-    parser.add_argument('-t', '--targets', type=str, default=['membrane_prediction'], nargs='+',
+    parser.add_argument('-t', '--target', type=str, default='membrane_prediction',
                         help=('Defines the map(s) to compute, can be any of the following:\n'
                               '    "membrane_prediction"\n'
                               '    "supervoxels"\n'
@@ -237,7 +259,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     project_path = args.project_path
-    targets = args.targets
+    target = args.target
     roi = args.roi
     unit = args.unit
     cores = int(args.cores) if args.cores is not None else None
@@ -255,7 +277,7 @@ if __name__ == '__main__':
 
     run(
         project_path=project_path,
-        targets=targets,
+        target=target,
         roi=roi,
         unit=unit,
         cores=cores,

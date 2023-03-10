@@ -1,17 +1,12 @@
 {
+  "batch_shape": [384, 384, 384],
+  "halo": [64, 64, 64],
   "quantile_norm": {
     "quantiles": [0.1, 0.9],
     "anchors": [0.1, 0.9]
   },
-  "batch_shape": [384, 384, 384],
-  "halo": [64, 64, 64],
   "mc_args": {
-    "lifted": false,
-    "node_classification": true,
-    "beta": 0.5,
-    "gamma": 1.0,
-    "lifted_nhood": 2,
-    "adapt_edge_probs": false
+    "betas": [0.5]
   },
   "learning_kwargs": {
     "ignore_label": null,

@@ -217,3 +217,10 @@ class BdvDatasetAdvanced(BdvDataset):
         super().__setitem__(key, value)
 
 
+def bdv2pos(pos, resolution=None, verbose=False):
+    pos = np.array([float(x) for x in (re.findall('\d+\.\d+', pos))])[::-1]
+    if verbose:
+        print(f'pos = {pos}')
+    if resolution is not None:
+        pos = np.round(pos / np.array(resolution)).astype(int)
+    return pos

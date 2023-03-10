@@ -239,6 +239,36 @@ class CebraAnnWidget(QWidget):
                     if 'semantics_' in [lyr.name[:10] for lyr in viewer.layers.selection]:
                         viewer.layers.selection = {viewer.layers['instances']}
 
+        @self.viewer.bind_key('Control-E')
+        def ctrl_e_pressed(viewer):
+
+            # (0, 1, 2) -> (2, 0, 1)
+            # (2, 0, 1) -> (1, 2, 0)
+            # (1, 2, 0) -> (0, 1, 2)
+
+            # Get current order and current pointer location
+            current_pos = np.array(viewer.cursor.position)
+            current_zoom = viewer.camera.zoom
+            current_disp_dim = list(viewer.dims.displayed)
+            print(np.array(viewer.camera.center))
+            offset_vector = current_pos[current_disp_dim] - np.array(viewer.camera.center[1:])
+
+            current_order = viewer.dims.order
+
+            if current_order == (0, 1, 2):
+                viewer.dims.order = (2, 0, 1)
+            elif current_order == (2, 0, 1):
+                viewer.dims.order = (1, 2, 0)
+            elif current_order == (1, 2, 0):
+                viewer.dims.order = (0, 1, 2)
+
+            displayed = list(viewer.dims.displayed)
+
+            viewer.camera.center = current_pos[displayed] - offset_vector
+            viewer.camera.zoom = current_zoom
+
+            viewer.dims.set_current_step(current_order[-1], current_pos[current_order[-1]])
+
     def _btn_load_project_onclicked(self, value: bool):
 
         self._close_project()

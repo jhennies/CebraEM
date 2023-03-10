@@ -367,7 +367,8 @@ class AnnProject:
 
     @staticmethod
     def default_semantic(name):
-        return os.path.join('{project}', f'{name}.h5')
+        assert name[:10] == 'semantics_' and len(name) > 10
+        return os.path.join('{project}', f'{name[10:]}.h5')
 
 
 def validate_project_json(fp):

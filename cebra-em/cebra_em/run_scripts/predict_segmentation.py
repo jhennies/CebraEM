@@ -3,6 +3,7 @@ import numpy as np
 import pickle
 import os
 import json
+import pickle
 
 from cebra_em.run_utils.tasks import load_data, apply_normalization
 from cebra_em_core.project_utils.project import get_current_project_path
@@ -13,63 +14,52 @@ from cebra_em_core.dataset.bdv_utils import is_h5
 from cebra_em_core.bioimageio.cebra_net import run_cebra_net
 from cebra_em.misc.bdv_io import vol_to_bdv
 from cebra_em_core.segmentation.supervoxels import watershed_dt_with_probs
+from cebra_em_core.dataset.data import crop_zero_padding_3d
 from cebra_em.run_utils.tasks import compute_task_with_mask
+from cebra_em_core.segmentation.multicut import predict_mc_wf_classifiers
 
 
-def run_membrane_prediction(
-        input_dict,
-        mask_ids=None,
-        halo=None,
-        verbose=False
+def predict_segmentation(
+        input_dict, seg_kwargs, mask_ids=None, halo=None, verbose=False
 ):
+
+    if verbose:
+        print(f'keys = {input_dict.keys()}')
+    assert 'rf_filepath' in input_dict
+    assert 'nrf_filepath' in input_dict
     assert 'raw' in input_dict
-    if 'mask' in input_dict:
-        assert len(input_dict) == 2
-    else:
-        assert len(input_dict) == 1
-
-    raw = input_dict['raw']
-
-    def _run_cebra_net(vol, mask=None):
-        return run_cebra_net(vol).squeeze()
-        # # Use this for debugging:
-        # return np.ones(vol.shape) * 255
-
-    if 'mask' in input_dict:
-        if verbose:
-            print(f'Computing with mask ...')
-        return compute_task_with_mask(_run_cebra_net, raw, input_dict['mask'], mask_ids=mask_ids, halo=halo, verbose=verbose)
-    else:
-        if verbose:
-            print(f'Computing without mask ...')
-        return _run_cebra_net(raw)
-
-
-def run_supervoxels(
-        input_dict,
-        sv_kwargs,
-        mask_ids=None,
-        halo=None,
-        verbose=False
-):
-    # TODO check if a mask can be applied to computation such that exhaustive memory hungry steps can be avoided
+    assert 'supervoxels' in input_dict
     assert 'membrane_prediction' in input_dict
-    if 'mask' in input_dict:
-        assert len(input_dict) == 2
-    else:
-        assert len(input_dict) == 1
+    mask = input_dict['mask'] if 'mask' in input_dict else None
+    vol = [
+        input_dict['raw'],
+        input_dict['membrane_prediction'],
+        input_dict['supervoxels']
+    ]
+    rf_filepath = input_dict['rf_filepath']
+    nrf_filepath = input_dict['nrf_filepath']
 
-    mem = input_dict['membrane_prediction']
+    if verbose:
+        print(f"raw.dtype = {input_dict['raw'].dtype}")
+        print(f"supervoxels.dtype = {input_dict['supervoxels'].dtype}")
+        print(f"membrane_prediction.dtype = {input_dict['membrane_prediction'].dtype}")
 
-    def run_sv(vol, mask=None):
-        return watershed_dt_with_probs(vol, **sv_kwargs, verbose=verbose)
+    def run_predict_mc_wf_classifiers(vol, mask=None):
+        return predict_mc_wf_classifiers(vol, rf_filepath, nrf_filepath, mask=mask, **seg_kwargs, verbose=verbose)
         # # Use this for debugging:
         # return np.ones(vol.shape)
 
-    if 'mask' in input_dict:
-        return compute_task_with_mask(run_sv, mem, input_dict['mask'], mask_ids=mask_ids, halo=halo)
-    else:
-        return run_sv(mem)
+    out_dict = compute_task_with_mask(
+        run_predict_mc_wf_classifiers, vol, mask,
+        mask_ids=mask_ids, halo=halo, pad_result_vol=False,
+        verbose=verbose
+    )
+
+    return out_dict
+
+    # mc_out, bounds, mask = out_dict['result'], out_dict['bounds'], out_dict['mask']
+    #
+    # return dict(mc_out=mc_out, bounds=bounds, mask=mask)
 
 
 if __name__ == '__main__':
@@ -87,16 +77,13 @@ if __name__ == '__main__':
     dataset = snakemake.params['image_name']
     idx = int(snakemake.wildcards['idx'])
 
-    # Config and run settings of this dataset
+    # # Config and run settings of this dataset
     config_ds = get_config(dataset, project_path)
-    ds_xml_path = absolute_path(config_ds['xml_path'], project_path=project_path)
-    ds_path = get_data_path(ds_xml_path, return_absolute_path=True)
     dep_datasets = config_ds['dep_datasets']
     target_resolution = config_ds['resolution']
     positions_fp = absolute_path(config_ds['positions'])
     halo = config_ds['halo']
     batch_shape = config_ds['batch_shape']
-    data_writing = config_ds['data_writing']
 
     # Fetch the settings of the dependencies
     config_raw = get_config('raw', project_path)
@@ -151,16 +138,6 @@ if __name__ == '__main__':
         position_halo = np.array(position)
         shape_halo = np.array(batch_shape)
 
-    relative_quantiles = config_ds['quantile_norm'] if 'quantile_norm' in config_ds else None
-    if relative_quantiles is not None:
-        raw_quantiles_fp = snakemake.input[-1]
-        assert raw_quantiles_fp == os.path.join(project_path, 'snk_wf', 'raw_quantiles.json'), \
-            f"{raw_quantiles_fp} != {os.path.join(project_path, 'snk_wf', 'raw_quantiles.json')}"
-        with open(raw_quantiles_fp, mode='r') as f:
-            raw_quantiles = json.load(f)
-    else:
-        raw_quantiles = None
-
     # _______________________________________________________________________________
     # Retrieve the input
     input_data = load_data(
@@ -176,60 +153,22 @@ if __name__ == '__main__':
         verbose=verbose
     )
 
+    # Adding the random forest models to the input dict
+    input_data['rf_filepath'] = snakemake.input[0]
+    input_data['nrf_filepath'] = snakemake.input[1]
+
     if verbose:
         print(f'input_data.keys() = {input_data.keys()}')
 
     # _______________________________________________________________________________
-    # Pre-processing
-
-    if relative_quantiles is not None:
-        input_data['raw'] = apply_normalization(
-            input_data['raw'],
-            input_data['mask'],
-            mask_ids,
-            raw_quantiles,
-            relative_quantiles,
-            verbose=verbose
-        )
-
-    # _______________________________________________________________________________
     # Run the task
 
-    if dataset == 'membrane_prediction':
-        output_data = run_membrane_prediction(input_data, mask_ids=mask_ids, halo=halo, verbose=verbose)
-    elif dataset == 'supervoxels':
-        sv_kwargs = config_ds['sv_kwargs']
-        output_data = run_supervoxels(input_data, sv_kwargs, mask_ids=mask_ids, halo=halo, verbose=verbose)
-    else:
-        raise RuntimeError(f'Invalid dataset: {dataset}')
-
-    # _______________________________________________________________________________
-    # Save the result
-    positions_fp = absolute_path(config_ds['positions'], project_path=project_path)
-    with open(positions_fp, 'rb') as f:
-        pos = pickle.load(f)[idx]
-
-    vol_to_bdv(
-        output_data,
-        dataset_path=ds_path,
-        position=pos,
-        downscale_mode=data_writing['downscale_mode'],
-        halo=halo,
-        background_value=data_writing['background_value'],
-        unique=data_writing['unique_labels'],
-        update_max_id=data_writing['unique_labels'],
-        cast_type=data_writing['dtype'] if 'dtype' in data_writing.keys() else None,
-        block_description=dict(
-            path=project_path,
-            idx=idx,
-            name=dataset
-        ),
-        verbose=verbose
-    )
+    seg_kwargs = {}  # config_ds['mc_args']
+    output_data = predict_segmentation(input_data, seg_kwargs, mask_ids=mask_ids, halo=halo, verbose=verbose)
 
     # _______________________________________________________________________________
     # Write result file
-    open(snakemake.output[0], 'w').close()
-
-
+    # TODO write the output data
+    with open(snakemake.output[0], 'wb') as f:
+        pickle.dump(output_data, f)
 

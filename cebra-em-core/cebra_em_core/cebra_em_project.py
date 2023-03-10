@@ -1,5 +1,7 @@
 
 import os
+import numpy as np
+from shutil import copy
 from cebra_em_core.project_utils.project import make_project_structure
 from cebra_em_core.project_utils.params import copy_default_params, query_parameters
 from cebra_em_core.project_utils.config import (
@@ -9,7 +11,10 @@ from cebra_em_core.project_utils.config import (
     init_image_config,
     get_config,
     get_mask_xml,
-    set_version
+    set_version,
+    add_to_config_json,
+    get_config_filepath,
+    get_config_path
 )
 from cebra_em_core.project_utils.tasks import compute_task_positions
 from cebra_em_core.project_utils.dependencies import init_dependencies
@@ -19,6 +24,7 @@ from cebra_em_core.dataset.mobie_utils import (
     init_membrane_prediction,
     init_supervoxels,
     init_mask,
+    init_segmentation_map
 )
 from cebra_em_core.version import __version__
 
@@ -254,4 +260,158 @@ def init_project(
     init_all_dependencies(project_path=project_path, n_workers=max_workers, verbose=verbose)
 
 
+def init_segmentation_parameters(
+        seg_name,
+        params=None,
+        project_path=None,
+        verbose=False
+):
+
+    if verbose:
+        print(f'project_path = {project_path}')
+
+    # Copy the default parameters
+    copy_default_params(
+        params=('segmentation',),
+        target_names=(seg_name,),
+        project_path=project_path,
+        verbose=verbose
+    )
+
+    # Query the parameters (if params == None)
+    query_parameters({seg_name: params})
+
+
+def init_segmentation(
+        organelle, suffix,
+        params=None,
+        project_path=None,
+        max_workers=1,
+        verbose=False
+):
+    """
+    Initializes a segmentation
+
+    :param organelle: Name of the target organelle
+    :param suffix: This string is appended to form the segmentation image ID.
+        For example:
+            organelle="mito"
+            suffix="iter01"
+        Yields segmentation_id = "mito_iter01"
+    :param params: dictionary or json file containing a dictionary with parameters for segmentation computation
+        None (default): the user will be queried for parameters
+        "suppress_query": a default set will be used without user query
+            (see inf_proj/params/segmentation_defaults.json)
+        "some_file.json": This file has to define ALL required parameters
+            (see inf_proj/params/segmentation_defaults.json)
+    :param project_path: Path of the project
+    :param max_workers: The maximum amount of parallel workers used while setting up the segmentation    :param verbose:
+
+    :return:
+    """
+
+    if verbose:
+        print(f'project_path = {project_path}')
+
+    seg_name = str.join('_', [organelle, suffix])
+
+    # Copy the default parameters
+    init_segmentation_parameters(
+        seg_name, params=params, project_path=project_path, verbose=verbose
+    )
+
+    # Initialize the config file
+    init_image_config(
+        seg_name, project_path=project_path
+    )
+
+    # Update the segmentation config json
+    # FIXME this should go into a function somewhere
+    config_seg = get_config(seg_name, project_path=project_path)
+    seg_resolution = config_seg['resolution']
+    config_raw = get_config('raw', project_path=project_path)
+    raw_resolution = config_raw['resolution']
+    raw_shape = config_raw['shape']
+    config_seg_fp = get_config_filepath(seg_name, project_path=project_path)
+    seg_shape = (
+            np.array(raw_shape) * np.array(raw_resolution) / np.array(seg_resolution).astype(float)
+    ).astype(int).tolist()
+    add_to_config_json(
+        config_seg_fp,
+        {
+            'shape': seg_shape,
+            'dep_datasets': [  # The order here is super critical, only the last one is used for Snakemake!
+                'raw',
+                'membrane_prediction',
+                'supervoxels'
+            ],
+            'add_dependencies': [
+                {
+                    'rule_def': 'train_segmentation.smk',
+                    'output': [
+                        f'train_{seg_name}_rf.pkl',
+                        f'train_{seg_name}_nrf.pkl'
+                    ]
+                }
+            ],
+            'add_downstream': [
+                {
+                    'rule_def': 'run_multicut.smk',
+                    'output': "run_multicut_{dataset}_{param}_{idx}.json",
+                    'param': 'mc_args:betas'
+                }
+            ],
+            'run_script': 'predict_segmentation.py',
+            'extension': 'pkl'
+            # 'prepare': 'segmentation'  # FIXME what's this?
+        },
+        verbose=verbose
+    )
+
+    # Compute position grid for each dataset
+    compute_all_task_positions(images=(seg_name,), project_path=project_path, verbose=verbose)
+
+    # Initialize the dependencies for each image
+    init_all_dependencies(images=(seg_name,), project_path=project_path, n_workers=max_workers, verbose=verbose)
+
+
+def init_beta_map(
+        name,
+        base_segmentation,
+        beta,
+        project_path=None,
+        verbose=False
+):
+
+    if verbose:
+        print(f'name = {name}')
+        print(f'base_segmentation = {base_segmentation}')
+
+    # # Make an entry in the main config
+    # config_bm_fp = os.path.join(get_config_path(project_path=project_path), f'config_{name}.json')
+    # config_bm_rel = os.path.join(get_config_path(relpath=True, project_path=project_path), f'config_{name}.json')
+    # config_main_fp = get_config_filepath('main', project_path=project_path)
+    # add_to_config_json(config_main_fp, {'configs': {name: '{project_path}' + config_bm_rel}})
+    #
+    # # Copy the config from the main segmentation
+    # base_seg_config_fp = get_config_filepath(base_segmentation, project_path=project_path)
+    # copy(base_seg_config_fp, config_bm_fp)
+    #
+    # # Adapt a few settings
+    # add_to_config_json(
+    #     config_bm_fp,
+    #     {
+    #         'mc_args': {'beta': beta},
+    #         'run_script': 'run_multicut.py'
+    #     }
+    # )
+
+    config_seg = get_config(base_segmentation, project_path=project_path)
+    if 'segmentations' in config_seg and name in config_seg['segmentations']:
+        return
+
+    # Initialize the Mobie project
+    init_segmentation_map(
+        name, base_segmentation, 'CebraINF', beta, project_path=project_path, verbose=verbose
+    )
 

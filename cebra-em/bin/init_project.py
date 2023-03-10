@@ -8,7 +8,11 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Initializes a CebraEM project',
+        description='Initializes a CebraEM project\n\n'
+                    'Next steps:\n'
+                    '  - Run membrane prediction and supervoxels:  `run.py -t supervoxels`\n'
+                    '  - Initialize a segmentation:                `init_segmentation.py [args]`\n'
+                    '  - Initialize ground truth cubes:            `init_gt.py [args]`\n',
         formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument('project_path', type=str, default=None,

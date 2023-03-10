@@ -127,13 +127,31 @@ def prepare_run_snakefile(targets, project_path, verbose=False):
                 for output in outputs:
                     additional_inp_str += f'\n        os.path.join(project_path, "snk_wf", "{output}"),'
 
-                with open(os.path.join('inf_snake_utils', f'{rule_def}'), mode='r') as f:
+                with open(os.path.join(get_repo_path(), 'snakefiles', f'{rule_def}'), mode='r') as f:
                     add_block = f.read()
 
                 add_block.replace('<priority>', str(priority + 9))
                 block += add_block
 
         block = block.replace('<additional_input>', additional_inp_str)
+        return block
+
+    def _downstream_dependency(block, dataset, priority):
+
+        conf_ds = get_config(dataset)
+
+        if 'add_downstream' in conf_ds:
+
+            downstreams = conf_ds['add_downstream']
+            for downstream in downstreams:
+                rule_def = downstream['rule_def']
+
+                with open(os.path.join(get_repo_path(), 'snakefiles', f'{rule_def}'), mode='r') as f:
+                    add_block = f.read()
+
+                add_block.replace('<priority>', str(priority))
+                block += add_block
+
         return block
 
     def _get_resources_str(resources):
@@ -150,19 +168,18 @@ def prepare_run_snakefile(targets, project_path, verbose=False):
     def _make_block(target, priority):
         conf_tgt = get_config(target, project_path=project_path)
 
-        if 'run_script' in conf_tgt.keys():
-            run_script = conf_tgt['run_script']
-        else:
-            # run_script = f'run_{target}.py'
-            run_script = f'run_task.py'
+        run_script = conf_tgt['run_script'] if 'run_script' in conf_tgt else f'run_task.py'
+        extension = conf_tgt['extension'] if 'extension' in conf_tgt else 'json'
         resources = _get_resources_str(conf_tgt['resources'])
 
         block = source_block
         block = _additional_dependencies(block, target, priority)
+        block = _downstream_dependency(block, target, priority)
         block = block.replace('<name>', target)
         block = block.replace('<priority>', str(priority))
         block = block.replace('<run_script>', run_script)
         block = block.replace('<resources>', resources)
+        block = block.replace('<extension>', extension)
 
         with open(snakefile_fp, mode='a') as f:
             f.write(block)
@@ -243,4 +260,39 @@ def prepare_run(
 
     # Prepare the snakefiles
     prepare_run_snakefile(targets=targets, project_path=project_path, verbose=verbose)
+
+
+def find_non_processed_items(items):
+
+    unprocessed = {}
+    for key, val in items.items():
+        if val['status'] == 'pending':
+            unprocessed[key] = val
+
+    return unprocessed
+
+
+def prepare_gt_extract(project_path=None, verbose=False):
+
+    name = 'gt'
+
+    if verbose:
+        print(f'Running {name} extract!')
+
+    def _roi_from_gt_cube_position(item):
+        return list(item['position']) + list(item['shape'])
+
+    # Determine gt cubes that are not extracted yet and put them in the queue
+    queue = find_non_processed_items(get_config(name, project_path=project_path))
+
+    if verbose:
+        print(f'queue = {queue}')
+
+    # Determine the rois for each element in the queue
+    roi = [_roi_from_gt_cube_position(val) for key, val in queue.items()]
+
+    if verbose:
+        print(f'roi = {roi}')
+
+    prepare_run(f'{name}_cubes', roi=roi, misc=list(queue.keys()), project_path=project_path, verbose=verbose)
 
