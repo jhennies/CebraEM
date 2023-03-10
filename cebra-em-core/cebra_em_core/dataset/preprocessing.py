@@ -51,14 +51,23 @@ def read_volume_from_tif_stack(in_path, roi, clip_values, verbose=False):
 
 def read_volume_from_container(in_filepath, roi, clip_values, key, axes_order='zyx'):
 
-    axes = dict(z=0, y=1, x=2)
+    if axes_order == 'zyx':
+        axes = dict(z=0, y=1, x=2)
+    elif axes_order == 'xyz':
+        axes = dict(x=0, y=1, z=2)
+    else:
+        raise NotImplementedError(f'Axes order {axes_order} not implemented!')
+
     axes_order_list = list(axes_order)
 
     if roi is not None:
-        roi = np.s_[[np.s_[roi[axes[a]]: roi[axes[a]] + roi[axes[a] + 3]] for a in axes_order_list]]
+        roi = tuple([np.s_[roi[axes[a]]: roi[axes[a]] + roi[axes[a] + 3]] for a in axes_order_list])
     else:
         roi = np.s_[:]
 
+    print(f'roi = {roi}')
+
+    # FIXME this doesn't work
     try:
         with open_file(in_filepath, mode='r') as f:
             data = f[key][roi]
@@ -150,7 +159,7 @@ def convert_to_bdv(
 
     # Load data (use a ROI if specified)
     print('Reading data ...')
-    if os.path.isdir(source_path):
+    if os.path.isdir(source_path) and os.path.splitext(source_path)[1] != '.n5':
         # Assuming a directory with tif files
         volume = read_volume_from_tif_stack(source_path, roi, clip_values, verbose=verbose)
     else:
@@ -158,7 +167,7 @@ def convert_to_bdv(
             print(f'Found {file_type} file extension')
         if file_type == '.n5' or file_type == '.h5':
             assert key is not None
-            volume = read_volume_from_container(source_path, roi, clip_values, key)
+            volume = read_volume_from_container(source_path, roi, clip_values, key, axes_order='xyz')
         elif file_type == '.model':
             if key is None:
                 key = 'mibModel'

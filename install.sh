@@ -51,7 +51,7 @@ fi
 source activate base
 
 # Always create an environment with python, elf and vigra
-"$CONDA" create -y -n "$NAME" -c conda-forge python=3.9 python-elf pybdv mobie_utils=0.3 vigra bioimageio.core numba=0.54 || exit 1
+"$CONDA" create -y -n "$NAME" -c conda-forge python=3.9 python-elf pybdv mobie_utils=0.3 vigra bioimageio.core || exit 1
 conda activate "$NAME" || exit 1
 conda list
 # And always install the cebra-em-core package
@@ -64,6 +64,9 @@ fi
 if [ "$PACKAGE" == em ] || [ "$PACKAGE" == all ]; then
   pip install -e ./cebra-em/ || exit 1
 fi
+
+# Numba makes problems, so upgrading to version 0.54
+"$CONDA" install -y -c conda-forge numba=0.54
 
 # Install torch by default
 if [ "$TORCH" == true ]; then

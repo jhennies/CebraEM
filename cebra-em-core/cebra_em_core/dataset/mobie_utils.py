@@ -7,7 +7,7 @@ import pandas as pd
 from pybdv.metadata import get_data_path, get_attributes, get_resolution
 from mobie.utils import require_dataset_and_view
 from mobie.xml_utils import copy_xml_with_newpath
-from mobie.metadata.source_metadata import add_source_to_dataset
+from mobie.metadata.source_metadata import add_source_metadata
 from cebra_em_core.project_utils.config import absolute_path, get_config, add_to_config_json, get_config_filepath
 from cebra_em_core.dataset.bdv_utils import is_h5, get_shape, create_empty_dataset
 from pybdv.util import get_key, open_file
@@ -102,11 +102,14 @@ def init_with_raw(mobie_project_path, dataset_name, raw_xml_path, image_name, pr
     _resolution_to_micrometer(xml_path)
 
     # Add the metadata
-    # add_source_metadata(dataset_folder, 'image', image_name, xml_path, overwrite=True, view=view)
-    add_source_to_dataset(
+    add_source_metadata(
         dataset_folder, 'image', image_name, xml_path,
         overwrite=True, view=view
     )
+    # add_source_to_dataset(
+    #     dataset_folder, 'image', image_name, xml_path,
+    #     overwrite=True, view=view
+    # )
 
     raw_attributes = get_attributes(xml_path, 0)
     raw_resolution = get_resolution(xml_path, 0)
@@ -202,9 +205,9 @@ def _make_empty_dataset(
         contrast_limits=contrast_limits
     )
 
-    add_source_to_dataset(
-        absolute_path(dataset_path, project_path=project_path),
-        source_type, image_name, xml_path, overwrite=True, view=view
+    add_source_metadata(
+        absolute_path(dataset_path, project_path=project_path), 'image', image_name, xml_path,
+        overwrite=True, view=view
     )
 
     return xml_rel_path
@@ -397,9 +400,13 @@ def init_mask(dataset_folder, mask_xml_path, image_name, project_path=None, verb
     _make_table(os.path.join(table_folder, 'default.tsv'), args['ids'])
 
     # Add the metadata
-    add_source_to_dataset(
+    add_source_metadata(
         dataset_folder, 'segmentation', image_name, xml_path,
-        overwrite=True, table_folder=table_folder, view=view)
+        overwrite=True, view=view, table_folder=table_folder
+    )
+    # add_source_to_dataset(
+    #     dataset_folder, 'segmentation', image_name, xml_path,
+    #     overwrite=True, table_folder=table_folder, view=view)
 
     # Update config
     add_to_config_json(
@@ -456,16 +463,6 @@ def init_segmentation_map(
         verbose=verbose
     )
 
-    # # The final stitched dataset
-    # stitched_xml_rel_path = _make_empty_dataset(
-    #     stitched_name_hyph,
-    #     seg_shape,
-    #     dataset_name,
-    #     seg_resolution,
-    #     project_path=project_path,
-    #     verbose=verbose
-    # )
-
     # Not adding the default table until it is actually used!
     # # Add the default table
     # make_table(os.path.join(data_structure_folder, 'tables', seg_name, 'default.csv'))
@@ -502,29 +499,3 @@ def init_segmentation_map(
         },
         verbose=verbose
     )
-
-    # add_to_config_json(
-    #     config_seg_fp,
-    #     {
-    #         'resolution': seg_resolution,
-    #         'shape': seg_shape,
-    #         'dep_datasets': [  # The order here is super critical, only the last one is used for Snakemake!
-    #             'raw',
-    #             'membrane_prediction',
-    #             'supervoxels'
-    #         ],
-    #         'xml_path': xml_rel_path,
-    #         "data_writing": {
-    #             "type": "segmentation",
-    #             "stitch_method": "crop",
-    #             "stitch_kwargs": {},
-    #             "background_value": 0,
-    #             "downscale_mode": "nearest",
-    #             "unique_labels": True,
-    #             "dtype": "uint64"
-    #         },
-    #         'add_dependencies': [],
-    #         # 'prepare': 'segmentation'
-    #     },
-    #     verbose=verbose
-    # )
