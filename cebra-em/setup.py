@@ -19,7 +19,6 @@ setup(
     # description='',
     # long_description='',
     install_requires=[
-        'snakemake',
-        'scikit-image==0.18'
+        'snakemake'
     ]
 )

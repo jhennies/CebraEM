@@ -7,7 +7,7 @@ import pandas as pd
 from pybdv.metadata import get_data_path, get_attributes, get_resolution
 from mobie.utils import require_dataset_and_view
 from mobie.xml_utils import copy_xml_with_newpath
-from mobie.metadata.source_metadata import add_source_metadata
+from mobie.metadata.source_metadata import add_source_to_dataset
 from cebra_em_core.project_utils.config import absolute_path, get_config, add_to_config_json, get_config_filepath
 from cebra_em_core.dataset.bdv_utils import is_h5, get_shape, create_empty_dataset
 from pybdv.util import get_key, open_file
@@ -91,7 +91,7 @@ def init_with_raw(mobie_project_path, dataset_name, raw_xml_path, image_name, pr
         menu_name=None,
         view=None,
         is_default_dataset=True,
-        # contrast_limits=[0, 255]
+        contrast_limits=[0, 255]
     )
 
     # The target xml file in the new Mobie project
@@ -102,14 +102,14 @@ def init_with_raw(mobie_project_path, dataset_name, raw_xml_path, image_name, pr
     _resolution_to_micrometer(xml_path)
 
     # Add the metadata
-    add_source_metadata(
-        dataset_folder, 'image', image_name, xml_path,
-        overwrite=True, view=view
-    )
-    # add_source_to_dataset(
+    # add_source_metadata(
     #     dataset_folder, 'image', image_name, xml_path,
     #     overwrite=True, view=view
     # )
+    add_source_to_dataset(
+        dataset_folder, 'image', image_name, xml_path,
+        overwrite=True, view=view
+    )
 
     raw_attributes = get_attributes(xml_path, 0)
     raw_resolution = get_resolution(xml_path, 0)
@@ -202,10 +202,14 @@ def _make_empty_dataset(
         menu_name=None,
         view=None,
         is_default_dataset=False,
-        # contrast_limits=contrast_limits
+        contrast_limits=contrast_limits
     )
 
-    add_source_metadata(
+    # add_source_metadata(
+    #     absolute_path(dataset_path, project_path=project_path), 'image', image_name, xml_path,
+    #     overwrite=True, view=view
+    # )
+    add_source_to_dataset(
         absolute_path(dataset_path, project_path=project_path), 'image', image_name, xml_path,
         overwrite=True, view=view
     )
@@ -400,13 +404,13 @@ def init_mask(dataset_folder, mask_xml_path, image_name, project_path=None, verb
     _make_table(os.path.join(table_folder, 'default.tsv'), args['ids'])
 
     # Add the metadata
-    add_source_metadata(
-        dataset_folder, 'segmentation', image_name, xml_path,
-        overwrite=True, view=view, table_folder=table_folder
-    )
-    # add_source_to_dataset(
+    # add_source_metadata(
     #     dataset_folder, 'segmentation', image_name, xml_path,
-    #     overwrite=True, table_folder=table_folder, view=view)
+    #     overwrite=True, view=view, table_folder=table_folder
+    # )
+    add_source_to_dataset(
+        dataset_folder, 'segmentation', image_name, xml_path,
+        overwrite=True, table_folder=table_folder, view=view)
 
     # Update config
     add_to_config_json(
