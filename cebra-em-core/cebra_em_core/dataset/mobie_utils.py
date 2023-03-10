@@ -91,7 +91,7 @@ def init_with_raw(mobie_project_path, dataset_name, raw_xml_path, image_name, pr
         menu_name=None,
         view=None,
         is_default_dataset=True,
-        contrast_limits=[0, 255]
+        # contrast_limits=[0, 255]
     )
 
     # The target xml file in the new Mobie project
@@ -202,7 +202,7 @@ def _make_empty_dataset(
         menu_name=None,
         view=None,
         is_default_dataset=False,
-        contrast_limits=contrast_limits
+        # contrast_limits=contrast_limits
     )
 
     add_source_metadata(
