@@ -124,6 +124,25 @@ elif run_type == 'gt_cubes':
 
     include: os.path.join(project_path, 'snakemake', 'run_blocks.smk')
 
+elif run_type == 'stitch':
+    print(run_info)
+
+    assert len(targets) == 1
+    target = targets[0]
+
+    rule all:
+        input:
+            expand(
+                os.path.join(
+                    project_path,
+                    'snk_wf',
+                    'apply_mapping_{target}_{idx}.done'.format(target=target, idx='{idx}')
+                ),
+                idx=indices[targets[0]]
+            )
+
+    include: os.path.join(project_path, 'snakemake', 'stitch_segmentation.smk')
+
 else:
     raise ValueError('Invalid run type')
 

@@ -34,12 +34,26 @@ def get_config_filepath(image_name, project_path=None):
     return absolute_path(config_main['configs'][image_name], project_path=project_path)
 
 
-
 def get_config(image_name, project_path=None):
     config_fp = get_config_filepath(image_name, project_path=project_path)
     with open(config_fp, 'r') as f:
         conf = json.load(f)
     return conf
+
+
+def extend_dict(base_dict, in_dict):
+
+    for k, v in in_dict.items():
+        if type(v) == dict:
+            if k not in base_dict.keys():
+                base_dict[k] = {}
+            extend_dict(base_dict[k], v)
+        elif type(v) == np.ndarray:
+            base_dict[k] = v.tolist()
+        else:
+            base_dict[k] = v
+
+    return base_dict
 
 
 def add_to_config_json(filename, data, verbose=False):
@@ -54,20 +68,22 @@ def add_to_config_json(filename, data, verbose=False):
     else:
         config = {}
 
-    for k, v in data.items():
-        if k not in config.keys():
-            config[k] = {}
-        if type(v) == dict:
-            for kk, vv in v.items():
-                if type(vv) == np.ndarray:
-                    config[k][kk] = vv.tolist()
-                else:
-                    config[k][kk] = vv
-        else:
-            if type(v) == np.ndarray:
-                config[k] = v.tolist()
-            else:
-                config[k] = v
+    config = extend_dict(config, data)
+
+    # for k, v in data.items():
+    #     if k not in config.keys():
+    #         config[k] = {}
+    #     if type(v) == dict:
+    #         for kk, vv in v.items():
+    #             if type(vv) == np.ndarray:
+    #                 config[k][kk] = vv.tolist()
+    #             else:
+    #                 config[k][kk] = vv
+    #     else:
+    #         if type(v) == np.ndarray:
+    #             config[k] = v.tolist()
+    #         else:
+    #             config[k] = v
 
     with open(filename, 'w') as f:
         json.dump(config, f, indent=2)

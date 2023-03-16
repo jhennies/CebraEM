@@ -65,9 +65,14 @@ def generate_run_json(
     snakemake_path = _snakemake_path(project_path=project_path)
     run_json_fp = os.path.join(snakemake_path, 'run.json')
 
+    if verbose:
+        print(f'targets = {targets}')
     if targets == 'gt_cubes' or targets == 'val_cubes':
         run_type = targets
         targets = ['supervoxels']
+    elif targets[:7] == 'stitch-':
+        run_type = 'stitch'
+        targets = [targets[7:]]
     else:
         run_type = 'run'
 
@@ -296,3 +301,50 @@ def prepare_gt_extract(project_path=None, verbose=False):
 
     prepare_run(f'{name}_cubes', roi=roi, misc=list(queue.keys()), project_path=project_path, verbose=verbose)
 
+
+def prepare_stitching(
+        target,
+        beta,
+        roi=None,
+        unit='px',
+        project_path=None,
+        verbose=False
+):
+    if verbose:
+        print(f'Running stitching for {target}')
+
+    # Make sure roi is a list of rois
+    if roi is not None:
+        if type(roi[0]) != tuple and type(roi[0]) != list:
+            roi = [roi]
+    else:
+        roi = [None]
+
+    generate_run_json(
+        target,
+        roi=roi,
+        unit=unit,
+        misc=dict(beta=beta),
+        project_path=project_path,
+        verbose=verbose
+    )
+
+    snakefile_path = _snakemake_path(project_path)
+    snakefile_fp = os.path.join(snakefile_path, 'stitch_segmentation.smk')
+    repo_path = get_repo_path()
+    snake_template_path = os.path.join(repo_path, 'snakefiles')
+
+    src = os.path.join(snake_template_path, 'stitch_segmentation.smk')
+    tgt = snakefile_fp
+
+    # Read the template snakefile
+    with open(src, mode='r') as f:
+        source_block = f.read()
+
+    source_block = source_block.replace('<name>', target[7:])
+
+    print(source_block)
+
+    # Write the result snakefile
+    with open(tgt, mode='w') as f:
+        f.write(source_block)
