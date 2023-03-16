@@ -1,5 +1,6 @@
 
 import numpy as np
+from vigra.analysis import labelMultiArrayWithBackground
 from pybdv.util import open_file, get_key
 from pybdv.metadata import get_data_path
 import pickle
@@ -20,12 +21,25 @@ def match_ids_at_block_faces(block_faces):
         bf_in = bf[1]
         bfr_in = bf[0]
 
+        bf_in_rel = labelMultiArrayWithBackground(bf_in.astype('uint32'), background_value=0)
+        bfr_in_rel = labelMultiArrayWithBackground(bfr_in.astype('uint32'), background_value=0)
+
+        # print(f'np.unique(bf_in) = {np.unique(bf_in)}')
+        # print(f'np.unique(bfr_in) = {np.unique(bfr_in)}')
+        # print(f'np.unique(bf_in_rel) = {np.unique(bf_in_rel)}')
+        # print(f'np.unique(bfr_in_rel) = {np.unique(bfr_in_rel)}')
+
         map = {}
-        for lbl in np.unique(bf_in):
-            if lbl > 0:
-                ref_lbl, overlap_ratio = largest_non_zero_overlap(bf_in, bfr_in, lbl)
-                if ref_lbl is not None and overlap_ratio > 0.5:
-                    map[int(lbl)] = int(ref_lbl)
+        for lbl_rel in np.unique(bf_in_rel):
+            if lbl_rel > 0:
+                ref_lbl_rel, overlap_ratio = largest_non_zero_overlap(bf_in_rel, bfr_in_rel, lbl_rel)
+                if ref_lbl_rel is not None and overlap_ratio > 0.5:
+                    lbl = int(bf_in[np.where(bf_in_rel == lbl_rel)].mean())
+                    ref_lbl = int(bfr_in[np.where(bfr_in_rel == ref_lbl_rel)].mean())
+                    if lbl in map:
+                        map[lbl].append(ref_lbl)
+                    else:
+                        map[lbl] = [ref_lbl]
 
         return map
 
