@@ -95,6 +95,9 @@ def create_empty_dataset(
         write_n5_metadata(data_path, factors, resolution, setup_id, timepoint, overwrite=False)
 
     # write bdv xml metadata
+    print(f'setup_id = {setup_id}')
+    print(f'setup_name = {setup_name}')
+    print(f'xml_path = {xml_path}')
     write_xml_metadata(xml_path, data_path, unit,
                        resolution, is_h5,
                        setup_id=setup_id,

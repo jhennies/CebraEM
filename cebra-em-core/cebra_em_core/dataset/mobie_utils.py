@@ -431,6 +431,7 @@ def init_segmentation_map(
         dataset_name,
         beta,
         project_path=None,
+        stitched=False,
         verbose=False
 ):
 
@@ -473,33 +474,49 @@ def init_segmentation_map(
 
     # _______________________________________________________________________________
     # Update the segmentation config json
-    add_to_config_json(
-        config_seg_fp,
-        {
-            'segmentations': {
-                seg_name: {
-                    'beta': beta,
-                    'resolution': seg_resolution,
-                    'shape': seg_shape,
-                    'dep_datasets': [  # The order here is super critical, only the last one is used for Snakemake!
-                        'raw',
-                        'membrane_prediction',
-                        'supervoxels'
-                    ],
-                    'xml_path': xml_rel_path,
-                    "data_writing": {
-                        "type": "segmentation",
-                        "stitch_method": "crop",
-                        "stitch_kwargs": {},
-                        "background_value": 0,
-                        "downscale_mode": "nearest",
-                        "unique_labels": True,
-                        "dtype": "uint64"
-                    },
-                    'add_dependencies': [],
-                    # 'prepare': 'segmentation'
+
+    if not stitched:
+        add_to_config_json(
+            config_seg_fp,
+            {
+                'segmentations': {
+                    seg_name: {
+                        'beta': beta,
+                        'resolution': seg_resolution,
+                        'shape': seg_shape,
+                        'dep_datasets': [  # The order here is super critical, only the last one is used for Snakemake!
+                            'raw',
+                            'membrane_prediction',
+                            'supervoxels'
+                        ],
+                        'xml_path': xml_rel_path,
+                        "data_writing": {
+                            "type": "segmentation",
+                            "stitch_method": "crop",
+                            "stitch_kwargs": {},
+                            "background_value": 0,
+                            "downscale_mode": "nearest",
+                            "unique_labels": True,
+                            "dtype": "uint64"
+                        },
+                        'add_dependencies': [],
+                        # 'prepare': 'segmentation'
+                    }
                 }
-            }
-        },
-        verbose=verbose
-    )
+            },
+            verbose=verbose
+        )
+    else:
+        add_to_config_json(
+            config_seg_fp,
+            {
+                'segmentations': {
+                    seg_name[:-9]: {
+                        'xml_path_stitched': xml_rel_path,
+                    }
+                }
+            },
+            verbose=verbose
+        )
+
+

@@ -4,7 +4,7 @@ import snakemake
 from multiprocessing import Process
 import shutil
 
-from cebra_em.prepare_snakefiles import prepare_run, prepare_gt_extract
+from cebra_em.prepare_snakefiles import prepare_run, prepare_gt_extract, prepare_stitching
 from cebra_em_core.project_utils.project import (
     get_current_project_path,
     lock_project,
@@ -12,6 +12,7 @@ from cebra_em_core.project_utils.project import (
 )
 from cebra_em.misc.repo import get_repo_path
 from cebra_em_core.project_utils.config import get_config
+from cebra_em_core.cebra_em_project import init_beta_map
 
 
 def _snakemake(*args, **kwargs):
@@ -68,9 +69,23 @@ def run_snakemake(project_path, verbose=False, return_thread=False, **kwargs):
         snk_p.join()
 
 
+def _parameter_str_to_dict(params):
+    if params is None:
+        return dict()
+    params = str.split(params, '=')
+    param_dict = dict()
+    for idx in range(0, len(params), 2):
+        try:
+            param_dict[params[idx]] = int(params[idx + 1])
+        except ValueError:
+            param_dict[params[idx]] = float(params[idx + 1])
+    return param_dict
+
+
 def run(
         project_path=None,
         target='membrane_prediction',
+        parameters=None,
         roi=None,
         unit='px',
         cores=None,
@@ -92,6 +107,8 @@ def run(
             gpus = 1
         else:
             gpus = 8
+
+    parameters = _parameter_str_to_dict(parameters)
 
     # Makes sure the project path is not None and points to a valid project
     project_path = get_current_project_path(project_path=project_path)
@@ -171,6 +188,30 @@ def run(
             unit=unit,
             project_path=project_path,
             verbose=verbose)
+    elif target[:7] == 'stitch-':
+        # This requests the stitching
+        assert 'beta' in parameters, 'Supply a value for beta using "--param beta=0.5"'
+        base_target = target[7:]
+        config_seg = get_config(base_target, project_path=project_path)
+        beta_target = f'{base_target}_b{str.replace(str(parameters["beta"]), ".", "_")}'
+        if not 'xml_path_stitched' in config_seg['segmentations'][beta_target]:
+            init_beta_map(
+                f'{beta_target}_stitched',
+                base_target,
+                parameters['beta'],
+                stitched=True,
+                project_path=project_path,
+                verbose=verbose
+            )
+
+        prepare_stitching(
+            target,
+            parameters['beta'],
+            roi=roi,
+            unit=unit,
+            project_path=project_path,
+            verbose=verbose
+        )
     else:
         # --- Assuming a segmentation! ---
         # # Make a target list since we need multiple targets here
@@ -181,13 +222,10 @@ def run(
         betas = config_seg['mc_args']['betas']
         beta_targets.extend([f'{target}_b{str.replace(str(beta), ".", "_")}' for beta in betas])
         # Initialize the beta maps (if they don't exist yet)
-        from cebra_em_core.cebra_em_project import init_beta_map
+        print(beta_targets)
         for idx, bm in enumerate(beta_targets):
-            try:
-                # Requesting a config that doesn't exist raises a KeyError
-                get_config(bm, project_path=project_path)
-            except KeyError:
-                print(f'Initializing {bm} with beta = {betas[idx]} ...')
+            if bm not in config_seg['segmentations'].keys():
+                print(f'Initializing beta map: {bm}')
                 init_beta_map(
                     bm,
                     target,
@@ -195,6 +233,8 @@ def run(
                     project_path=project_path,
                     verbose=verbose
                 )
+            else:
+                print(f'Beta map {bm} exists.')
         # Prepare the run
         prepare_run(
             [target],
@@ -231,6 +271,10 @@ if __name__ == '__main__':
                               '    "supervoxels"\n'
                               '    "[any_segmentation_map_id]"\n'
                               '    "gt_cubes"'))
+    parser.add_argument('-par', '--parameters', type=str, default=None,
+                        help='Parameters that are fed to the workflow within run.json["misc"]\n'
+                             'For example when running stitching, define the beta-map: '
+                             'run.py -t stich-seg_map --param beta=0.6')
     parser.add_argument('-r', '--roi', type=float, default=None, nargs=6,
                         metavar=('Z', 'Y', 'X', 'depth', 'height', 'width'),
                         help='Defines a region of interest to which the requested run is confined')
@@ -260,6 +304,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     project_path = args.project_path
     target = args.target
+    parameters = args.parameters
     roi = args.roi
     unit = args.unit
     cores = int(args.cores) if args.cores is not None else None
@@ -278,6 +323,7 @@ if __name__ == '__main__':
     run(
         project_path=project_path,
         target=target,
+        parameters=parameters,
         roi=roi,
         unit=unit,
         cores=cores,
