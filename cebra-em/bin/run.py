@@ -1,20 +1,4 @@
 
-import os
-import snakemake
-from multiprocessing import Process
-import shutil
-
-from cebra_em.prepare_snakefiles import prepare_run, prepare_gt_extract, prepare_stitching
-from cebra_em_core.project_utils.project import (
-    get_current_project_path,
-    lock_project,
-    unlock_project
-)
-from cebra_em.misc.repo import get_repo_path
-from cebra_em_core.project_utils.config import get_config
-from cebra_em_core.cebra_em_project import init_beta_map
-
-
 def _snakemake(*args, **kwargs):
     print('Starting snakemake with:')
     print(args)
@@ -317,6 +301,24 @@ if __name__ == '__main__':
     restart_times = args.restart_times
     verbose = args.verbose
     dryrun = args.dryrun
+
+    # ----------------------------------------------------
+    # Imports
+
+    import os
+    import snakemake
+    from multiprocessing import Process
+    import shutil
+
+    from cebra_em.prepare_snakefiles import prepare_run, prepare_gt_extract, prepare_stitching
+    from cebra_em_core.project_utils.project import (
+        get_current_project_path,
+        lock_project,
+        unlock_project
+    )
+    from cebra_em.misc.repo import get_repo_path
+    from cebra_em_core.project_utils.config import get_config
+    from cebra_em_core.cebra_em_project import init_beta_map
 
     # ----------------------------------------------------
 
