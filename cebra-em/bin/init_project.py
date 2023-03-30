@@ -1,6 +1,4 @@
 
-from cebra_em_core import init_project
-
 
 if __name__ == '__main__':
 
@@ -61,6 +59,8 @@ if __name__ == '__main__':
     verbose = args.verbose
 
     # ----------------------------------------------------
+
+    from cebra_em_core import init_project
 
     init_project(
         project_path,
