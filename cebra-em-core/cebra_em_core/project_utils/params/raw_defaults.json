@@ -1,4 +1,5 @@
 {
   "xcorr": false,
-  "quantile_spacing": 0.02
+  "quantile_spacing": 0.02,
+  "quantile_samples": 10000
 }
