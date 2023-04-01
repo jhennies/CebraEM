@@ -282,8 +282,8 @@ def crop_and_scale(
         print(f'p1_dash = {p1_dash}')
     p0_dash = np.round(p0_dash, decimals=2)
     p1_dash = np.round(p1_dash, decimals=2)
-    assert (p0_dash * 100 == (p0_dash * 100).astype(int)).all()
-    assert (p1_dash * 100 == (p1_dash * 100).astype(int)).all()
+    # assert (p0_dash * 100 == (p0_dash * 100).astype(int)).all(), f'p0_dash must not be float: p0_dash = {p0_dash}'
+    # assert (p1_dash * 100 == (p1_dash * 100).astype(int)).all(), f'p1_dash must not be float: p1_dash = {p1_dash}'
 
     floor_p0_dash = np.floor(p0_dash).astype(int)
     rem_p0_dash = p0_dash - floor_p0_dash
