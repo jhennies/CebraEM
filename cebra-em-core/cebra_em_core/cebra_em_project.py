@@ -362,7 +362,8 @@ def init_segmentation(
                 }
             ],
             'run_script': 'predict_segmentation.py',
-            'extension': 'pkl'
+            'extension': 'pkl',
+            'segmentations': {}
             # 'prepare': 'segmentation'  # FIXME what's this?
         },
         verbose=verbose
