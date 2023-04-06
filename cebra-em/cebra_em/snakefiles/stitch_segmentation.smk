@@ -35,7 +35,7 @@ rule apply_mapping_<name>:
     output:
         os.path.join(project_path, "snk_wf", "apply_mapping_<name>_{idx}.done")
     resources:
-        cpus=1, mem_mb=1024, time_min=30, gpu=0
+        cpus=1, mem_mb=4096, time_min=30, gpu=0
     params:
         image_name="<name>",
         p='htc',
