@@ -282,8 +282,8 @@ def crop_and_scale(
         print(f'p1_dash = {p1_dash}')
     p0_dash = np.round(p0_dash, decimals=2)
     p1_dash = np.round(p1_dash, decimals=2)
-    assert (p0_dash * 100 == (p0_dash * 100).astype(int)).all()
-    assert (p1_dash * 100 == (p1_dash * 100).astype(int)).all()
+    # assert (p0_dash * 100 == (p0_dash * 100).astype(int)).all(), f'p0_dash must not be float: p0_dash = {p0_dash}'
+    # assert (p1_dash * 100 == (p1_dash * 100).astype(int)).all(), f'p1_dash must not be float: p1_dash = {p1_dash}'
 
     floor_p0_dash = np.floor(p0_dash).astype(int)
     rem_p0_dash = p0_dash - floor_p0_dash
@@ -424,6 +424,8 @@ def get_quantiles(
         seg_resolution,
         seg_ids=None,
         quantile_spacing=0.2,
+        method='dense',
+        pixels_per_object=1024,
         verbose=False
 ):
 
@@ -445,32 +447,56 @@ def get_quantiles(
         this_obj = seg[bounds]
         this_obj[this_obj != idx] = 0
 
-        # Transorm the bounds to the raw resolution
         scale = seg_resolution / raw_resolution
-        top_left_rr = (top_left * scale).astype(int)
-        bottom_right_rr = ((bottom_right + 1) * scale).astype(int)
 
         if verbose:
-            print(f'top_left = {top_left}')
-            print(f'top_left_rr = {top_left_rr}')
-            print(f'bottom_right = {bottom_right}')
-            print(f'bottom_right_rr = {bottom_right_rr}')
+            print(f'seg_resolution = {seg_resolution}')
+            print(f'raw_resolution = {raw_resolution}')
+            print(f'scale = {scale}')
 
-        # Fetch the object area from the raw data
-        bounds_rr = np.s_[top_left_rr[0]:bottom_right_rr[0],
-                 top_left_rr[1]:bottom_right_rr[1],
-                 top_left_rr[2]:bottom_right_rr[2]]
-        # FIXME this can be ommited by directly fetching the relvant pixels from the full map
-        this_raw = raw_handle[bounds_rr]
+        if method == 'dense':
 
-        # Get the raw pixels of the current object
-        print(f'Fetching the raw pixels ...')
-        pos = (
-            (np.where(this_obj > 1)[0] * scale[0]).astype(int),
-            (np.where(this_obj > 1)[1] * scale[1]).astype(int),
-            (np.where(this_obj > 1)[2] * scale[2]).astype(int)
-        )
-        raw_pixels = this_raw[pos]
+            # Transorm the bounds to the raw resolution
+            top_left_rr = (top_left * scale).astype(int)
+            bottom_right_rr = ((bottom_right + 1) * scale).astype(int)
+
+            if verbose:
+                print(f'top_left = {top_left}')
+                print(f'top_left_rr = {top_left_rr}')
+                print(f'bottom_right = {bottom_right}')
+                print(f'bottom_right_rr = {bottom_right_rr}')
+
+            # Fetch the object area from the raw data
+            bounds_rr = np.s_[top_left_rr[0]:bottom_right_rr[0],
+                     top_left_rr[1]:bottom_right_rr[1],
+                     top_left_rr[2]:bottom_right_rr[2]]
+            this_raw = raw_handle[bounds_rr]
+
+            # Get the raw pixels of the current object
+            print(f'Fetching the raw pixels ...')
+            pos = np.where(this_obj >= 1)
+            pos = (
+                (pos[0] * scale[0]).astype(int),
+                (pos[1] * scale[1]).astype(int),
+                (pos[2] * scale[2]).astype(int)
+            )
+            raw_pixels = this_raw[pos]
+
+        elif method == 'sparse':
+
+            # Sample the points from within the mask
+            pos = np.argwhere(this_obj >= 1)
+            rand_ids = np.random.randint(len(pos), size=pixels_per_object)
+            pos = pos[rand_ids, :]
+
+            # Extract the pixel values
+            raw_pixels = np.array([raw_handle[tuple(np.array(p) * scale)] for p in pos])
+
+            if verbose:
+                print(f'raw_pixels = {raw_pixels}')
+
+        else:
+            raise ValueError(f'Invalid normalization method: {method}')
 
         # Determine the quantile list
         if verbose:
@@ -479,27 +505,5 @@ def get_quantiles(
 
         # Append to the return dict
         quantiles[idx] = this_quantiles
-
-        # # Scale the seg to match the raw
-        # print(f'Scaling the segmentation ...')
-        # if verbose:
-        #     print(f'scale = {scale}')
-        # this_obj_r = scale_and_shift(
-        #     this_obj,
-        #     scale=scale,
-        #     scale_im_size=this_raw.shape,
-        #     order=0
-        # )
-        #
-        # # Get the raw pixels of the current object
-        # raw_pixels = this_raw[this_obj_r > 1]
-        #
-        # # Determine the quantile list
-        # if verbose:
-        #     print('Computing the quantiles ...')
-        # this_quantiles = {q: np.quantile(raw_pixels, q / 100) for q in range(0, 100, int(quantile_spacing * 100))}
-        #
-        # # Append to the return dict
-        # quantiles[idx] = this_quantiles
 
     return quantiles

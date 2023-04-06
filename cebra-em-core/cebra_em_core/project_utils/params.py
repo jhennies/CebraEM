@@ -7,12 +7,14 @@ from cebra_em_core.misc.repo import get_repo_path
 from cebra_em_core.project_utils.project import get_current_project_path
 
 
-if sys.platform == 'linux':
+if sys.platform == 'linux' or sys.platform == 'darwin':
     from cebra_em_core.linux.misc import show_in_editor
 elif sys.platform[:3] == 'win':
     from cebra_em_core.windows.misc import show_in_editor
 else:
-    raise RuntimeError(f'Running on {sys.platform} not supported! ')
+    # raise RuntimeError(f'Running on {sys.platform} not supported! ')
+    print(f'Warning: Running on {sys.platform} might not be supported!')
+    from cebra_em_core.linux.misc import show_in_editor
 
 
 def get_params_path(image_name, project_path=None):

@@ -144,7 +144,7 @@ def segmentation_cleanup(
 
     # Always relabel (FIXME needed?)
     # m = relabel_consecutive(m, sort_by_size=False) + 1
-    m = relabelConsecutive(m)[0] + 1
+    m = relabelConsecutive(m.astype('uint32'))[0] + 1
     # Assert supervoxel level
     m = transfer_seg_to_sv_level(m, sv, m_)
 

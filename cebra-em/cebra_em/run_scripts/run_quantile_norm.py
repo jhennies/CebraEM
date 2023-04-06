@@ -1,5 +1,6 @@
 
 import json
+import numpy as np
 from pybdv.util import open_file
 from pybdv.metadata import get_data_path, get_key
 
@@ -22,6 +23,7 @@ if __name__ == '__main__':
 
     config_raw = get_config('raw', project_path=project_path)
     quantile_spacing = config_raw['quantile_spacing']
+    quantile_samples = config_raw['quantile_samples']
     raw_resolution = config_raw['resolution']
     raw_xml_path = absolute_path(config_raw['xml_path'], project_path=project_path)
     raw_path = get_data_path(raw_xml_path, return_absolute_path=True)
@@ -37,7 +39,11 @@ if __name__ == '__main__':
     # Compute the quantiles
 
     raw_handle = open_file(raw_path, mode='r')[get_key(is_h5(raw_xml_path), 0, 0, 0)]
-    mask = open_file(mask_path, mode='r')[get_key(is_h5(mask_xml_path), 0, 0, mask_ds_level)][:]
+    with open_file(mask_path, mode='r') as f:
+        mask = f[get_key(is_h5(mask_xml_path), 0, 0, mask_ds_level)][:]
+        downsampling_factors = np.array(f[get_key(is_h5(mask_xml_path), 0, 0, mask_ds_level)].attrs['downsamplingFactors'])
+
+    mask_resolution = mask_resolution * downsampling_factors
 
     quantiles = get_quantiles(
         raw_handle,
@@ -46,6 +52,8 @@ if __name__ == '__main__':
         mask_resolution,
         seg_ids=mask_ids,
         quantile_spacing=quantile_spacing,
+        method='sparse' if quantile_samples > 0 else 'dense',
+        pixels_per_object=quantile_samples,
         verbose=verbose
     )
 
