@@ -6,7 +6,7 @@ rule run_multicut_<name>:
     output:
         os.path.join(project_path, "snk_wf", "run_multicut_<name>_{beta}_{idx}.json")
     resources:
-        cpus=1, mem_mb=1024, time_min=10, gpus=0
+        cpus=1, mem_mb=resources_<name>['mem_mb'], time_min=resources_<name>['time_min'], gpus=0
     params:
         image_name="<name>",
         p='htc',
