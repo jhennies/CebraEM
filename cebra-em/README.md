@@ -199,7 +199,7 @@ Then repeat with further iterations until the result is satisfactory (usually 2 
 
 A CebraEM project is wrapped around a MoBIE project and can be directly opened within the MoBIE viewer (https://github.com/mobie/mobie-viewer-fiji) (1). 
 
-Note that we are currently supporting MoBIE version 2.0.0
+Note that we are currently supporting MoBIE version 2.0.0 (Attached to the latest release).
 
 
 ## References
