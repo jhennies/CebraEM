@@ -208,6 +208,10 @@ def init_project(
     if verbose:
         print(f'project_path = {project_path}')
 
+    raw_data_xml = os.path.abspath(raw_data_xml)
+    if verbose:
+        print(f'raw_data_xml = {raw_data_xml}')
+
     print('')
     print('Making project structure ...')
 
