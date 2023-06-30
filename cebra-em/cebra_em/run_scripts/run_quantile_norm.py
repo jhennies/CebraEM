@@ -28,22 +28,30 @@ if __name__ == '__main__':
     raw_xml_path = absolute_path(config_raw['xml_path'], project_path=project_path)
     raw_path = get_data_path(raw_xml_path, return_absolute_path=True)
 
-    config_mask = get_config('mask', project_path=project_path)
-    mask_ids = config_mask['args']['ids']
-    mask_resolution = config_mask['resolution']
-    mask_ds_level = config_mask['ds_level_for_init']
-    mask_xml_path = absolute_path(config_mask['xml_path'], project_path=project_path)
-    mask_path = get_data_path(mask_xml_path, return_absolute_path=True)
+    try:
+        config_mask = get_config('mask', project_path=project_path)
+    except KeyError:
+        config_mask = None
+    if config_mask is not None:
+        mask_ids = config_mask['args']['ids']
+        mask_resolution = config_mask['resolution']
+        mask_ds_level = config_mask['ds_level_for_init']
+        mask_xml_path = absolute_path(config_mask['xml_path'], project_path=project_path)
+        mask_path = get_data_path(mask_xml_path, return_absolute_path=True)
+    else:
+        mask_ids = mask_resolution = mask_ds_level = mask_xml_path = mask_path = None
 
     # _______________________________________________________________________________
     # Compute the quantiles
 
     raw_handle = open_file(raw_path, mode='r')[get_key(is_h5(raw_xml_path), 0, 0, 0)]
-    with open_file(mask_path, mode='r') as f:
-        mask = f[get_key(is_h5(mask_xml_path), 0, 0, mask_ds_level)][:]
-        downsampling_factors = np.array(f[get_key(is_h5(mask_xml_path), 0, 0, mask_ds_level)].attrs['downsamplingFactors'])
-
-    mask_resolution = mask_resolution * downsampling_factors
+    if config_mask is not None:
+        with open_file(mask_path, mode='r') as f:
+            mask = f[get_key(is_h5(mask_xml_path), 0, 0, mask_ds_level)][:]
+            downsampling_factors = np.array(f[get_key(is_h5(mask_xml_path), 0, 0, mask_ds_level)].attrs['downsamplingFactors'])
+        mask_resolution = mask_resolution * downsampling_factors
+    else:
+        mask = None
 
     quantiles = get_quantiles(
         raw_handle,

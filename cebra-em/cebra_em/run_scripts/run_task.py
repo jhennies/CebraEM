@@ -161,6 +161,8 @@ if __name__ == '__main__':
     else:
         raw_quantiles = None
 
+    invert = config_raw['invert'] if 'invert' in config_raw else None
+
     # _______________________________________________________________________________
     # Retrieve the input
     input_data = load_data(
@@ -185,12 +187,15 @@ if __name__ == '__main__':
     if relative_quantiles is not None:
         input_data['raw'] = apply_normalization(
             input_data['raw'],
-            input_data['mask'],
+            input_data['mask'] if 'mask' in input_data else None,
             mask_ids,
             raw_quantiles,
             relative_quantiles,
             verbose=verbose
         )
+    if invert is not None and 'raw' in input_data:
+        assert input_data['raw'].dtype == 'uint8', 'Data inversion only implemented for 8bit data!'
+        input_data['raw'] = 255 - input_data['raw']
 
     # _______________________________________________________________________________
     # Run the task

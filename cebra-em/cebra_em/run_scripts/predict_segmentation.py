@@ -168,7 +168,6 @@ if __name__ == '__main__':
 
     # _______________________________________________________________________________
     # Write result file
-    # TODO write the output data
     with open(snakemake.output[0], 'wb') as f:
         pickle.dump(output_data, f)
 

@@ -79,22 +79,33 @@ def apply_normalization(
 
     alow, ahigh = np.array(relative_quantiles['anchors']) * 255
 
-    for idx in np.unique(mask):
-        if idx in mask_ids:
+    def normalize(pixels, alow, ahigh, qlow, qhigh):
+        pixels = pixels.astype('float64')
+        pixels -= qlow
+        pixels /= qhigh - qlow
+        pixels *= ahigh - alow
+        pixels += alow
+        pixels[pixels < 0] = 0
+        pixels[pixels > 255] = 255
+        pixels = np.round(pixels).astype('uint8')
+        return pixels
 
-            qlow = raw_quantiles[str(idx)][str(int(relative_quantiles['quantiles'][0] * 100))]
-            qhigh = raw_quantiles[str(idx)][str(int(relative_quantiles['quantiles'][1] * 100))]
+    if mask is not None:
 
-            pixels = raw[mask == idx]
-            pixels = pixels.astype('float64')
-            pixels -= qlow
-            pixels /= qhigh - qlow
-            pixels *= ahigh - alow
-            pixels += alow
-            pixels[pixels < 0] = 0
-            pixels[pixels > 255] = 255
-            pixels = np.round(pixels).astype('uint8')
-            raw[mask == idx] = pixels
+        for idx in np.unique(mask):
+            if idx in mask_ids:
+
+                qlow = raw_quantiles[str(idx)][str(int(relative_quantiles['quantiles'][0] * 100))]
+                qhigh = raw_quantiles[str(idx)][str(int(relative_quantiles['quantiles'][1] * 100))]
+
+                raw[mask == idx] = normalize(raw[mask == idx], alow, ahigh, qlow, qhigh)
+
+    else:
+
+        qlow = raw_quantiles['0'][str(int(relative_quantiles['quantiles'][0] * 100))]
+        qhigh = raw_quantiles['0'][str(int(relative_quantiles['quantiles'][1] * 100))]
+
+        raw = normalize(raw, alow, ahigh, qlow, qhigh)
 
     return raw
 
