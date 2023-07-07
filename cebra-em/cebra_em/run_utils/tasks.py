@@ -125,10 +125,20 @@ def compute_task_with_mask(func, vol, mask, mask_ids, halo=None, pad_result_vol=
     :return:
     """
 
+    vol = np.array(vol)
+
     def _get_bin_mask():
-        tm = np.zeros(mask.shape, dtype=bool)
-        for idx in mask_ids:
-            tm[mask == idx] = True
+        if mask is None:
+            if vol.ndim == 3:
+                tm = np.ones(vol.shape, dtype=bool)
+            elif vol.ndim == 4:
+                tm = np.ones(vol[0].shape, dtype=bool)
+            else:
+                raise NotImplementedError('Only 3 and 4 dimensional arrays are implemented!')
+        else:
+            tm = np.zeros(mask.shape, dtype=bool)
+            for idx in mask_ids:
+                tm[mask == idx] = True
         return tm
 
     bin_mask = _get_bin_mask()
@@ -141,14 +151,14 @@ def compute_task_with_mask(func, vol, mask, mask_ids, halo=None, pad_result_vol=
         halo_mask = bin_mask.copy()
 
     # Return if there is no data in the main ROI
-    if not halo_mask.any():
+    if not halo_mask.any() and pad_result_vol:  # FIXME
         if verbose:
             print(f'No data inside ROI, returning zeros ...')
         return np.zeros(vol.shape)
         # --------------------------------------
 
     # Simply compute if there is no background in the mask
-    if bin_mask.min() > 0:
+    if bin_mask.min() > 0 and pad_result_vol:  # FIXME
         if verbose:
             print(f'Mask fully within data, computing normally ...')
         return func(vol)
@@ -168,6 +178,7 @@ def compute_task_with_mask(func, vol, mask, mask_ids, halo=None, pad_result_vol=
     # Compute the respective subarea
     res = func(vol_in, mask=bin_mask[bounds])
 
+    print(f'pad_result_vol = {pad_result_vol}')
     if pad_result_vol:
 
         if verbose:
@@ -193,7 +204,6 @@ def compute_task_with_mask(func, vol, mask, mask_ids, halo=None, pad_result_vol=
         return vol_out
 
     else:
-
         return dict(
             result=res, mask=bin_mask[bounds], bounds=bounds, shape=bin_mask.shape
         )
