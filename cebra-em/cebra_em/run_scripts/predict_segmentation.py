@@ -47,7 +47,7 @@ def predict_segmentation(
     def run_predict_mc_wf_classifiers(vol, mask=None):
         return predict_mc_wf_classifiers(vol, rf_filepath, nrf_filepath, mask=mask, **seg_kwargs, verbose=verbose)
         # # Use this for debugging:
-        # return np.ones(vol.shape)
+        # return {'watershed': np.ones(vol.shape), 'edge_probs': [], 'node_probs': [], 'edge_sizes': []}
 
     out_dict = compute_task_with_mask(
         run_predict_mc_wf_classifiers, vol, mask,
@@ -55,6 +55,7 @@ def predict_segmentation(
         verbose=verbose
     )
 
+    print(f'out_dict.keys() = {out_dict.keys()}')
     return out_dict
 
     # mc_out, bounds, mask = out_dict['result'], out_dict['bounds'], out_dict['mask']
