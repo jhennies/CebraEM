@@ -1,4 +1,4 @@
-
+import click
 import os
 import numpy as np
 from shutil import copy
@@ -26,6 +26,7 @@ from cebra_em_core.dataset.mobie_utils import (
     init_mask,
     init_segmentation_map
 )
+from cebra_em_core.misc.cliutils import project_path_option, verbose_option, default_parameter_file
 from cebra_em_core.version import __version__
 
 
@@ -160,6 +161,17 @@ def init_mobie_dataset(
     )
 
 
+@click.command()
+@project_path_option(exists=False, default=os.path.join(os.getcwd(), "cebra_project"))
+@click.option("--raw-data-xml", type=click.Path(exists=True, dir_okay=False), required=True, help='BDV xml file from the raw data')
+@click.option("--mask-xml", type=click.Path(exists=True, dir_okay=False), help='BDV xml of a segmentation that will be used to mask computations')
+@click.option("--general-params", type=click.Path(exists=True, dir_okay=False), default=default_parameter_file("general_defaults.json"), help="JSON file containing a dictionary with set of parameters")
+@click.option("--mem-params", type=click.Path(exists=True, dir_okay=False), default=default_parameter_file("membrane_prediction_defaults.json"), help="JSON file containing a dictionary with parameters for the membrane prediction")
+@click.option("--sv-params", type=click.Path(exists=True, dir_okay=False), default=default_parameter_file("supervoxels_defaults.json"), help="JSON file containing a dictionary with parameters for supervoxel computation")
+@click.option("--mask-params", type=click.Path(exists=True, dir_okay=False), default=default_parameter_file("mask_defaults.json"), help="JSON file containing a dictionary with parameters for the mask")
+@click.option("--max-workers", type=int, default=1, help="The maximum amount of parallel workers used while setting up the project")
+@click.option("--force", type=bool, is_flag=True, help="Force the project creation even if target folder is not empty (use with care!)")
+@verbose_option
 def init_project(
         project_path,
         raw_data_xml,
@@ -173,34 +185,18 @@ def init_project(
         force=False,
         verbose=False
 ):
-    """
-    Initializes a CebraEM project
+    """Initializes a CebraEM project
 
-    :param project_path: Path of the project to be initialized
-    :param raw_data_xml: BDV xml file from the raw data
-    :param mask_xml: BDV xml of a segmentation that will be used to mask computations
-    :param mem_params: dictionary or json file containing a dictionary with parameters for the membrane prediction
-        None (default): the user will be queried for parameters
-        "suppress_query": a default set will be used without user query
-            (see inf_proj/params/membrane_prediction_defaults.json)
-        "some_file.json": This file has to define ALL required parameters
-            (see inf_proj/params/membrane_prediction_defaults.json)
-    :param sv_params: dictionary or json file containing a dictionary with parameters for supervoxel computation
-        None (default): the user will be queried for parameters
-        "suppress_query": a default set will be used without user query
-            (see inf_proj/params/supervoxels_defaults.json)
-        "some_file.json": This file has to define ALL required parameters
-            (see inf_proj/params/supervoxels_defaults.json)
-    :param mask_params: dictionary or json file containing a dictionary with parameters for the mask
-        None (default): the user will be queried for parameters
-        "suppress_query": a default set will be used without user query
-            (see inf_proj/params/mask_defaults.json)
-        "some_file.json": This file has to define ALL required parameters
-            (see inf_proj/params/mask_defaults.json)
-    :param max_workers: The maximum amount of parallel workers used while setting up the project
-    :param force: Force the project creation even if target folder is not empty (use with care!)
-    :param verbose:
-    :return:
+    Next steps after running this:
+    
+    * Run membrane prediction and supervoxels:
+    cebra run --target supervoxels
+
+    * Initialize a segmentation:
+    cebra init_segmentation [args]
+
+    * Initialize ground truth cubes:
+    cebra init_gt [args]
     """
 
     assert project_path is not None
@@ -286,33 +282,22 @@ def init_segmentation_parameters(
     query_parameters({seg_name: params})
 
 
+@click.command()
+@click.option("--organelle", type=str, required=True, help='Name of the target organelle')
+@click.option("--suffix", type=str, help='This string is appended to form the segmentation image ID e.g organelle="mito" and suffix="iter01" yields segmentation_id = "mito_iter01"')
+@click.option("--params", type=click.Path(dir_okay=False, exists=True), default=default_parameter_file("membrane_prediction_defaults.json"), help='JSON file containing a dictionary with parameters for the membrane prediction')
+@project_path_option(exists=True)
+@click.option("--max-workers", type=int, default=1, help='The maximum amount of parallel workers used while setting up the segmentation')
+@verbose_option
 def init_segmentation(
-        organelle, suffix,
+        organelle=None,
+        suffix=None,
         params=None,
         project_path=None,
         max_workers=1,
         verbose=False
 ):
-    """
-    Initializes a segmentation
-
-    :param organelle: Name of the target organelle
-    :param suffix: This string is appended to form the segmentation image ID.
-        For example:
-            organelle="mito"
-            suffix="iter01"
-        Yields segmentation_id = "mito_iter01"
-    :param params: dictionary or json file containing a dictionary with parameters for segmentation computation
-        None (default): the user will be queried for parameters
-        "suppress_query": a default set will be used without user query
-            (see inf_proj/params/segmentation_defaults.json)
-        "some_file.json": This file has to define ALL required parameters
-            (see inf_proj/params/segmentation_defaults.json)
-    :param project_path: Path of the project
-    :param max_workers: The maximum amount of parallel workers used while setting up the segmentation    :param verbose:
-
-    :return:
-    """
+    """Initializes a segmentation"""
 
     if verbose:
         print(f'project_path = {project_path}')

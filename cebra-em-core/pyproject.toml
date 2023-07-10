@@ -1,0 +1,50 @@
+# This section describes the requirements of the build/installation
+# process itself. Being able to do this was the original reason to
+# introduce pyproject.toml
+[build-system]
+requires = [
+    "setuptools >=61",
+    "setuptools_scm >=7",
+]
+build-backend = "setuptools.build_meta"
+
+# This section provides general project metadata that is used across
+# a variety of build tools. Notably, the version specified here is the
+# single source of truth for cebra_em_core's version
+[project]
+name = "cebra_em_core"
+version = "0.0.2"
+description = "Add short description here"
+readme = "README.md"
+maintainers = [
+    { name = "Julian Hennies", email = "hennies@embl.de" },
+]
+requires-python = ">=3.8"
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+    "click",
+    "pandas",
+]
+
+# Command line scripts installed as part of the installation
+[project.scripts]
+cebra_convert_to_bdv = "cebra_em_core.dataset.preprocessing:convert_to_bdv"
+cebra_init_gt = "cebra_em_core.project_utils.gt:init_gt_cube"
+cebra_init_project = "cebra_em_core.cebra_em_project:init_project"
+cebra_init_segmentation = "cebra_em_core.cebra_em_project:init_segmentation"
+cebra_link_gt = "cebra_em_core.project_utils.gt:link_gt_cubes"
+cebra_log_gt = "cebra_em_core.project_utils.gt:log_gt"
+cebra_normalize_instances = "cebra_em_core.dataset.preprocessing:normalize_instances"
+
+# The following section contains setuptools-specific configuration
+# options. For a full reference of available options, check the overview
+# at https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
+[tool.setuptools]
+packages = [
+    "cebra_em_core",
+]

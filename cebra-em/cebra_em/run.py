@@ -1,3 +1,20 @@
+import click
+import os
+import shutil
+import snakemake
+
+from multiprocessing import Process
+from cebra_em.prepare_snakefiles import prepare_run, prepare_gt_extract, prepare_stitching
+from cebra_em_core.project_utils.project import (
+    get_current_project_path,
+    lock_project,
+    unlock_project
+)
+from cebra_em.misc.repo import get_repo_path
+from cebra_em_core.project_utils.config import get_config
+from cebra_em_core.cebra_em_project import init_beta_map
+from cebra_em_core.misc.cliutils import execution_options, project_path_option, quiet_option, verbose_option
+
 
 def _snakemake(*args, **kwargs):
     print('Starting snakemake with:')
@@ -66,24 +83,79 @@ def _parameter_str_to_dict(params):
     return param_dict
 
 
+@click.command()
+@project_path_option()
+@click.option(
+    "--target",
+    type=str,
+    default="membrane_prediction",
+    help="Defines the map(s) to compute"
+)
+@click.option(
+    "--parameter",
+    type=str,
+    multiple=True,
+    help="Parameters that are fed to the workflow within run.json['misc']"
+)
+@click.option(
+    "--roi",
+    type=int,
+    nargs=6,
+    metavar=('Z', 'Y', 'X', 'depth', 'height', 'width'),
+    help="Defines a region of interest to which the requested run is confined",
+)
+@click.option(
+    "--unit",
+    type=click.Choice(["px", "um", "nm"]),
+    default="px",
+    help="The unit that defines roi"
+)
+@execution_options
+@click.option(
+    "--unlock",
+    type=bool,
+    is_flag=True,
+    help="Use this flag to unlock a locked snakemake workflow"
+)
+@quiet_option
+@click.option(
+    "--dryrun",
+    type=bool,
+    is_flag=True,
+    help="Only dry-run the workflow"
+)
+@click.option(
+    "--rerun",
+    type=bool,
+    is_flag=True,
+    help="Trigger re-running of the respective target chunks"
+)
+@click.option(
+    "--restart-times",
+    type=click.IntRange(min=0),
+    default=1,
+    help="How many times a job is restarted if it fails"
+)
+@verbose_option
 def run(
-        project_path=None,
-        target='membrane_prediction',
-        parameters=None,
-        roi=None,
-        unit='px',
-        cores=None,
-        gpus=None,
-        unlock=False,
-        quiet=False,
-        dryrun=False,
-        return_thread=False,
-        cluster=None,
-        qos='normal',
-        rerun=False,
-        restart_times=1,
-        verbose=False
+    project_path=None,
+    target=None,
+    parameter=None,
+    roi=None,
+    unit=None,
+    cores=None,
+    gpus=None,
+    unlock=None,
+    quiet=None,
+    dryrun=None,
+    cluster=None,
+    qos=None,
+    rerun=None,
+    restart_times=None,
+    verbose=None,
+    return_thread=False # What is this about?
 ):
+    "Run the CebraEM pipeline workflow. "
 
     assert cluster in [None, 'slurm']
     if gpus is None:
@@ -92,7 +164,9 @@ def run(
         else:
             gpus = 8
 
-    parameters = _parameter_str_to_dict(parameters)
+    parameters = {}
+    for param in parameter:
+        parameters.update(**_parameter_str_to_dict(param))
 
     # Makes sure the project path is not None and points to a valid project
     project_path = get_current_project_path(project_path=project_path)
@@ -239,104 +313,4 @@ def run(
 
 
 if __name__ == '__main__':
-
-    # ----------------------------------------------------
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description='Starts a run of the CebraEM workflow.',
-        formatter_class=argparse.RawTextHelpFormatter
-    )
-    parser.add_argument('-p', '--project_path', type=str, default=None,
-                        help='Path of the project, the current path by default')
-    parser.add_argument('-t', '--target', type=str, default='membrane_prediction',
-                        help=('Defines the map(s) to compute, can be any of the following:\n'
-                              '    "membrane_prediction"\n'
-                              '    "supervoxels"\n'
-                              '    "[any_segmentation_map_id]"\n'
-                              '    "gt_cubes"'))
-    parser.add_argument('-par', '--parameters', type=str, default=None,
-                        help='Parameters that are fed to the workflow within run.json["misc"]\n'
-                             'For example when running stitching, define the beta-map: '
-                             'run.py -t stich-seg_map --param beta=0.6')
-    parser.add_argument('-r', '--roi', type=float, default=None, nargs=6,
-                        metavar=('Z', 'Y', 'X', 'depth', 'height', 'width'),
-                        help='Defines a region of interest to which the requested run is confined')
-    parser.add_argument('-u', '--unit', type=str, default='px',
-                        choices=('px', 'um', 'nm'),
-                        help='The unit that defines roi. Can be [px, um, nm]')
-    parser.add_argument('-c', '--cores', type=int, default=None,
-                        help='Maximum number of CPU cores used, defaults to all available cores')
-    parser.add_argument('-g', '--gpus', type=int, default=None,
-                        help='Maximum number of GPUs to use, defaults to 1 for local and 8 for cluster computation')
-    parser.add_argument('--unlock', action='store_true',
-                        help='Use this flag to unlock a locked snakemake workflow')
-    parser.add_argument('-q', '--quiet', action='store_true',
-                        help='Do not print any default job information (default False)')
-    parser.add_argument('-d', '--dryrun', action='store_true',
-                        help='Only dry-run the workflow (default False)')
-    parser.add_argument('--cluster', type=str, default=None,
-                        help='Enable running jobs on a cluster, currently only Slurm is supported')
-    parser.add_argument('--qos', type=str, default='normal',
-                        help="Quality of service for cluster jobs ['lowest', 'low', 'normal', 'high', 'highest']")
-    parser.add_argument('--rerun', action='store_true',
-                        help='Trigger re-running of the respective target chunks')
-    parser.add_argument('--restart_times', type=int, default=1,
-                        help='How many times a job is restarted if it fails')
-    parser.add_argument('-v', '--verbose', action='store_true')
-
-    args = parser.parse_args()
-    project_path = args.project_path
-    target = args.target
-    parameters = args.parameters
-    roi = args.roi
-    unit = args.unit
-    cores = int(args.cores) if args.cores is not None else None
-    gpus = args.gpus
-    unlock = args.unlock
-    quiet = args.quiet
-    cluster = args.cluster
-    qos = args.qos
-    rerun = args.rerun
-    restart_times = args.restart_times
-    verbose = args.verbose
-    dryrun = args.dryrun
-
-    # ----------------------------------------------------
-    # Imports
-
-    import os
-    import snakemake
-    from multiprocessing import Process
-    import shutil
-
-    from cebra_em.prepare_snakefiles import prepare_run, prepare_gt_extract, prepare_stitching
-    from cebra_em_core.project_utils.project import (
-        get_current_project_path,
-        lock_project,
-        unlock_project
-    )
-    from cebra_em.misc.repo import get_repo_path
-    from cebra_em_core.project_utils.config import get_config
-    from cebra_em_core.cebra_em_project import init_beta_map
-
-    # ----------------------------------------------------
-
-    run(
-        project_path=project_path,
-        target=target,
-        parameters=parameters,
-        roi=roi,
-        unit=unit,
-        cores=cores,
-        gpus=gpus,
-        unlock=unlock,
-        quiet=quiet,
-        cluster=cluster,
-        verbose=verbose,
-        dryrun=dryrun,
-        qos=qos,
-        rerun=rerun,
-        restart_times=restart_times
-    )
-
+    run()

@@ -1,4 +1,4 @@
-
+import click
 from glob import glob
 import os
 import numpy as np
@@ -15,6 +15,7 @@ from .data import (
     quantile_norm
 )
 from .bdv_utils import create_empty_dataset
+from cebra_em_core.misc.cliutils import bdv_scaling, str_to_integers, verbose_option
 
 
 SUPPORTED_FILE_TYPES = ['h5', 'n5', 'model']
@@ -127,21 +128,95 @@ def optimize_data_type(volume):
     return volume
 
 
+@click.command()
+@click.option(
+    "--source-path",
+    type=click.Path(dir_okay=False, exists=True),
+    required=True,
+    help="Path of the dataset (tiff slices, h5, n5 or MIB's model)",
+)
+@click.option(
+    "--target-path",
+    type=click.Path(dir_okay=False, writable=True),
+    required=True,
+    help="Path where the result is saved. Include file name.",
+)
+@click.option("--key", type=str, help="Dataset key within h5 or n5 file")
+@click.option(
+    "--resolution",
+    type=float,
+    nargs=3,
+    metavar=("z", "y", "x"),
+    default=(0.01, 0.01, 0.01),
+    help="Used for the big data viewer format to specify the resolution",
+)
+@click.option(
+    "--unit",
+    type=click.Choice(["micrometer"]),
+    default="micrometer",
+    help="Unit of resolutions, note that raw and seg resolutions have to be given in the same unit",
+)
+@click.option(
+    "--clip-values",
+    type=click.IntRange(0, 255),
+    nargs=2,
+    help="Clips grey values, specify lower and upper bound",
+)
+@click.option("--invert", type=bool, is_flag=True, help="Inverts the grey values")
+@click.option(
+    "--roi",
+    type=int,
+    nargs=6,
+    metavar=("x", "y", "z", "w", "h", "d"),
+    help="Define the ROI according to Fiji's coordinate system",
+)
+@bdv_scaling
+@click.option(
+    "--connected_components",
+    type=bool,
+    is_flag=True,
+    help="Performs a connected component operation on a label map before converting to BDV format",
+)
+@click.option(
+    "--size_filter",
+    type=int,
+    help="If given, applies a size filter after running the connected component analysis",
+)
+@click.option(
+    "--axes-order",
+    type=str,
+    default="zyx",
+    show_default=True,
+    help="Order of the axes when reading an h5 or n5 container."
+)
+@verbose_option
 def convert_to_bdv(
-        source_path,
-        target_path,
-        key=None,
-        resolution=(0.01, 0.01, 0.01),
-        unit='micrometer',
-        clip_values=None,
-        invert=False,
-        roi=None,
-        bdv_scale_factors=(2, 2, 4),
-        scale_mode='mean',
-        connected_components=False,
-        size_filter=0,
-        verbose=False
+    source_path=None,
+    target_path=None,
+    key=None,
+    resolution=None,
+    unit=None,
+    clip_values=None,
+    invert=None,
+    roi=None,
+    bdv_scale_factors=(2, 2, 4),
+    scale_mode=None,
+    connected_components=None,
+    size_filter=None,
+    axes_order=None,
+    verbose=None,
 ):
+    """Converts a dataset to the Big Data Viewer format
+
+    * Optional run connected component analysis on a segmentation map.
+
+    * Optional size filtering of detected objects
+
+    * The result is relabeled consecutively
+    * The output is a bdv dataset (h5 or n5)
+
+    !! Note that the full dataset is loaded into memory !!
+    """
 
     # Currently CebraEM internally only uses micrometer, hence I am only supporting it here as well
     if unit != 'micrometer':
@@ -167,7 +242,7 @@ def convert_to_bdv(
             print(f'Found {file_type} file extension')
         if file_type == '.n5' or file_type == '.h5':
             assert key is not None
-            volume = read_volume_from_container(source_path, roi, clip_values, key, axes_order='zyx')
+            volume = read_volume_from_container(source_path, roi, clip_values, key, axes_order=axes_order)
         elif file_type == '.model':
             if key is None:
                 key = 'mibModel'
@@ -207,23 +282,103 @@ def convert_to_bdv(
              resolution=resolution, unit=unit)
 
 
+@click.command()
+@click.option(
+    "--raw-source",
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+    help="Path to the raw dataset (h5 or n5)",
+    required=True,
+)
+@click.option("--raw-key", type=str, help="Key within raw dataset", required=True)
+@click.option(
+    "--seg-source",
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+    help="Path of the instance segmentation (h5 or n5). Note that the segmentation is loaded entirely into memory! It can (and should) have a lower resolution compared to the raw data.",
+    required=True,
+)
+@click.option(
+    "--seg-key", type=str, help="Key within segmentation dataset", required=True
+)
+@click.option(
+    "--target-path",
+    type=click.Path(dir_okay=False, writable=True, resolve_path=True),
+    default=os.path.join(os.getcwd(), "output"),
+    help="Path where the result is saved. Include file name (n5 or h5).",
+)
+@click.option(
+    "--raw-resolution",
+    type=float,
+    nargs=3,
+    metavar=("z", "y", "x"),
+    default=(0.01, 0.01, 0.01),
+    help="Resolution of the raw dataset",
+    show_default=True,
+)
+@click.option(
+    "--seg-resolution",
+    type=float,
+    nargs=3,
+    metavar=("z", "y", "x"),
+    default=(0.01, 0.01, 0.01),
+    help="Resolution of the segmentation dataset",
+    show_default=True,
+)
+@click.option(
+    "--unit",
+    type=click.Choice(["micrometer"]),
+    default="micrometer",
+    help="Unit of resolutions, note that raw and seg resolutions have to be given in the same unit",
+)
+@click.option(
+    "--instance-ids",
+    type=str,
+    callback=lambda c,p,val: str_to_integers(val,),
+    help="Ids of the instances in the segmentation that will be used, where 0 is reserved for background"
+)
+@click.option(
+    "--quantiles",
+    type=click.FloatRange(0, 1),
+    nargs=2,
+    default=(0.1, 0.9),
+    help="Quantiles of the greyscale histogram used to anchor the distribution",
+    show_default=True,
+)
+# TODO: From here on, the shortcut versions become a but obscure for outside people
+@click.option(
+    "--anchor_values",
+    type=float,
+    nargs=2,
+    default=(0.05, 0.95),
+    help="Which grey values to anchor the quantiles to, specified in percent of the data range",
+    show_default=True,
+)
+@click.option(
+    "--dtype",
+    type=click.Choice(["uint8"]),
+    default="uint8",
+    help="Data type of the result dataset. Currently only supporting 'uint8'",
+    show_default=True,
+)
+@bdv_scaling
+@verbose_option
 def normalize_instances(
-        raw_source,
-        raw_key,
-        seg_source,
-        seg_key,
-        target_path,
-        raw_resolution=(0.01, 0.01, 0.01),
-        seg_resolution=(0.01, 0.01, 0.01),
-        unit='micrometer',
-        instance_ids=None,
-        quantiles=(0.1, 0.9),
-        anchor_values=(0.05, 0.95),
-        dtype='uint8',
-        bdv_scale_factors=(2, 2, 4),
-        scale_mode='mean',
-        verbose=False,
+    raw_source=None,
+    raw_key=None,
+    seg_source=None,
+    seg_key=None,
+    target_path=None,
+    raw_resolution=None,
+    seg_resolution=None,
+    unit=None,
+    instance_ids=None,
+    quantiles=None,
+    anchor_values=None,
+    dtype=None,
+    bdv_scale_factors=(2, 2, 4),
+    scale_mode=None,
+    verbose=None,
 ):
+    """Quantile normalization of the raw data based on a instance segmentation """
 
     print(f'Fetching inputs ...')
     # Read the segmentation
