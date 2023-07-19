@@ -194,8 +194,9 @@ if __name__ == '__main__':
             verbose=verbose
         )
     if invert is not None and 'raw' in input_data:
-        assert input_data['raw'].dtype == 'uint8', 'Data inversion only implemented for 8bit data!'
-        input_data['raw'] = 255 - input_data['raw']
+        if invert:
+            assert input_data['raw'].dtype == 'uint8', 'Data inversion only implemented for 8bit data!'
+            input_data['raw'] = 255 - input_data['raw']
 
     # _______________________________________________________________________________
     # Run the task
