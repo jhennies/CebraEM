@@ -1029,7 +1029,7 @@ class CebraAnnWidget(QWidget):
         sv = self.viewer.layers['sv'].data
         mem, sv = crop_to_same_shape(mem, sv)
 
-        pm = supervoxel_merging(mem, sv, beta=beta) + 1
+        pm = supervoxel_merging(mem, sv, beta=beta, weight_method='min') + 1
 
         translate = self.viewer.layers['mem'].translate
 
