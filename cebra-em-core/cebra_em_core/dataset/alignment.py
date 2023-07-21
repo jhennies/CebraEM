@@ -1,11 +1,11 @@
 
 import numpy as np
-from scipy.ndimage.interpolation import shift
+from scipy.ndimage import shift
 from vigra.filters import gaussianSmoothing
 from skimage import filters
 from skimage.registration import phase_cross_correlation
 from scipy.signal import medfilt
-from scipy.ndimage.filters import gaussian_filter1d
+from scipy.ndimage import gaussian_filter1d
 
 
 def xcorr(offset_image, image):
