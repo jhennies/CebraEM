@@ -24,6 +24,7 @@ def generate_run_json(
         unit='px',
         misc=None,
         project_path=None,
+        debug=False,
         verbose=False
 ):
 
@@ -83,7 +84,8 @@ def generate_run_json(
                 'targets': targets,
                 'target_ids': {tgt: _target_ids_from_roi(tgt, roi, unit) for tgt in targets},
                 'verbose': verbose,
-                'misc': misc
+                'misc': misc,
+                'debug': debug
             }, f, indent=2
         )
 
@@ -238,6 +240,7 @@ def prepare_run(
         unit='px',
         misc=None,
         project_path=None,
+        debug=False,
         verbose=False
 ):
 
@@ -260,6 +263,7 @@ def prepare_run(
         unit=unit,
         misc=misc,
         project_path=project_path,
+        debug=debug,
         verbose=verbose
     )
 

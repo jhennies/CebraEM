@@ -10,11 +10,14 @@ def run_cebra_net(
 ):
 
     # Set up the model
-    # rdf_doi = "10.5281/zenodo.7274275"
-    rdf_path = os.path.join(
-        get_repo_path(), 'models', 'cebranet-cellular-membranes-in-volume-sem_pytorch_state_dict.zip'
-    )
-    model_resource = bioimageio.core.load_resource_description(rdf_path)
+    try:
+        rdf_path = os.path.join(
+            get_repo_path(), 'models', 'cebranet-cellular-membranes-in-volume-sem_pytorch_state_dict.zip'
+        )
+        model_resource = bioimageio.core.load_resource_description(rdf_path)
+    except TypeError:
+        rdf_doi = "10.5281/zenodo.7274275"
+        model_resource = bioimageio.core.load_resource_description(rdf_doi)
 
     # Prepare the data
     input_array = xr.DataArray(input_data[None, None, :], dims=tuple(model_resource.inputs[0].axes))

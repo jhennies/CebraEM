@@ -29,7 +29,8 @@ from ._widgets import QSliderLabelEdit
 from h5py import File
 from copy import deepcopy
 import numpy as np
-from cebra_em_core.cebra_net import run_cebra_net, default_model_path
+from cebra_em_core.cebra_net import default_model_path
+from cebra_em_core.bioimageio.cebra_net import run_cebra_net
 from cebra_em_core import pre_processing, watershed_dt_with_probs
 
 
@@ -639,17 +640,20 @@ class CebraAnnWidget(QWidget):
 
             raw = pre_processing(raw, sigma, qnorm_low, qnorm_high)
 
-            run_cebra_net(
-                raw_channels=[[raw]],
-                model_filepath=default_model_path,
-                target_filepath=self._project.get_absolute_path(self._project.mem),
-                target_size=batch_size,
-                overlap=(np.array(halo) / 2).astype(int),
-                squeeze_result=True
-            )
+            # run_cebra_net(
+            #     raw_channels=[[raw]],
+            #     model_filepath=default_model_path,
+            #     target_filepath=self._project.get_absolute_path(self._project.mem),
+            #     target_size=batch_size,
+            #     overlap=(np.array(halo) / 2).astype(int),
+            #     squeeze_result=True
+            # )
 
-            with File(self._project.get_absolute_path(self._project.mem), mode='r') as f:
-                mem = f['data'][:]
+            mem = run_cebra_net(raw)
+
+            with File(self._project.get_absolute_path(self._project.mem), mode='w') as f:
+                f.create_dataset('data', data=mem, compression='gzip')
+            #     mem = f['data'][:]
 
             if padding == 'data':
                 mem = mem[

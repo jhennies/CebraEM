@@ -79,22 +79,33 @@ def apply_normalization(
 
     alow, ahigh = np.array(relative_quantiles['anchors']) * 255
 
-    for idx in np.unique(mask):
-        if idx in mask_ids:
+    def normalize(pixels, alow, ahigh, qlow, qhigh):
+        pixels = pixels.astype('float64')
+        pixels -= qlow
+        pixels /= qhigh - qlow
+        pixels *= ahigh - alow
+        pixels += alow
+        pixels[pixels < 0] = 0
+        pixels[pixels > 255] = 255
+        pixels = np.round(pixels).astype('uint8')
+        return pixels
 
-            qlow = raw_quantiles[str(idx)][str(int(relative_quantiles['quantiles'][0] * 100))]
-            qhigh = raw_quantiles[str(idx)][str(int(relative_quantiles['quantiles'][1] * 100))]
+    if mask is not None:
 
-            pixels = raw[mask == idx]
-            pixels = pixels.astype('float64')
-            pixels -= qlow
-            pixels /= qhigh - qlow
-            pixels *= ahigh - alow
-            pixels += alow
-            pixels[pixels < 0] = 0
-            pixels[pixels > 255] = 255
-            pixels = np.round(pixels).astype('uint8')
-            raw[mask == idx] = pixels
+        for idx in np.unique(mask):
+            if idx in mask_ids:
+
+                qlow = raw_quantiles[str(idx)][str(int(relative_quantiles['quantiles'][0] * 100))]
+                qhigh = raw_quantiles[str(idx)][str(int(relative_quantiles['quantiles'][1] * 100))]
+
+                raw[mask == idx] = normalize(raw[mask == idx], alow, ahigh, qlow, qhigh)
+
+    else:
+
+        qlow = raw_quantiles['0'][str(int(relative_quantiles['quantiles'][0] * 100))]
+        qhigh = raw_quantiles['0'][str(int(relative_quantiles['quantiles'][1] * 100))]
+
+        raw = normalize(raw, alow, ahigh, qlow, qhigh)
 
     return raw
 
@@ -114,10 +125,20 @@ def compute_task_with_mask(func, vol, mask, mask_ids, halo=None, pad_result_vol=
     :return:
     """
 
+    vol = np.array(vol)
+
     def _get_bin_mask():
-        tm = np.zeros(mask.shape, dtype=bool)
-        for idx in mask_ids:
-            tm[mask == idx] = True
+        if mask is None:
+            if vol.ndim == 3:
+                tm = np.ones(vol.shape, dtype=bool)
+            elif vol.ndim == 4:
+                tm = np.ones(vol[0].shape, dtype=bool)
+            else:
+                raise NotImplementedError('Only 3 and 4 dimensional arrays are implemented!')
+        else:
+            tm = np.zeros(mask.shape, dtype=bool)
+            for idx in mask_ids:
+                tm[mask == idx] = True
         return tm
 
     bin_mask = _get_bin_mask()
@@ -130,14 +151,14 @@ def compute_task_with_mask(func, vol, mask, mask_ids, halo=None, pad_result_vol=
         halo_mask = bin_mask.copy()
 
     # Return if there is no data in the main ROI
-    if not halo_mask.any():
+    if not halo_mask.any() and pad_result_vol:  # FIXME
         if verbose:
             print(f'No data inside ROI, returning zeros ...')
         return np.zeros(vol.shape)
         # --------------------------------------
 
     # Simply compute if there is no background in the mask
-    if bin_mask.min() > 0:
+    if bin_mask.min() > 0 and pad_result_vol:  # FIXME
         if verbose:
             print(f'Mask fully within data, computing normally ...')
         return func(vol)
@@ -157,6 +178,7 @@ def compute_task_with_mask(func, vol, mask, mask_ids, halo=None, pad_result_vol=
     # Compute the respective subarea
     res = func(vol_in, mask=bin_mask[bounds])
 
+    print(f'pad_result_vol = {pad_result_vol}')
     if pad_result_vol:
 
         if verbose:
@@ -182,7 +204,6 @@ def compute_task_with_mask(func, vol, mask, mask_ids, halo=None, pad_result_vol=
         return vol_out
 
     else:
-
         return dict(
             result=res, mask=bin_mask[bounds], bounds=bounds, shape=bin_mask.shape
         )

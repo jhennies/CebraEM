@@ -429,8 +429,11 @@ def get_quantiles(
         verbose=False
 ):
 
-    if seg_ids is None:
-        seg_ids = np.unqiue(seg)[1:]
+    if seg is not None:
+        if seg_ids is None:
+            seg_ids = np.unqiue(seg)[1:]
+    else:
+        seg_ids = [0]
 
     raw_resolution, seg_resolution = np.array(raw_resolution), np.array(seg_resolution)
     quantiles = {}
@@ -441,20 +444,25 @@ def get_quantiles(
         print(f'Extracting quantiles for idx = {idx}')
 
         # Get the bounding box of the current object in the segmentation
-        bounds, top_left, bottom_right = crop_zero_padding_3d(seg == idx, return_as_arrays=True)
+        if seg is not None:
+            bounds, top_left, bottom_right = crop_zero_padding_3d(seg == idx, return_as_arrays=True)
 
-        # Fetch the data from the segmentation
-        this_obj = seg[bounds]
-        this_obj[this_obj != idx] = 0
+            # Fetch the data from the segmentation
+            this_obj = seg[bounds]
+            this_obj[this_obj != idx] = 0
 
-        scale = seg_resolution / raw_resolution
+            scale = seg_resolution / raw_resolution
 
-        if verbose:
-            print(f'seg_resolution = {seg_resolution}')
-            print(f'raw_resolution = {raw_resolution}')
-            print(f'scale = {scale}')
+            if verbose:
+                print(f'seg_resolution = {seg_resolution}')
+                print(f'raw_resolution = {raw_resolution}')
+                print(f'scale = {scale}')
+        else:
+            scale = 1.
 
         if method == 'dense':
+
+            assert seg is not None, 'Not implemented for no mask!'
 
             # Transorm the bounds to the raw resolution
             top_left_rr = (top_left * scale).astype(int)
@@ -485,7 +493,11 @@ def get_quantiles(
         elif method == 'sparse':
 
             # Sample the points from within the mask
-            pos = np.argwhere(this_obj >= 1)
+            if seg is not None:
+                pos = np.argwhere(this_obj >= 1)
+            else:
+                # Make a grid of points on the raw data
+                pos = np.argwhere(np.ones((np.array(raw_handle.shape) / 8).astype(int)) == 1) * 8
             rand_ids = np.random.randint(len(pos), size=pixels_per_object)
             pos = pos[rand_ids, :]
 

@@ -167,7 +167,7 @@ def convert_to_bdv(
             print(f'Found {file_type} file extension')
         if file_type == '.n5' or file_type == '.h5':
             assert key is not None
-            volume = read_volume_from_container(source_path, roi, clip_values, key, axes_order='xyz')
+            volume = read_volume_from_container(source_path, roi, clip_values, key, axes_order='zyx')
         elif file_type == '.model':
             if key is None:
                 key = 'mibModel'
