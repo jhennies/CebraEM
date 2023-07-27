@@ -453,7 +453,7 @@ def get_quantiles(
             this_obj[this_obj != idx] = 0
 
             if debug:
-                with open_file(f'/tmp/mask_{idx}.h5', mode='w') as f:
+                with open_file(f'tmp/mask_{idx}.h5', mode='w') as f:
                     f.create_dataset('data', data=this_obj, compression='gzip')
 
             scale = seg_resolution / raw_resolution
