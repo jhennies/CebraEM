@@ -205,7 +205,6 @@ if __name__ == '__main__':
     if dataset == 'membrane_prediction':
         if debug:
             from elf.io import open_file
-
             filename = os.path.join(os.path.splitext(snakemake.output[0])[0] + '.h5')
             with open_file(filename, mode='w') as f:
                 f.create_dataset('data', data=input_data['raw'], compression='gzip')
