@@ -525,7 +525,8 @@ def get_quantiles(
             #         for p in pos
             #     ]
             # )
-            raw_pixels = np.array([extract_pixel_values(p) for p in pos if p is not None])
+            raw_pixels = [extract_pixel_values(p) for p in pos]
+            raw_pixels = np.array([px for px in raw_pixels if px is not None])
             if len(raw_pixels) < pixels_per_object:
                 print(f'Warning: The number of extracted pixels is smaller than requested: '
                       f'{len(raw_pixels)} < {pixels_per_object}')
