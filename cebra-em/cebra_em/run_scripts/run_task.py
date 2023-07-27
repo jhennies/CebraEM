@@ -202,13 +202,13 @@ if __name__ == '__main__':
     # _______________________________________________________________________________
     # Run the task
 
-    if debug:
-        from elf.io import open_file
-        filename = os.path.join(os.path.splitext(snakemake.output[0])[0] + '.h5')
-        with open_file(filename, mode='w') as f:
-            f.create_dataset('data', data=input_data, compression='gzip')
-
     if dataset == 'membrane_prediction':
+        if debug:
+            from elf.io import open_file
+
+            filename = os.path.join(os.path.splitext(snakemake.output[0])[0] + '.h5')
+            with open_file(filename, mode='w') as f:
+                f.create_dataset('data', data=input_data['raw'], compression='gzip')
         output_data = run_membrane_prediction(input_data, mask_ids=mask_ids, halo=halo, verbose=verbose)
     elif dataset == 'supervoxels':
         sv_kwargs = config_ds['sv_kwargs']
