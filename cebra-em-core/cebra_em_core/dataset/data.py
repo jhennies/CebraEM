@@ -452,9 +452,12 @@ def get_quantiles(
             this_obj = seg[bounds]
             this_obj[this_obj != idx] = 0
 
+            if verbose:
+                print(f'debug = {debug}')
             if debug:
                 if not os.path.exists('tmp'):
                     os.mkdir('tmp')
+                print(os.getcwd())
                 with open_file(f'tmp/mask_{idx}.h5', mode='w') as f:
                     f.create_dataset('data', data=this_obj, compression='gzip')
 
