@@ -452,16 +452,14 @@ def get_quantiles(
             this_obj = seg[bounds]
             this_obj[this_obj != idx] = 0
 
-            if verbose:
-                print(f'debug = {debug}')
+            scale = seg_resolution / raw_resolution
+
             if debug:
                 if not os.path.exists('tmp'):
                     os.mkdir('tmp')
                 print(os.getcwd())
                 with open_file(f'tmp/mask_{idx}.h5', mode='w') as f:
                     f.create_dataset('data', data=this_obj, compression='gzip')
-
-            scale = seg_resolution / raw_resolution
 
             if verbose:
                 print(f'top_left = {top_left} | bottom_right = {bottom_right}')
@@ -513,7 +511,12 @@ def get_quantiles(
             pos = pos[rand_ids, :]
 
             # Extract the pixel values
-            raw_pixels = np.array([raw_handle[tuple(np.array(p) * scale)] for p in pos])
+            raw_pixels = np.array(
+                [
+                    raw_handle[tuple((np.array(p) + top_left) * scale)]
+                    for p in pos
+                ]
+            )
 
             if verbose:
                 print(f'raw_pixels = {raw_pixels}')
