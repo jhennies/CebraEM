@@ -82,6 +82,7 @@ def run(
         qos='normal',
         rerun=False,
         restart_times=1,
+        debug=False,
         verbose=False
 ):
 
@@ -171,6 +172,7 @@ def run(
             roi=roi,
             unit=unit,
             project_path=project_path,
+            debug=debug,
             verbose=verbose)
     elif target[:7] == 'stitch-':
         # This requests the stitching
@@ -283,6 +285,8 @@ if __name__ == '__main__':
                         help='Trigger re-running of the respective target chunks')
     parser.add_argument('--restart_times', type=int, default=1,
                         help='How many times a job is restarted if it fails')
+    parser.add_argument('--debug', action='store_true',
+                        help='Runs in debug mode')
     parser.add_argument('-v', '--verbose', action='store_true')
 
     args = parser.parse_args()
@@ -301,6 +305,7 @@ if __name__ == '__main__':
     restart_times = args.restart_times
     verbose = args.verbose
     dryrun = args.dryrun
+    debug = args.debug
 
     # ----------------------------------------------------
     # Imports
@@ -337,6 +342,7 @@ if __name__ == '__main__':
         dryrun=dryrun,
         qos=qos,
         rerun=rerun,
-        restart_times=restart_times
+        restart_times=restart_times,
+        debug=debug
     )
 
