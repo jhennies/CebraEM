@@ -426,6 +426,7 @@ def get_quantiles(
         quantile_spacing=0.2,
         method='dense',
         pixels_per_object=1024,
+        debug=False,
         verbose=False
 ):
 
@@ -451,9 +452,14 @@ def get_quantiles(
             this_obj = seg[bounds]
             this_obj[this_obj != idx] = 0
 
+            if debug:
+                with open_file(f'/tmp/mask_{idx}.h5', mode='w') as f:
+                    f.create_dataset('data', data=this_obj, compression='gzip')
+
             scale = seg_resolution / raw_resolution
 
             if verbose:
+                print(f'top_left = {top_left} | bottom_right = {bottom_right}')
                 print(f'seg_resolution = {seg_resolution}')
                 print(f'raw_resolution = {raw_resolution}')
                 print(f'scale = {scale}')
