@@ -510,13 +510,25 @@ def get_quantiles(
             rand_ids = np.random.randint(len(pos), size=pixels_per_object)
             pos = pos[rand_ids, :]
 
+            def extract_pixel_values(p):
+                try:
+                    return raw_handle[tuple((np.array(p) + top_left) * scale)]
+                except ValueError:
+                    # This happens when the position is out of bounds in the raw data (due to scaling issues)
+                    return None
+
             # Extract the pixel values
-            raw_pixels = np.array(
-                [
-                    raw_handle[tuple((np.array(p) + top_left) * scale)]
-                    for p in pos
-                ]
-            )
+
+            # raw_pixels = np.array(
+            #     [
+            #         raw_handle[tuple((np.array(p) + top_left) * scale)]
+            #         for p in pos
+            #     ]
+            # )
+            raw_pixels = np.array([extract_pixel_values(p) for p in pos if p is not None])
+            if len(raw_pixels) < pixels_per_object:
+                print(f'Warning: The number of extracted pixels is smaller than requested: '
+                      f'{len(raw_pixels)} < {pixels_per_object}')
 
             if verbose:
                 print(f'raw_pixels = {raw_pixels}')
