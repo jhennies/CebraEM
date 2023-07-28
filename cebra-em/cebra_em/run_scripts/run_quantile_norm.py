@@ -20,6 +20,7 @@ if __name__ == '__main__':
     run_json = get_run_json(project_path)
 
     verbose = run_json['verbose']
+    debug = run_json['debug']
 
     config_raw = get_config('raw', project_path=project_path)
     quantile_spacing = config_raw['quantile_spacing']
@@ -62,6 +63,7 @@ if __name__ == '__main__':
         quantile_spacing=quantile_spacing,
         method='sparse' if quantile_samples > 0 else 'dense',
         pixels_per_object=quantile_samples,
+        debug=debug,
         verbose=verbose
     )
 

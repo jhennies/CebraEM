@@ -83,6 +83,7 @@ if __name__ == '__main__':
     run_json = get_run_json(project_path)
 
     verbose = run_json['verbose']
+    debug = run_json['debug']
 
     dataset = snakemake.params['image_name']
     idx = int(snakemake.wildcards['idx'])
@@ -202,6 +203,11 @@ if __name__ == '__main__':
     # Run the task
 
     if dataset == 'membrane_prediction':
+        if debug:
+            from elf.io import open_file
+            filename = os.path.join(os.path.splitext(snakemake.output[0])[0] + '.h5')
+            with open_file(filename, mode='w') as f:
+                f.create_dataset('data', data=input_data['raw'], compression='gzip')
         output_data = run_membrane_prediction(input_data, mask_ids=mask_ids, halo=halo, verbose=verbose)
     elif dataset == 'supervoxels':
         sv_kwargs = config_ds['sv_kwargs']
