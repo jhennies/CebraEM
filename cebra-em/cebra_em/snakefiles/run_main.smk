@@ -117,7 +117,7 @@ elif run_type == 'gt_cubes':
             os.path.join(project_path, name, "{cube_id}", "mem.h5"),
             os.path.join(project_path, name, "{cube_id}", "sv.h5")
         resources:
-            cpus=1, time_min=10, mem_mb=1024
+            cpus=1, time_min=10, mem_mb=4096
         params: p='htc', gres=''
         script:
             os.path.join(cebra_em_path, 'run_scripts','../run_scripts/run_extract_gt.py')

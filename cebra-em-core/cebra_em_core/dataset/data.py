@@ -468,6 +468,7 @@ def get_quantiles(
                 print(f'scale = {scale}')
         else:
             scale = 1.
+            top_left = np.array((0, 0, 0))
 
         if method == 'dense':
 
