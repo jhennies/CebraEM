@@ -191,18 +191,32 @@ class BdvDatasetAdvanced(BdvDataset):
                      halo[1]: -halo[1],
                      halo[2]: -halo[2]
                      ]
-        if unique:
-            if self._background_value is not None:
-                assert self._background_value == 0, 'Only implemented for background value == 0'
-                volume[volume != 0] = volume[volume != 0] + max_id
-            else:
-                volume += max_id + 1
+            if unique:
+                if self._background_value is not None:
+                    assert self._background_value == 0, 'Only implemented for background value == 0'
+                    volume[volume != 0] = volume[volume != 0] + max_id
+                else:
+                    volume += max_id + 1
 
-        dd = np.s_[
-            position[0] + halo[0]: position[0] + shp[0] - halo[0],
-            position[1] + halo[1]: position[1] + shp[1] - halo[1],
-            position[2] + halo[2]: position[2] + shp[2] - halo[2]
-        ]
+            dd = np.s_[
+                position[0] + halo[0]: position[0] + shp[0] - halo[0],
+                position[1] + halo[1]: position[1] + shp[1] - halo[1],
+                position[2] + halo[2]: position[2] + shp[2] - halo[2]
+            ]
+
+        else:
+            if unique:
+                if self._background_value is not None:
+                    assert self._background_value == 0, 'Only implemented for background value == 0'
+                    volume[volume != 0] = volume[volume != 0] + max_id
+                else:
+                    volume += max_id + 1
+
+            dd = np.s_[
+                 position[0]: position[0] + shp[0],
+                 position[1]: position[1] + shp[1],
+                 position[2]: position[2] + shp[2]
+                 ]
 
         return dd, volume
 
