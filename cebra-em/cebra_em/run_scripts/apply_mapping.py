@@ -151,7 +151,8 @@ if __name__ == '__main__':
             path=project_path,
             idx=cube_idx,
             name=image
-        )
+        ),
+        verbose=verbose
     )
 
     # _______________________________________________________________________________
