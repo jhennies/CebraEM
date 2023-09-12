@@ -33,13 +33,13 @@ def request_run(idx, path=None, name='n', verbose=False):
         for request in requests:
             request_idx = int(os.path.split(request)[1].split('_')[-2])
             request_time = float(os.path.split(request)[1].split('_')[-1])
-            if verbose:
-                print(f'in loop: request_idx = {request_idx}')
-                print(f'found_own_request = {found_own_request}')
             if request_idx != idx and timestamp > request_time:
                 queued = True
             if request_idx == idx:
                 found_own_request = True
+            if verbose:
+                print(f'in loop: request_idx = {request_idx}')
+                print(f'found_own_request = {found_own_request}')
         if not found_own_request:
             raise RuntimeError('Request file missing!')
 

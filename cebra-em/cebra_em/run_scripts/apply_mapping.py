@@ -149,7 +149,7 @@ if __name__ == '__main__':
         cast_type=None,
         block_description=dict(
             path=project_path,
-            idx=cube_idx,
+            idx=int(cube_idx),
             name=image
         ),
         verbose=verbose
