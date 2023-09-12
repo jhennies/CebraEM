@@ -142,7 +142,7 @@ if __name__ == '__main__':
         dataset_path=stitched_img_data_path,
         position=pos,
         downscale_mode='nearest',
-        halo=[0, 0, 0],
+        halo=None,
         background_value=0,
         unique=False,
         update_max_id=False,

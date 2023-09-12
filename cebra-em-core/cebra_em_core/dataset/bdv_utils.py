@@ -185,11 +185,12 @@ class BdvDatasetAdvanced(BdvDataset):
 
         halo = self._halo
 
-        volume = volume[
-                 halo[0]: -halo[0],
-                 halo[1]: -halo[1],
-                 halo[2]: -halo[2]
-                 ]
+        if halo is not None:
+            volume = volume[
+                     halo[0]: -halo[0],
+                     halo[1]: -halo[1],
+                     halo[2]: -halo[2]
+                     ]
         if unique:
             if self._background_value is not None:
                 assert self._background_value == 0, 'Only implemented for background value == 0'
