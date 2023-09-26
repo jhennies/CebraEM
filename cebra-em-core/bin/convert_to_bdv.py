@@ -46,6 +46,8 @@ if __name__ == '__main__':
     parser.add_argument('-sf', '--size_filter', type=int, default=0,
                         help='Applies a size filter after running the connected component analysis; '
                              'int pixels; Default=0 (no size filter)')
+    parser.add_argument('-ax', '--axes_order', type=str, default='zyx',
+                        help="Order of the axes when reading an h5 or n5 container. Default='zyx'")
     parser.add_argument('-v', '--verbose', action='store_true',
                         help="Additional console output (for debugging purposes)")
 
@@ -62,6 +64,7 @@ if __name__ == '__main__':
     scale_mode = args.scale_mode
     connected_components = args.connected_components
     size_filter = args.size_filter
+    axes_order = args.axes_order
     verbose = args.verbose
     # ___________________________________________________
 
@@ -80,5 +83,6 @@ if __name__ == '__main__':
         scale_mode=scale_mode,
         connected_components=connected_components,
         size_filter=size_filter,
+        axes_order=axes_order,
         verbose=verbose
     )

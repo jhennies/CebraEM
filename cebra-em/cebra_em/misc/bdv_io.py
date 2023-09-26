@@ -6,20 +6,30 @@ import time
 from cebra_em_core.dataset.bdv_utils import BdvDatasetAdvanced
 
 
-def request_run(idx, path=None, name='n'):
+def request_run(idx, path=None, name='n', verbose=False):
 
     def _request_run(idx, path, name):
         timestamp = time.time()
         open(os.path.join(path, f'.request_{name}_{idx}_{timestamp}'), mode='w').close()
+        if verbose:
+            print(f'request_run: timestamp = {timestamp}')
+            print(f'request_run: idx = {idx}')
         return timestamp
 
     def _is_queued(idx, path, name, timestamp):
+
+        if verbose:
+            print(f'is_queued: timestamp = {timestamp}')
+            print(f'is_queued: idx = {idx}')
 
         # Find all requests
         requests = glob(os.path.join(path, f'.request_{name}_*'))
 
         found_own_request = False
         queued = False
+        if verbose:
+            print(f'requests = {requests}')
+            print(f'found_own_request = {found_own_request}')
         for request in requests:
             request_idx = int(os.path.split(request)[1].split('_')[-2])
             request_time = float(os.path.split(request)[1].split('_')[-1])
@@ -27,6 +37,9 @@ def request_run(idx, path=None, name='n'):
                 queued = True
             if request_idx == idx:
                 found_own_request = True
+            if verbose:
+                print(f'in loop: request_idx = {request_idx}')
+                print(f'found_own_request = {found_own_request}')
         if not found_own_request:
             raise RuntimeError('Request file missing!')
 
@@ -98,7 +111,7 @@ def vol_to_bdv(
 
     # Block from parallel writing
     idx, path, name = block_description['idx'], block_description['path'], block_description['name']
-    ts = request_run(idx, path=os.path.join(path, f'.run_requests'), name=name)
+    ts = request_run(idx, path=os.path.join(path, f'.run_requests'), name=name, verbose=verbose)
     # Write the data
     bdv_ds[s_] = volume
     # Remove block
