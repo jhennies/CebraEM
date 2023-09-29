@@ -6,12 +6,13 @@ import os
 from pybdv.metadata import get_data_path
 from pybdv.util import open_file, get_key
 
-from pybdv.bdv_datasets import BdvDataset
+# from pybdv.bdv_datasets import BdvDataset
 
 from cebra_em_core.project_utils.config import get_config, absolute_path
 from cebra_em_core.project_utils.project import get_current_project_path
 from cebra_em_core.dataset.bdv_utils import is_h5
 from cebra_em.run_utils.run_specs import get_run_json
+from cebra_em.misc.bdv_io import vol_to_bdv
 
 
 def apply_mapping(data, mapping, verbose=False):
@@ -44,20 +45,20 @@ def load_data(data_path, data_key, position, shape):
     return data
 
 
-def save_data(data, data_path, position, shape):
-    bdv_ds = BdvDataset(
-        data_path,
-        timepoint=0,
-        setup_id=0,
-        downscale_mode='nearest',  # It's always a segmentation
-        n_threads=1,
-        verbose=True
-    )
-    bdv_ds[
-        position[0]: position[0] + shape[0],
-        position[1]: position[1] + shape[1],
-        position[2]: position[2] + shape[2]
-    ] = data
+# def save_data(data, data_path, position, shape):
+#     bdv_ds = BdvDataset(
+#         data_path,
+#         timepoint=0,
+#         setup_id=0,
+#         downscale_mode='nearest',  # It's always a segmentation
+#         n_threads=1,
+#         verbose=True
+#     )
+#     bdv_ds[
+#         position[0]: position[0] + shape[0],
+#         position[1]: position[1] + shape[1],
+#         position[2]: position[2] + shape[2]
+#     ] = data
 
 
 if __name__ == '__main__':
@@ -134,8 +135,25 @@ if __name__ == '__main__':
         print(f'shape = {data.shape}')
         print(f'shp = {shp}')
         print(f'pos = {pos}')
-    save_data(data, stitched_img_data_path, pos, shp)
+    # save_data(data, stitched_img_data_path, pos, shp)
     # _update_table(table_path, bdv_ds.get_max_id())
+    vol_to_bdv(
+        data,
+        dataset_path=stitched_img_data_path,
+        position=pos,
+        downscale_mode='nearest',
+        halo=None,
+        background_value=0,
+        unique=False,
+        update_max_id=False,
+        cast_type=None,
+        block_description=dict(
+            path=project_path,
+            idx=int(cube_idx),
+            name=image
+        ),
+        verbose=verbose
+    )
 
     # _______________________________________________________________________________
     # Write result file
