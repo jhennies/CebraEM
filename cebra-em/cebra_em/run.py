@@ -245,6 +245,7 @@ def run(
             roi=roi,
             unit=unit,
             project_path=project_path,
+            debug=debug,
             verbose=verbose)
     elif target[:7] == 'stitch-':
         # This requests the stitching

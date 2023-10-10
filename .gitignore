@@ -149,3 +149,4 @@ log/
 # Misc
 run_validate*
 ext_packages/
+tmp/

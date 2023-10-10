@@ -120,6 +120,9 @@ class CebraAnnWidget(QWidget):
         # Pre-merging
         layout_pre_merging = QFormLayout()
         self.grp_pre_merging = QGroupBox('Pre-merging')
+        self.cmb_weight_method = QComboBox()
+        self.cmb_weight_method = QComboBox()
+        self.cmb_weight_method.addItems(['mean', 'min'])
         self.sld_beta = QSliderLabelEdit(
             0.5, (0, 1), 0.1,
             decimals=2,
@@ -129,9 +132,12 @@ class CebraAnnWidget(QWidget):
         self.sld_beta.sld.valueChanged.connect(self._sld_beta_onvaluechanged)
         self.btn_pre_merging = QPushButton('Compute')
         self.btn_pre_merging.clicked.connect(self._btn_pre_merging_onclicked)
+        layout_weight_method = QHBoxLayout()
+        layout_weight_method.addWidget(self.cmb_weight_method)
         layout_beta = QHBoxLayout()
         layout_beta.addWidget(self.sld_beta)
         layout_beta.addWidget(self.btn_pre_merging)
+        layout_pre_merging.addRow(QLabel('Weight method: '), layout_weight_method)
         layout_pre_merging.addRow(QLabel('Beta: '), layout_beta)
         self.grp_pre_merging.setLayout(layout_pre_merging)
         layout.addWidget(self.grp_pre_merging)
@@ -1029,7 +1035,7 @@ class CebraAnnWidget(QWidget):
         sv = self.viewer.layers['sv'].data
         mem, sv = crop_to_same_shape(mem, sv)
 
-        pm = supervoxel_merging(mem, sv, beta=beta) + 1
+        pm = supervoxel_merging(mem, sv, beta=beta, weight_method=self.cmb_weight_method.currentText()) + 1
 
         translate = self.viewer.layers['mem'].translate
 

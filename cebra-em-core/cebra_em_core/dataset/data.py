@@ -426,6 +426,7 @@ def get_quantiles(
         quantile_spacing=0.2,
         method='dense',
         pixels_per_object=1024,
+        debug=False,
         verbose=False
 ):
 
@@ -453,12 +454,21 @@ def get_quantiles(
 
             scale = seg_resolution / raw_resolution
 
+            if debug:
+                if not os.path.exists('tmp'):
+                    os.mkdir('tmp')
+                print(os.getcwd())
+                with open_file(f'tmp/mask_{idx}.h5', mode='w') as f:
+                    f.create_dataset('data', data=this_obj, compression='gzip')
+
             if verbose:
+                print(f'top_left = {top_left} | bottom_right = {bottom_right}')
                 print(f'seg_resolution = {seg_resolution}')
                 print(f'raw_resolution = {raw_resolution}')
                 print(f'scale = {scale}')
         else:
             scale = 1.
+            top_left = np.array((0, 0, 0))
 
         if method == 'dense':
 
@@ -501,8 +511,26 @@ def get_quantiles(
             rand_ids = np.random.randint(len(pos), size=pixels_per_object)
             pos = pos[rand_ids, :]
 
+            def extract_pixel_values(p):
+                try:
+                    return raw_handle[tuple((np.array(p) + top_left) * scale)]
+                except ValueError:
+                    # This happens when the position is out of bounds in the raw data (due to scaling issues)
+                    return None
+
             # Extract the pixel values
-            raw_pixels = np.array([raw_handle[tuple(np.array(p) * scale)] for p in pos])
+
+            # raw_pixels = np.array(
+            #     [
+            #         raw_handle[tuple((np.array(p) + top_left) * scale)]
+            #         for p in pos
+            #     ]
+            # )
+            raw_pixels = [extract_pixel_values(p) for p in pos]
+            raw_pixels = np.array([px for px in raw_pixels if px is not None])
+            if len(raw_pixels) < pixels_per_object:
+                print(f'Warning: The number of extracted pixels is smaller than requested: '
+                      f'{len(raw_pixels)} < {pixels_per_object}')
 
             if verbose:
                 print(f'raw_pixels = {raw_pixels}')
