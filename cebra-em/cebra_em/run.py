@@ -86,7 +86,7 @@ def _parameter_str_to_dict(params):
 @click.command()
 @project_path_option()
 @click.option(
-    "--target",
+    "-t", "--target",
     type=str,
     default="membrane_prediction",
     help="Defines the map(s) to compute"

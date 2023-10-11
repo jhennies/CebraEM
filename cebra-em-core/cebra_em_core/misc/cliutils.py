@@ -16,7 +16,7 @@ def project_path_option(exists=True, **args):
         defaults["default"] = os.getcwd()
 
     return click.option(
-        "--project-path",
+        "-p", "--project-path",
         type=click.Path(file_okay=False, exists=exists, writable=True),
         required=True,
         help=f"Path to the {'(existing) ' if exists else ''}CebraEM project",
