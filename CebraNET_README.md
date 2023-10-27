@@ -2,7 +2,7 @@
 
 Cellular membrane prediction model for volume SEM datasets. This model was trained on a FIB-SEM dataset to generically predict membranes (or organelle boundaries) in any volume SEM dataset.
 
-The model was published as major component of the CebraEM workflow in [hennies et al. 2023](https://www.biorxiv.org/content/10.1101/2023.04.06.535829v1).
+The model was published as major component of the [CebraEM](https:/github.com/jhennies/CebraEM) workflow in [hennies et al. 2023](https://www.biorxiv.org/content/10.1101/2023.04.06.535829v1).
 
 ## Usage of CebraNET independent of CebraEM
 
