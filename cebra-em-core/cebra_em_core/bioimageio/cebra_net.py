@@ -14,6 +14,7 @@ def run_cebra_net(
         rdf_path = os.path.join(
             get_repo_path(), 'models', 'cebranet-cellular-membranes-in-volume-sem_pytorch_state_dict.zip'
         )
+        print(f'rdf_path = {rdf_path}')
         model_resource = bioimageio.core.load_resource_description(rdf_path)
     except TypeError:
         rdf_doi = "10.5281/zenodo.7274275"
