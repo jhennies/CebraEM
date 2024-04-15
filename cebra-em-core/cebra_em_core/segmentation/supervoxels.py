@@ -111,9 +111,11 @@ def watershed_dt_with_probs(
     seeds = analysis.localMinima3D(dt_signed, neighborhood=26, allowAtBorder=True)
 
     if np.max(seeds) == 0:
-        if verbose:
-            print('No seeds found ...')
-        return np.zeros(seeds.shape, dtype=seeds.dtype), np.zeros(seeds.shape, dtype=seeds.dtype)
+        print('No seeds found ...')
+        if return_intermediates:
+            return np.zeros(seeds.shape, dtype=seeds.dtype), np.zeros(seeds.shape, dtype=seeds.dtype)
+        else:
+            return np.zeros(seeds.shape, dtype=seeds.dtype)
 
     if verbose:
         print('clean_close_seeds')

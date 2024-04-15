@@ -12,7 +12,7 @@ except ModuleNotFoundError:
 import os
 
 
-default_model_path = os.path.join(os.path.dirname(__file__), '..', 'models', 'default_weights.pyt')
+default_model_path = os.path.join(os.path.dirname(__file__), '..', 'models.bkp', 'default_weights.pyt')
 
 
 def run_cebra_net(

@@ -241,7 +241,24 @@ if __name__ == '__main__':
 
     # _______________________________________________________________________________
     # Write result file
-    open(snakemake.output[0], 'w').close()
-
+    with open(snakemake.output[0], 'w') as f:
+        json.dump(
+            dict(
+                dataset_path=ds_path,
+                position=pos,
+                downscale_mode=data_writing['downscale_mode'],
+                halo=halo,
+                background_value=data_writing['background_value'],
+                unique=data_writing['unique_labels'],
+                update_max_id=data_writing['unique_labels'],
+                cast_type=data_writing['dtype'] if 'dtype' in data_writing.keys() else None,
+                block_description=dict(
+                    path=project_path,
+                    idx=idx,
+                    name=dataset
+                )
+            ),
+            f
+        )
 
 
