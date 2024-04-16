@@ -12,7 +12,7 @@ def run_cebra_net(
     # Set up the model
     try:
         rdf_path = os.path.join(
-            get_repo_path(), 'models', 'cebranet-cellular-membranes-in-volume-sem_pytorch_state_dict.zip'
+            get_repo_path(), 'models', 'cebranet-cellular-membranes-in-volume-sem_torchscript.zip'
         )
         print(f'rdf_path = {rdf_path}')
         model_resource = bioimageio.core.load_resource_description(rdf_path)
