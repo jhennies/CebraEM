@@ -245,7 +245,7 @@ if __name__ == '__main__':
         json.dump(
             dict(
                 dataset_path=ds_path,
-                position=pos,
+                position=pos.tolist(),
                 downscale_mode=data_writing['downscale_mode'],
                 halo=halo,
                 background_value=data_writing['background_value'],
@@ -258,7 +258,7 @@ if __name__ == '__main__':
                     name=dataset
                 )
             ),
-            f
+            f, indent=2
         )
 
 
