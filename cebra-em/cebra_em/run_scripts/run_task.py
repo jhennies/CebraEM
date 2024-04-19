@@ -92,17 +92,21 @@ def run_supervoxels(
         result_vol = np.zeros(mem.shape, dtype='float32')
         if 'mask' in input_dict:
 
+            max_val = 0
             for idx, p in enumerate(pos):
                 result_vol[pos_t[idx]] = compute_task_with_mask(run_sv, mem[p], mask[p], mask_ids, halo=halo)[
                                             hl[0]: -hl[0],
                                             hl[1]: -hl[1],
                                             hl[2]: -hl[2],
-                                         ]
+                                         ] + max_val
+                max_val = result_vol.max()
             return result_vol
 
         else:
+            max_val = 0
             for idx, p in enumerate(pos):
-                result_vol[pos_t[idx]] = run_sv(mem[p])
+                result_vol[pos_t[idx]] = run_sv(mem[p]) + max_val
+                max_val = result_vol.max()
             return result_vol
 
     if 'mask' in input_dict:
