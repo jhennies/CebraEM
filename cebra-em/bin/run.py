@@ -155,7 +155,7 @@ def run(
                 f"--qos={qos}")
             kwargs['nodes'] = cores
             kwargs['restart_times'] = restart_times
-            kwargs['rerun_incomplete'] = True
+            kwargs['force_incomplete'] = True
         else:
             raise RuntimeError(f'Not supporting cluster = {cluster}')
 
