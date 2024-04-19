@@ -165,6 +165,33 @@ if __name__ == '__main__':
     invert = config_raw['invert'] if 'invert' in config_raw else None
 
     # _______________________________________________________________________________
+    # Write result file
+    # NOTE: doing this before computing anything. Like this, I can get all this information in case it errors out
+    positions_fp = absolute_path(config_ds['positions'], project_path=project_path)
+    with open(positions_fp, 'rb') as f:
+        pos = pickle.load(f)[idx]
+
+    with open(snakemake.output[0], 'w') as f:
+        json.dump(
+            dict(
+                dataset_path=ds_path,
+                position=pos.tolist(),
+                downscale_mode=data_writing['downscale_mode'],
+                halo=halo,
+                background_value=data_writing['background_value'],
+                unique=data_writing['unique_labels'],
+                update_max_id=data_writing['unique_labels'],
+                cast_type=data_writing['dtype'] if 'dtype' in data_writing.keys() else None,
+                block_description=dict(
+                    path=project_path,
+                    idx=idx,
+                    name=dataset
+                )
+            ),
+            f, indent=2
+        )
+
+    # _______________________________________________________________________________
     # Retrieve the input
     input_data = load_data(
         dep_datasets,
@@ -217,9 +244,6 @@ if __name__ == '__main__':
 
     # _______________________________________________________________________________
     # Save the result
-    positions_fp = absolute_path(config_ds['positions'], project_path=project_path)
-    with open(positions_fp, 'rb') as f:
-        pos = pickle.load(f)[idx]
 
     vol_to_bdv(
         output_data,
@@ -238,27 +262,4 @@ if __name__ == '__main__':
         ),
         verbose=verbose
     )
-
-    # _______________________________________________________________________________
-    # Write result file
-    with open(snakemake.output[0], 'w') as f:
-        json.dump(
-            dict(
-                dataset_path=ds_path,
-                position=pos.tolist(),
-                downscale_mode=data_writing['downscale_mode'],
-                halo=halo,
-                background_value=data_writing['background_value'],
-                unique=data_writing['unique_labels'],
-                update_max_id=data_writing['unique_labels'],
-                cast_type=data_writing['dtype'] if 'dtype' in data_writing.keys() else None,
-                block_description=dict(
-                    path=project_path,
-                    idx=idx,
-                    name=dataset
-                )
-            ),
-            f, indent=2
-        )
-
 
