@@ -1,4 +1,5 @@
 {
+  "batch_shape": [512, 512, 512],
   "quantile_norm": {
     "quantiles": [0.1, 0.9],
     "anchors": [0.1, 0.9]
@@ -7,7 +8,7 @@
   "model": null,
   "resources": {
     "cpus": 1,
-    "mem_mb": 2048,
+    "mem_mb": 16000,
     "time_min": 30,
     "gpus": 1
   }

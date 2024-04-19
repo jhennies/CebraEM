@@ -2,7 +2,7 @@
   "method": "label_map",
   "ds_level_for_init": 0,
   "args": {
-    "ids": [4]
+    "ids": [1]
   },
   "dilate": true
 }
