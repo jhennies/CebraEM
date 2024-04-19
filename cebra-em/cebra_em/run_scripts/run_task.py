@@ -93,7 +93,11 @@ def run_supervoxels(
         if 'mask' in input_dict:
 
             for idx, p in enumerate(pos):
-                result_vol[pos_t[idx]] = compute_task_with_mask(run_sv, mem[p], mask[p], mask_ids, halo=halo)
+                result_vol[pos_t[idx]] = compute_task_with_mask(run_sv, mem[p], mask[p], mask_ids, halo=halo)[
+                                            hl[0]: -hl[0],
+                                            hl[1]: -hl[1],
+                                            hl[2]: -hl[2],
+                                         ]
             return result_vol
 
         else:
