@@ -136,7 +136,7 @@ dmypy.json
 .current_project
 default_weights.pyt
 *pytorch_state_dict.zip
-models/*
+models
 
 # Packed environments
 *.tar.gz
