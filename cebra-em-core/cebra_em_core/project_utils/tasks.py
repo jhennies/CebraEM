@@ -75,7 +75,8 @@ def pos_generator(
         td, th, tw = np.ceil(np.array(dshp) * np.array(dres) / np.array(mres)).astype(int)
 
         print('')
-
+        if verbose:
+            print(f'len(positions) = {len(positions)}')
         for pidx, p in enumerate(positions):
 
             sys.stdout.write('\r' + f'{100 * pidx / (len(positions) - 1)} %: position = {p}')
@@ -94,14 +95,15 @@ def pos_generator(
                     ttw = tw + tx
                     tx = 0
 
-            # if verbose:
-            #     print(f'tpos = {[tz, ty, tx]}')
-            #     print(f'mshp = {[td, th, tw]}')
+            if verbose:
+                print(f'tpos = {[tz, ty, tx]}')
+                print(f'mshp = {[td, th, tw]}')
+                print(f'mshp_ = {[ttd, tth, ttw]}')
 
             val = m[tz: tz + ttd, ty: ty + tth, tx: tx + ttw].max()
 
-            # if verbose:
-            #     print(f'val = {val}')
+            if verbose:
+                print(f'val = {val}')
 
             p_mask[pidx] = val > 0
 

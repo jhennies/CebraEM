@@ -232,7 +232,7 @@ class BdvDatasetAdvanced(BdvDataset):
             self.set_max_id(vol_max, compare_with_present=True)
 
         # Now call the super with the properly stitched volume
-        super().__setitem__(key, value)
+        super().__setitem__(key, np.array(value))
 
 
 def bdv2pos(pos, resolution=None, verbose=False):

@@ -12,8 +12,8 @@
   },
   "resources": {
     "cpus": 1,
-    "mem_mb": 6144,
-    "time_min": 20,
+    "mem_mb": 16000,
+    "time_min": 60,
     "gpus": 0
   }
 }

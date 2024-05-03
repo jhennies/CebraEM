@@ -50,8 +50,10 @@ def run_supervoxels(
         sv_kwargs,
         mask_ids=None,
         halo=None,
+        tile=True,
         verbose=False
 ):
+
     # TODO check if a mask can be applied to computation such that exhaustive memory hungry steps can be avoided
     assert 'membrane_prediction' in input_dict
     if 'mask' in input_dict:
@@ -66,8 +68,56 @@ def run_supervoxels(
         # # Use this for debugging:
         # return np.ones(vol.shape)
 
+    if tile:
+
+        shp = np.array(mem.shape)
+        hl = np.array(halo)
+        pos = []
+        pos_t = []
+        for z in range(2):
+            for y in range(2):
+                for x in range(2):
+                    pos.append(np.s_[
+                        int(z * (shp[0]/2 - hl[0])): int(z * (shp[0]/2 - hl[0]) + shp[0]/2 + hl[0]),
+                        int(y * (shp[1]/2 - hl[1])): int(y * (shp[1]/2 - hl[1]) + shp[1]/2 + hl[1]),
+                        int(x * (shp[2]/2 - hl[2])): int(x * (shp[2]/2 - hl[2]) + shp[2]/2 + hl[2])
+                    ])
+                    pos_t.append(np.s_[
+                        int((1-z) * hl[0] + z * shp[0]/2): int((1-z) * hl[0] + z * shp[0]/2 + shp[0]/2 - hl[0]),
+                        int((1-y) * hl[1] + y * shp[1]/2): int((1-y) * hl[1] + y * shp[1]/2 + shp[1]/2 - hl[1]),
+                        int((1-x) * hl[2] + x * shp[2]/2): int((1-x) * hl[2] + x * shp[2]/2 + shp[2]/2 - hl[2])
+                    ])
+
+        result_vol = np.zeros(mem.shape, dtype='float32')
+        if 'mask' in input_dict:
+
+            mask = input_dict['mask']
+
+            max_val = 0
+            for idx, p in enumerate(pos):
+                result_vol[pos_t[idx]] = compute_task_with_mask(run_sv, mem[p], mask[p], mask_ids, halo=halo)[
+                                            hl[0]: -hl[0],
+                                            hl[1]: -hl[1],
+                                            hl[2]: -hl[2],
+                                         ] + max_val
+                max_val = result_vol.max()
+            return result_vol
+
+        else:
+            max_val = 0
+            for idx, p in enumerate(pos):
+                result_vol[pos_t[idx]] = run_sv(mem[p])[
+                                             hl[0]: -hl[0],
+                                             hl[1]: -hl[1],
+                                             hl[2]: -hl[2],
+                                         ] + max_val
+                max_val = result_vol.max()
+            return result_vol
+
     if 'mask' in input_dict:
-        return compute_task_with_mask(run_sv, mem, input_dict['mask'], mask_ids=mask_ids, halo=halo)
+
+        mask = input_dict['mask']
+        return compute_task_with_mask(run_sv, mem, mask, mask_ids=mask_ids, halo=halo)
     else:
         return run_sv(mem)
 
@@ -165,6 +215,33 @@ if __name__ == '__main__':
     invert = config_raw['invert'] if 'invert' in config_raw else None
 
     # _______________________________________________________________________________
+    # Write result file
+    # NOTE: doing this before computing anything. Like this, I can get all this information in case it errors out
+    positions_fp = absolute_path(config_ds['positions'], project_path=project_path)
+    with open(positions_fp, 'rb') as f:
+        pos = pickle.load(f)[idx]
+
+    with open(snakemake.output[0], 'w') as f:
+        json.dump(
+            dict(
+                dataset_path=ds_path,
+                position=pos.tolist(),
+                downscale_mode=data_writing['downscale_mode'],
+                halo=halo,
+                background_value=data_writing['background_value'],
+                unique=data_writing['unique_labels'],
+                update_max_id=data_writing['unique_labels'],
+                cast_type=data_writing['dtype'] if 'dtype' in data_writing.keys() else None,
+                block_description=dict(
+                    path=project_path,
+                    idx=idx,
+                    name=dataset
+                )
+            ),
+            f, indent=2
+        )
+
+    # _______________________________________________________________________________
     # Retrieve the input
     input_data = load_data(
         dep_datasets,
@@ -217,9 +294,6 @@ if __name__ == '__main__':
 
     # _______________________________________________________________________________
     # Save the result
-    positions_fp = absolute_path(config_ds['positions'], project_path=project_path)
-    with open(positions_fp, 'rb') as f:
-        pos = pickle.load(f)[idx]
 
     vol_to_bdv(
         output_data,
@@ -238,10 +312,4 @@ if __name__ == '__main__':
         ),
         verbose=verbose
     )
-
-    # _______________________________________________________________________________
-    # Write result file
-    open(snakemake.output[0], 'w').close()
-
-
 

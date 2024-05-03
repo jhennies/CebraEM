@@ -105,15 +105,15 @@ def run(
         print(f'unit = {unit}')
         print(f'dryrun = {dryrun}')
 
-    lock_fp, lock_status = lock_project(project_path=project_path)
-    if lock_status == 'is_locked_error':
-        print('Project is locked, another instance is already running.')
-        print('If you are sure that this is not the case, delete the lock file:')
-        print(f'{lock_fp}')
-        return 1
-    elif lock_status == 'could_not_lock_error':
-        print('Could not lock the project. No write permission?')
-        return 1
+    # lock_fp, lock_status = lock_project(project_path=project_path)
+    # if lock_status == 'is_locked_error':
+    #     print('Project is locked, another instance is already running.')
+    #     print('If you are sure that this is not the case, delete the lock file:')
+    #     print(f'{lock_fp}')
+    #     return 1
+    # elif lock_status == 'could_not_lock_error':
+    #     print('Could not lock the project. No write permission?')
+    #     return 1
 
     # Create or clean the run requests folder
     if not os.path.exists(os.path.join(project_path, '.run_requests')):
@@ -131,7 +131,8 @@ def run(
         cores=cores,
         unlock=unlock,
         quiet=quiet,
-        dryrun=dryrun
+        dryrun=dryrun,
+        force_incomplete=True
     )
 
     if cluster is not None:
@@ -155,13 +156,14 @@ def run(
                 f"--qos={qos}")
             kwargs['nodes'] = cores
             kwargs['restart_times'] = restart_times
+            kwargs['force_incomplete'] = True
         else:
             raise RuntimeError(f'Not supporting cluster = {cluster}')
 
     if rerun:
         kwargs['forcerun'] = [f'run_{target}']
-    if qos == 'low':
-        kwargs['force_incomplete'] = True
+    # if qos == 'low':
+    #     kwargs['force_incomplete'] = True
 
     # Prepare snakefile(s)
     if target == 'gt_cubes':
@@ -236,7 +238,7 @@ def run(
     else:
         run_snakemake(project_path, verbose=verbose, **kwargs)
 
-    unlock_project(project_path=project_path)
+    # unlock_project(project_path=project_path)
     return 0
 
 

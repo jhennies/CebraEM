@@ -2,12 +2,19 @@
 
 ## Installation
 
-For a more detailed description see the cebra_em readme.
+For a full CebraEM installation including CebraANN, please follow the installation instruction in the [main readme](../README.md). 
+
+In case you are installing CebraANN on a machine separate from the main CebraEM workflow, 
+you can omit the installation of the cebra-em package as well as pytorch. 
+
+The simplified installation for CebraANN looks like this:
 
 ```
-conda create -y -n cebra-ann-env -c conda-forge python=3.9
-cd path/to/CebraEM/cebra-ann/
-pip install -e .
+mamba create -y -n cebra-ann-env -c conda-forge python=3.9 python-elf pybdv mobie_utils=0.3 vigra bioimageio.core=0.5.11 bioimageio.spec=0.4.9.post5 marshmallow
+conda activate cebra-ann-env
+
+pip install -e ./cebra-em-core/
+pip install -e ./cebra-ann/
 ```
 
 ## Usage
@@ -15,7 +22,7 @@ pip install -e .
 Start the software with
 
 ```
-conda activate cebra-ann-env
+conda activate cebra-em-env  # or cebra-ann-env, depending on your installation
 napari -w cebra-ann
 ```
 

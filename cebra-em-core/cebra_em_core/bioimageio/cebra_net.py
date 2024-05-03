@@ -13,9 +13,14 @@ def run_cebra_net(
     try:
         rdf_path = os.path.join(
             get_repo_path(), 'models', 'cebranet-cellular-membranes-in-volume-sem_pytorch_state_dict.zip'
+            # get_repo_path(), 'models', 'cebra_net.zip'
         )
+        print(f'rdf_path = {rdf_path}')
+        print(f'trying locally')
         model_resource = bioimageio.core.load_resource_description(rdf_path)
+        # model_resource = bioimageio.core.load_description(rdf_path)
     except TypeError:
+        print('using this')
         rdf_doi = "10.5281/zenodo.7274275"
         model_resource = bioimageio.core.load_resource_description(rdf_doi)
 
@@ -33,8 +38,19 @@ def run_cebra_net(
     prediction_pipeline.input_specs[0].shape = prediction_pipeline.output_specs[0].shape
     tiling = True
 
+    # sample = bioimageio.core.Sample(members={0: input_array}, stat=None, id=0)
+
     # Predict with tiling
     result = bioimageio.core.predict_with_tiling(prediction_pipeline, input_array, tiling=tiling, verbose=True)[0]
-
+    # result = prediction_pipeline.predict_sample_with_blocking(sample)
     return (result[0, 0, :] * 255).astype('uint8')
+
+
+if __name__ == '__main__':
+
+    from h5py import File
+    with File('/media/julian/Data/tmp/gt000/raw.h5', mode='r') as f:
+        data = f['data'][:]
+
+    run_cebra_net(data)
 
