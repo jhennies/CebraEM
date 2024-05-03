@@ -22,7 +22,7 @@ and these are run from within a project folder:
  - ```link_gt.py```: Link a ground truth cube to a segmentation dataset
  - ```log_gt.py```: Shows the ground truth cubes that are present in the current project
 
-To annotate ground truth cubes with CebraANN use (Also see CebraANN readme):
+To annotate ground truth cubes with CebraANN use (Also see the [CebraANN readme](../cebra-ann/README.md)):
 
  - ```napari -w cebra-ann```
 

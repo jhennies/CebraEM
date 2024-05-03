@@ -64,8 +64,7 @@ the proper pytorch installation commands
 
 [CebraEM readme](cebra-em/README.md)
 
-Contains: 
- - Installation of CebraEM including the cebra-ann, cebra-em-core and cebra-em packages
+Contains:
  - Usage of CebraEM
 
 ## CebraANN
@@ -73,7 +72,7 @@ Contains:
 [CebraANN readme](cebra-ann/README.md)
 
 Contains:
- - Specific installation of cebra-em-core for the cebra-ann package
+ - Specific installation for the cebra-ann package in case CebraANN needs to be run on a separate machine
  - Usage of CebraANN
 
 ## CebraNET
