@@ -62,7 +62,6 @@ def run_supervoxels(
         assert len(input_dict) == 1
 
     mem = input_dict['membrane_prediction']
-    mask = input_dict['mask']
 
     def run_sv(vol, mask=None):
         return watershed_dt_with_probs(vol, **sv_kwargs, verbose=verbose)
@@ -92,6 +91,8 @@ def run_supervoxels(
         result_vol = np.zeros(mem.shape, dtype='float32')
         if 'mask' in input_dict:
 
+            mask = input_dict['mask']
+
             max_val = 0
             for idx, p in enumerate(pos):
                 result_vol[pos_t[idx]] = compute_task_with_mask(run_sv, mem[p], mask[p], mask_ids, halo=halo)[
@@ -105,11 +106,17 @@ def run_supervoxels(
         else:
             max_val = 0
             for idx, p in enumerate(pos):
-                result_vol[pos_t[idx]] = run_sv(mem[p]) + max_val
+                result_vol[pos_t[idx]] = run_sv(mem[p])[
+                                             hl[0]: -hl[0],
+                                             hl[1]: -hl[1],
+                                             hl[2]: -hl[2],
+                                         ] + max_val
                 max_val = result_vol.max()
             return result_vol
 
     if 'mask' in input_dict:
+
+        mask = input_dict['mask']
         return compute_task_with_mask(run_sv, mem, mask, mask_ids=mask_ids, halo=halo)
     else:
         return run_sv(mem)

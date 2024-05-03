@@ -4,7 +4,7 @@
 
 For Windows use an anaconda prompt, for Linux use a terminal.
 
-Clone the CebraEM repo into a path of your choice (now referred to as ```/path/to/cebra_em/```:
+Clone the CebraEM repo into a path of your choice (now referred to as ```/path/to/cebra_em/```):
 
 ```
 cd /path/of/cebra_em/
@@ -18,11 +18,11 @@ environment with:
 conda install -c conda-forge mamba
 ```
 
-For the following descriptions an installation of Mamba is assumed
+For the following descriptions an installation of Mamba is assumed (otherwise just replace "mamba" -> "conda")
 
 ### CebraEM conda environment
 
-The following installs CebraEM as well as all dependencies except pytorch
+The following commands install CebraEM as well as all dependencies except pytorch
 ```
 mamba create -y -n cebra-em-env -c conda-forge python=3.9 python-elf pybdv mobie_utils=0.3 vigra bioimageio.core=0.5.11 bioimageio.spec=0.4.9.post5 marshmallow
 conda activate cebra-em-env
