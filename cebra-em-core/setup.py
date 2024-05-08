@@ -13,8 +13,8 @@ setup(
     # ],
     entry_points={
         'console_scripts': [
-            'convert_to_bdv = bin.convert_to_bdv:main',
-            'normalize_instances = bin.normalize_instances:main'
+            'convert-to-bdv = bin.convert_to_bdv:main',
+            'normalize-instances = bin.normalize_instances:main'
         ]
     },
     # url='',
