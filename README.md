@@ -2,21 +2,15 @@
 
 ## Installation
 
-### Installation of Miniconda
+### Installation of the MoBIE browser
 
-Install [miniconda](https://docs.anaconda.com/free/miniconda/) on your computer.
+ - Download [Fiji](https://imagej.net/software/fiji/downloads) for your operating system
+ - Unpack Fiji to any location on the filesystem
+ - Download the "mobie-*.jar" file from the [latest release](https://github.com/jhennies/CebraEM/releases/download/v0.0.1/mobie-2.0.0-SNAPSHOT.jar)
+ - move the "mobie-*.jar" file to the ```jars``` folder in the Fiji directory: e.g. ```fiji-linux64/Fiji.app/jars``` (Linux), ```fiji-win64/Fiji.app/jars``` (Windows)
+ - Now you can open a CebraEM/MoBIE project using ```Fiji -> Plugins -> MoBIE -> Open -> Project -> Open MoBIE Project ...```
 
-For Windows use the miniconda prompt (open the ***"Anaconda (Miniconda3)"***-app), for Linux use a terminal.
-
-
-I generally recommend using the mamba package for installing the conda environments. Install mamba into the base 
-environment with:
-
-```
-conda install -c conda-forge mamba
-```
-
-For the following descriptions an installation of Mamba is assumed (otherwise just replace "mamba" -> "conda")
+**Note: CebraEM projects currently do not work with the latest MoBIE version, so please adhere to the instructions above!**
 
 ### Download of the CebraEM source code
 
@@ -39,15 +33,21 @@ git clone https://github.com/jhennies/CebraEM.git
 
 The path to CebraEM will be referred to below as ```/path/to/CebraEM```
 
-### Installation of the MoBIE browser
+### Installation of Miniconda
 
- - Download [Fiji](https://imagej.net/software/fiji/downloads) for your operating system
- - Unpack Fiji to any location on the filesystem
- - Download the "mobie-*.jar" file from the [latest release](https://github.com/jhennies/CebraEM/releases/download/v0.0.1/mobie-2.0.0-SNAPSHOT.jar)
- - move the "mobie-*.jar" file to the ```jars``` folder in the Fiji directory: e.g. ```fiji-linux64/Fiji.app/jars``` (Linux), ```fiji-win64/Fiji.app/jars``` (Windows)
- - Now you can open a CebraEM/MoBIE project using ```Fiji -> Plugins -> MoBIE -> Open -> Project -> Open MoBIE Project ...```
+Install [miniconda](https://docs.anaconda.com/free/miniconda/) on your computer.
 
-**Note: CebraEM projects currently do not work with the latest MoBIE version, so please adhere to the instructions above!**
+For Windows use the miniconda prompt (open the ***"Anaconda (Miniconda3)"***-app), for Linux use a terminal.
+
+
+I generally recommend using the mamba package for installing the conda environments. Install mamba into the base 
+environment with:
+
+```
+conda install -c conda-forge mamba
+```
+
+For the following descriptions an installation of Mamba is assumed (otherwise just replace "mamba" -> "conda")
 
 ### CebraEM conda environment
 
