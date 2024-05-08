@@ -6,12 +6,12 @@
 
 Install [miniconda](https://docs.anaconda.com/free/miniconda/) on your computer.
 
-For Windows use an anaconda prompt, for Linux use a terminal.
+For Windows use the miniconda prompt (open the ***"Anaconda (Miniconda3)"***-app), for Linux use a terminal.
 
 Clone the CebraEM repo into a path of your choice (now referred to as ```/path/to/cebra_em/```):
 
 ```
-cd /path/of/cebra_em/
+cd /path/to/cebra_em/
 git clone https://github.com/jhennies/CebraEM.git
 ```
 
@@ -26,7 +26,7 @@ For the following descriptions an installation of Mamba is assumed (otherwise ju
 
 ### CebraEM conda environment
 
-The following commands install CebraEM as well as all dependencies except pytorch
+These commands install CebraEM as well as all dependencies except pytorch (run each of these lines in your terminal/prompt):
 ```
 mamba create -y -n cebra-em-env -c conda-forge python=3.9 python-elf pybdv mobie_utils=0.3 vigra bioimageio.core=0.5.11 bioimageio.spec=0.4.9.post5 marshmallow
 conda activate cebra-em-env
