@@ -2,6 +2,8 @@
 
 ## Usage
 
+For Windows use an anaconda prompt, for Linux use a terminal.
+
 Activate the CebraEM environment:
 
 ```

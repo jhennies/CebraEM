@@ -2,6 +2,10 @@
 
 ## Installation
 
+### Pre-requesites
+
+Install [miniconda](https://docs.anaconda.com/free/miniconda/) on your computer.
+
 For Windows use an anaconda prompt, for Linux use a terminal.
 
 Clone the CebraEM repo into a path of your choice (now referred to as ```/path/to/cebra_em/```):
