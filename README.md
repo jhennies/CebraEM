@@ -44,7 +44,7 @@ The path to CebraEM will be referred to below as ```/path/to/CebraEM```
  - Download [Fiji](https://imagej.net/software/fiji/downloads) for your operating system
  - Unpack Fiji to any location on the filesystem
  - Download the "mobie-*.jar" file from the [latest release](https://github.com/jhennies/CebraEM/releases/download/v0.0.1/mobie-2.0.0-SNAPSHOT.jar)
- - move the "mobie-*.jar" file to the ```jars``` folder in the Fiji directory (```fiji-linux64/Fiji.app/jars```)
+ - move the "mobie-*.jar" file to the ```jars``` folder in the Fiji directory: e.g. ```fiji-linux64/Fiji.app/jars``` (Linux), ```fiji-win64/Fiji.app/jars``` (Windows)
  - Now you can open a CebraEM/MoBIE project using ```Fiji -> Plugins -> MoBIE -> Open -> Project -> Open MoBIE Project ...```
 
 **Note: CebraEM projects currently do not work with the latest MoBIE version, so please adhere to the instructions above!**
