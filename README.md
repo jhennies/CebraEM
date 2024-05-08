@@ -54,7 +54,7 @@ The path to CebraEM will be referred to below as ```/path/to/CebraEM```
 These commands install CebraEM as well as all dependencies except pytorch (run each of these lines in your terminal/prompt):
 ```
 cd /path/to/CebraEM
-mamba create -y -n cebra-em-env -c conda-forge python=3.9 python-elf pybdv mobie_utils=0.3 vigra bioimageio.core=0.5.11 bioimageio.spec=0.4.9.post5 marshmallow
+mamba env create -f environment.yaml
 conda activate cebra-em-env
 
 pip install -e ./cebra-em-core/
