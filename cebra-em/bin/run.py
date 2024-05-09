@@ -1,5 +1,6 @@
 
 def _snakemake(*args, **kwargs):
+    import snakemake
     print('Starting snakemake with:')
     print(args)
     print(kwargs)
@@ -11,6 +12,12 @@ def _snakemake(*args, **kwargs):
 
 
 def run_snakemake(project_path, verbose=False, return_thread=False, **kwargs):
+
+    import os
+    import snakemake
+    import shutil
+    from multiprocessing import Process
+    from cebra_em.misc.repo import get_repo_path
 
     project_path = os.path.abspath(project_path)
     os.chdir(project_path)
@@ -85,6 +92,22 @@ def run(
         debug=False,
         verbose=False
 ):
+
+    # ----------------------------------------------------
+    # Imports
+
+    import os
+
+    from cebra_em.prepare_snakefiles import prepare_run, prepare_gt_extract, prepare_stitching
+    from cebra_em_core.project_utils.project import (
+        get_current_project_path,
+        # lock_project,
+        # unlock_project
+    )
+    from cebra_em_core.project_utils.config import get_config
+    from cebra_em_core.cebra_em_project import init_beta_map
+
+    # ----------------------------------------------------
 
     assert cluster in [None, 'slurm']
     if gpus is None:
@@ -242,7 +265,7 @@ def run(
     return 0
 
 
-if __name__ == '__main__':
+def main():
 
     # ----------------------------------------------------
     import argparse
@@ -308,26 +331,6 @@ if __name__ == '__main__':
     verbose = args.verbose
     dryrun = args.dryrun
     debug = args.debug
-
-    # ----------------------------------------------------
-    # Imports
-
-    import os
-    import snakemake
-    from multiprocessing import Process
-    import shutil
-
-    from cebra_em.prepare_snakefiles import prepare_run, prepare_gt_extract, prepare_stitching
-    from cebra_em_core.project_utils.project import (
-        get_current_project_path,
-        lock_project,
-        unlock_project
-    )
-    from cebra_em.misc.repo import get_repo_path
-    from cebra_em_core.project_utils.config import get_config
-    from cebra_em_core.cebra_em_project import init_beta_map
-
-    # ----------------------------------------------------
 
     run(
         project_path=project_path,

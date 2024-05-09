@@ -24,7 +24,7 @@ def link_gt(
     )
 
 
-if __name__ == '__main__':
+def main():
 
     # ----------------------------------------------------
     import argparse

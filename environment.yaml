@@ -1,0 +1,14 @@
+name:
+  cebra-em-env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - python-elf
+  - pybdv
+  - mobie_utils=0.3
+  - vigra
+  - bioimageio.core=0.5.11
+  - bioimageio.spec=0.4.9.post5
+  - marshmallow
+  - datrie

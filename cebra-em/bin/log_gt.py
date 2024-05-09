@@ -16,7 +16,7 @@ def log_gt(project_path=None, datasets=False):
     log_func(project_path=project_path)
 
 
-if __name__ == '__main__':
+def main():
 
     # ___________________________________________________
     # Command line arguments

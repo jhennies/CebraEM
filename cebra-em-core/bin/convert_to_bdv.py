@@ -1,5 +1,5 @@
 
-if __name__ == '__main__':
+def main():
 
     # ___________________________________________________
     # Command line arguments

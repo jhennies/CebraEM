@@ -29,7 +29,7 @@ def init_gt(
     )
 
 
-if __name__ == '__main__':
+def main():
 
     # ----------------------------------------------------
     import argparse
