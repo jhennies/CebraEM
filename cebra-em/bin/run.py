@@ -274,14 +274,14 @@ def main():
         description='Starts a run of the CebraEM workflow.',
         formatter_class=argparse.RawTextHelpFormatter
     )
-    parser.add_argument('-p', '--project_path', type=str, default=None,
-                        help='Path of the project, the current path by default')
-    parser.add_argument('-t', '--target', type=str, default='membrane_prediction',
+    parser.add_argument('target', type=str, default='membrane_prediction',
                         help=('Defines the map(s) to compute, can be any of the following:\n'
                               '    "membrane_prediction"\n'
                               '    "supervoxels"\n'
                               '    "[any_segmentation_map_id]"\n'
                               '    "gt_cubes"'))
+    parser.add_argument('-p', '--project_path', type=str, default=None,
+                        help='Path of the project, the current path by default')
     parser.add_argument('-par', '--parameters', type=str, default=None,
                         help='Parameters that are fed to the workflow within run.json["misc"]\n'
                              'For example when running stitching, define the beta-map: '

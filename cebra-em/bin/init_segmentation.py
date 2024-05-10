@@ -5,7 +5,8 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Initializes a segmentation',
+        description='Initializes a segmentation\n'
+                    'To print existing segmentation datasets and their linked ground truth cubes use: `log_gt -d`',
         formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument('organelle', type=str,

@@ -35,14 +35,8 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Initializes a ground truth cube at a certain position in the dataset.\n\n'
-                    'Print existing ground truth cube information: `log_gt [args]`\n\n'
-                    'Next steps (not necessarily in this specific order!):\n'
-                    '  - Initialize additional ground truth cubes (re-run this function with different positions)\n'
-                    '  - Extract initialized ground truth cubes for annotation:  `run.py -t gt_cubes`\n'
-                    '  - Annotate ground truth cubes with CebraANN:              `napari -w cebra-ann`\n'
-                    '  - Initialize a segmentation:                              `init_segmentation.py [args]`\n'
-                    '  - Link ground truth cubes to a segmentation:              `link_gt.py [args]`\n',
+        description='Initializes a ground truth cube at a certain position in the dataset.\n'
+                    'To print existing ground truth cube information use: `log_gt`',
         formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument('-p', '--project_path', type=str, default=None,
