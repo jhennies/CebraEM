@@ -2,15 +2,35 @@
 
 ## Installation
 
+### Support for Linux and Windows
+
+Note that CebraEM is developed on Linux. We have tested CebraEM on Windows and are currently working
+on a stable solution for Windows machines. 
+
+Note that for Windows 10, a Windows Subsystem for Linux ([WSL](https://learn.microsoft.com/en-us/windows/wsl/about))
+has to be installed for CebraEM to run. 
+In Windows 11 this is already installed by default.
+
 ### Installation of the MoBIE browser
+
+Follow the instruction [here](https://github.com/mobie/mobie-viewer-fiji/) to install the Fiji and the MoBIE browser 
+which includes these steps:
 
  - Download [Fiji](https://imagej.net/software/fiji/downloads) for your operating system
  - Unpack Fiji to any location on the filesystem
- - Download the "mobie-*.jar" file from the [latest release](https://github.com/jhennies/CebraEM/releases/download/v0.0.1/mobie-2.0.0-SNAPSHOT.jar)
- - move the "mobie-*.jar" file to the ```jars``` folder in the Fiji directory: e.g. ```fiji-linux64/Fiji.app/jars``` (Linux), ```fiji-win64/Fiji.app/jars``` (Windows)
- - Now you can open a CebraEM/MoBIE project using ```Fiji -> Plugins -> MoBIE -> Open -> Project -> Open MoBIE Project ...```
+ - Open Fiji and install MoBIE:
+   - Open the Fiji upater using ```Help -> Update...``` and wait for the updater to start up (may take a moment)
+   - An information prompt will probably report that 'Your ImageJ is up to date!'. Press ```OK```
+   - In the "ImageJ Updater" window click ```Manage Update Sites```
+   - In the "Manage Update Sites" window scroll down or search for "MoBIE" and tick the box next to it
+   - Press ```Apply and Close```
+   - Back in the "ImageJ Updater" window click ```Apply Changes``` which will now trigger download and installation of 
+     the required packages
+   - Close and re-open Fiji to complete the installation
+ 
+Alternatively, can download and extract a Fiji that already includes MoBIE from the [latest release](TODO: put link).
 
-**Note: CebraEM projects currently do not work with the latest MoBIE version, so please adhere to the instructions above!**
+After successful installation of MoBIE you can open a CebraEM/MoBIE project using ```Fiji -> Plugins -> MoBIE -> Open -> Project -> Open MoBIE Project ...```
 
 ### Download of the CebraEM source code
 
@@ -37,10 +57,7 @@ The path to CebraEM will be referred to below as ```/path/to/CebraEM```
 
 Install [miniconda](https://docs.anaconda.com/free/miniconda/) on your computer.
 
-For Windows use the miniconda prompt (open the ***"Anaconda (Miniconda3)"***-app), for Linux use a terminal.
-
-
-I generally recommend using the mamba package for installing the conda environments. Install mamba into the base 
+I generally recommend using the mamba package for installing the conda environments. Open a terminal and install mamba into the base 
 environment with:
 
 ```
@@ -52,6 +69,7 @@ For the following descriptions an installation of Mamba is assumed (otherwise ju
 ### CebraEM conda environment
 
 These commands install CebraEM as well as all dependencies except pytorch (run each of these lines in your terminal/prompt):
+
 ```
 cd /path/to/CebraEM
 mamba env create -f environment.yaml
