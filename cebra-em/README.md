@@ -33,15 +33,33 @@ To annotate ground truth cubes with CebraANN use (Also see the [CebraANN readme]
 TODO: Fill this with an actual example (sample dataset) including images
 
 Assuming a EM dataset in Big Data Viewer format at ```/data/em_dataset.xml``` 
-and a corresponding mask map at ```/data/labels.xml```
-The EM dataset has a resolution of 5 nm isotropic.
+and a corresponding mask map at ```/data/labels.xml```.
+The EM dataset has a resolution of 10 nm isotropic.
+
+The usage of a mask, which indicates where compuation is to be performed is optional but recommended for datasets which
+have a large amount of background (e.g. single cells from cell culture samples) or in case only a specific region of the 
+data is to be processed.
 
 ### Initialization of the CebraEM project
+
+Initialize the project either without mask: 
+
+```
+cem-init-project /data/em_dataset.xml
+```
+
+or with mask:
 
 ```
 cem-init-project /data/em_dataset.xml -m /data/labels.xml
 ```
-To change the annotation resolution, change the resolution in the general parameter settings to 10 nm. 
+
+When running one of the two commands above parameters for the dataset will be shown which can be changed by typing the 
+respective ID and ENTER. This opens up an editor where the json file can be modified.
+
+For example, to change the annotation resolution, change the resolution in the general parameter settings to the desired
+annotation resolution.
+
 Press ENTER to continue.
 
 ### Run membrane prediction and supervoxels
