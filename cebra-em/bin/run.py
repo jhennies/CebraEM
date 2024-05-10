@@ -60,16 +60,32 @@ def run_snakemake(project_path, verbose=False, return_thread=False, **kwargs):
         snk_p.join()
 
 
+# def _parameter_str_to_dict(params):
+#     if params is None:
+#         return dict()
+#     params = str.split(params, '=')
+#     param_dict = dict()
+#     for idx in range(0, len(params), 2):
+#         try:
+#             param_dict[params[idx]] = int(params[idx + 1])
+#         except ValueError:
+#             param_dict[params[idx]] = float(params[idx + 1])
+#     return param_dict
+
+
 def _parameter_str_to_dict(params):
     if params is None:
         return dict()
-    params = str.split(params, '=')
+
     param_dict = dict()
-    for idx in range(0, len(params), 2):
-        try:
-            param_dict[params[idx]] = int(params[idx + 1])
-        except ValueError:
-            param_dict[params[idx]] = float(params[idx + 1])
+
+    for p in params:
+        k, v = str.split(p, '=')
+        if ',' in v:
+            v = [float(x) for x in str.split(v, ',')]
+        else:
+            v = [float(v)]
+        param_dict[k] = v
     return param_dict
 
 
@@ -201,10 +217,10 @@ def run(
             verbose=verbose)
     elif target[:7] == 'stitch-':
         # This requests the stitching
-        assert 'beta' in parameters, 'Supply a value for beta using "--param beta=0.5"'
+        assert 'beta' in parameters, 'Supply a value for beta, e.g. by using "--param beta=0.5"'
         base_target = target[7:]
         config_seg = get_config(base_target, project_path=project_path)
-        beta_target = f'{base_target}_b{str.replace(str(parameters["beta"]), ".", "_")}'
+        beta_target = f'{base_target}_b{str.replace(str(parameters["beta"][0]), ".", "_")}'
         if not 'xml_path_stitched' in config_seg['segmentations'][beta_target]:
             init_beta_map(
                 f'{beta_target}_stitched',
@@ -230,7 +246,16 @@ def run(
         # Generate the beta target maps
         beta_targets = []
         config_seg = get_config(target, project_path=project_path)
+
         betas = config_seg['mc_args']['betas']
+        if 'beta' in parameters:
+            import numpy as np
+            betas.extend(parameters['beta'])
+            betas = np.unique(betas).tolist()
+            from cebra_em_core.project_utils.config import add_to_config_json, get_config_filepath
+            config_fp = get_config_filepath(target, project_path=project_path)
+            add_to_config_json(config_fp, {'mc_args': {'betas': betas}})
+            config_seg = get_config(target, project_path=project_path)
         beta_targets.extend([f'{target}_b{str.replace(str(beta), ".", "_")}' for beta in betas])
         # Initialize the beta maps (if they don't exist yet)
         print(beta_targets)
@@ -282,10 +307,10 @@ def main():
                               '    "gt_cubes"'))
     parser.add_argument('-p', '--project_path', type=str, default=None,
                         help='Path of the project, the current path by default')
-    parser.add_argument('-par', '--parameters', type=str, default=None,
+    parser.add_argument('-par', '--parameters', nargs='+', type=str, default=None,
                         help='Parameters that are fed to the workflow within run.json["misc"]\n'
                              'For example when running stitching, define the beta-map: '
-                             'run.py -t stich-seg_map --param beta=0.6')
+                             'run.py -t stitch-seg_map --param beta=0.6')
     parser.add_argument('-r', '--roi', type=float, default=None, nargs=6,
                         metavar=('Z', 'Y', 'X', 'depth', 'height', 'width'),
                         help='Defines a region of interest to which the requested run is confined')

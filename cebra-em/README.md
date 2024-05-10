@@ -110,6 +110,15 @@ cem-run mito_it00
 
 Optionally, the segmentation can be run on a subset to test the segmentation quality using the ```--roi``` parameter.
 
+Also it can be beneficial to modify the beta-parameter. The default of 0.5 often yields a low specificity of the
+model. Different values, for example 0.6 to 0.8, can be selected by running 
+
+```
+cem-run mito_it00 --param beta=0.6,0.7,0.8
+```
+
+For each of these parameters a segmentation map will be saved to the project.
+
 ### Iterate the process
 
 Add ground truth cubes (see Initialize ground truth cubes) specifically where the current segmentation performs poorly
@@ -127,7 +136,7 @@ Link the ground truth cubes to this second segmentation. Include the ground trut
 cem-link-gt 0 1 2 3 mito mito_it01
 ```
 
-Run the second iteration
+Run the second iteration (also consider different values for beta if necessary by adding e.g. ```--param beta=0.6,0.7,0.8```)
 
 ```
 cem-run -t mito_it01
