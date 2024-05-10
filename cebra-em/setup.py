@@ -20,12 +20,12 @@ setup(
     # long_description='',
     entry_points={
         'console_scripts': [
-            'init-gt = bin.init_gt:main',
-            'init-project = bin.init_project:main',
-            'init-segmentation = bin.init_segmentation:main',
-            'link-gt = bin.link_gt:main',
-            'log-gt = bin.log_gt:main',
-            'run = bin.run:main',
+            'cem-init-gt = bin.init_gt:main',
+            'cem-init-project = bin.init_project:main',
+            'cem-init-segmentation = bin.init_segmentation:main',
+            'cem-link-gt = bin.link_gt:main',
+            'cem-log-gt = bin.log_gt:main',
+            'cem-run = bin.run:main',
             # 'update_mobie_table = bin.update_mobie_table:main'  # Not implemented yet
         ]
     },
