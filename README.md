@@ -28,7 +28,7 @@ which includes these steps:
      the required packages
    - Close and re-open Fiji to complete the installation
  
-Alternatively, can download and extract a Fiji that already includes MoBIE from the [latest release](TODO: put link).
+Alternatively, can download and extract a Fiji that already includes MoBIE from the [latest release](https://github.com/jhennies/CebraEM/releases/download/v0.0.3/fiji-linux64-with-mobie.zip).
 
 After successful installation of MoBIE you can open a CebraEM/MoBIE project using ```Fiji -> Plugins -> MoBIE -> Open -> Project -> Open MoBIE Project ...```
 
@@ -36,7 +36,7 @@ After successful installation of MoBIE you can open a CebraEM/MoBIE project usin
 
 Here, you have two options: 
 
-#### 1. Download the source code in the [latest release](https://github.com/jhennies/CebraEM/archive/refs/tags/v0.0.1.zip) (recommended)
+#### 1. Download the source code in the [latest release](https://github.com/jhennies/CebraEM/archive/refs/tags/v0.0.3.zip) (recommended)
 
  - Now unpack the contents to some path of your choice (here I'm now assuming you created a folder called ```src``` in the user directory)
  - The path to CebraEM will now look something like this: ```~/src/CebraEM-v0.0.1/``` (Linux) or ```C:\Users\username\CebraEM-v0.0.1\``` (Windows)
