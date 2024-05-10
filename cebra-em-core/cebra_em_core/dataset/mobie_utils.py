@@ -94,10 +94,16 @@ def init_with_raw(mobie_project_path, dataset_name, raw_xml_path, image_name, pr
         contrast_limits=[0, 255]
     )
 
+    print(f'raw_data_path = {raw_data_path}')
+    print(f'mobie_project_path = {mobie_project_path}')
+    print(f'dataset_folder = {dataset_folder}')
+
     # The target xml file in the new Mobie project
     xml_path = os.path.join(dataset_folder, 'images', '{}', f'{image_name}.xml')
     xml_path = xml_path.format(data_format.replace('.', '-'))
-    copy_xml_with_newpath(raw_xml_path, xml_path, raw_data_path, path_type='absolute', data_format=data_format)
+    raw_data_path = os.path.relpath(raw_data_path, os.path.split(xml_path)[0])
+    copy_xml_with_newpath(raw_xml_path, xml_path, raw_data_path, path_type='relative', data_format=data_format)
+    # copy_xml_with_newpath(raw_xml_path, xml_path, raw_data_path, path_type='absolute', data_format=data_format)
     _update_image_name(xml_path, image_name)
     _resolution_to_micrometer(xml_path)
 
@@ -210,7 +216,7 @@ def _make_empty_dataset(
     #     overwrite=True, view=view
     # )
     add_source_to_dataset(
-        absolute_path(dataset_path, project_path=project_path), 'image', image_name, xml_path,
+        absolute_path(dataset_path, project_path=project_path), source_type, image_name, xml_path,
         overwrite=True, view=view
     )
 

@@ -4,9 +4,13 @@ import json
 from cebra_em_core.version import __version__, VALID_VERSIONS
 
 
+def get_project_json(project_path):
+    return os.path.join(project_path, 'cebra-em.json')
+
+
 def assert_valid_project(project_path):
 
-    proj_json = os.path.join(project_path, 'project.json')
+    proj_json = get_project_json(project_path)
     if not os.path.isfile(proj_json):
         print(f'Not a valid project location: {project_path}')
         raise RuntimeError('Not a valid project location: No project.json found')
@@ -30,7 +34,7 @@ def make_project_structure(project_path, ignore_non_empty=False):
             assert not os.listdir(project_path), 'Project path exists and is not empty!'
 
     # Make project json
-    with open(os.path.join(project_path, 'project.json'), mode='w') as f:
+    with open(get_project_json(project_path), mode='w') as f:
         json.dump({
             'em_core_version': __version__,
             'type': 'cebra_em'

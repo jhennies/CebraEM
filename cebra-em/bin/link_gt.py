@@ -33,9 +33,7 @@ def main():
         description='Link ground truth cubes to a segmentation.\n\n'
                     'Requirements:\n'
                     '  - Initialized ground truth cube(s):  `init_gt.py [args]`\n'
-                    '  - Initialized segmentation:          `init_segmentation.py [args]` \n\n'
-                    'Next step:\n'
-                    '  - Train and run the segmentation:    `run.py -t [segmentation_id]`\n',
+                    '  - Initialized segmentation:          `init_segmentation.py [args]`',
         formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument('cube_ids', type=int, nargs='+',
