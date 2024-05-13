@@ -211,6 +211,8 @@ def init_project(
     raw_data_xml = os.path.abspath(raw_data_xml)
     if verbose:
         print(f'raw_data_xml = {raw_data_xml}')
+    if mask_xml is not None:
+        mask_xml = os.path.abspath(mask_xml)
 
     print('')
     print('Making project structure ...')

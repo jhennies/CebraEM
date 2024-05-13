@@ -70,8 +70,21 @@ def watershed_dt_with_probs(
         verbose=False
 ):
 
+    # from h5py import File
+    # from random import randint
+    # rand_val = randint(0, 999)
+    # print(f'rand_val = {rand_val}')
+    # with File(f'/media/julian/Data/tmp/sv_input_{rand_val}.h5', mode='w') as f:
+    #     f.create_dataset('data', data=pmap, compression='gzip')
+    #
+    # return pmap
+
     pmap = pmap.astype('float32')
     pmap /= pmap.max()
+
+    pmap_ = np.ones(pmap.shape, dtype=pmap.dtype)
+    pmap_[1: -1, 1: -1, 1: -1] = pmap[1: -1, 1: -1, 1: -1]
+    pmap = pmap_
 
     if verbose:
         print('pmin = {}'.format(threshold))
