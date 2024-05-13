@@ -393,7 +393,8 @@ def init_mask(dataset_folder, mask_xml_path, image_name, project_path=None, verb
     # The target xml file in the Mobie project
     xml_path = os.path.join(dataset_folder, 'images', '{}', f'{image_name}.xml')
     xml_path = xml_path.format(data_format.replace('.', '-'))
-    copy_xml_with_newpath(mask_xml_path, xml_path, mask_data_path, path_type='absolute', data_format=data_format)
+    mask_data_path_rel = os.path.relpath(mask_data_path, os.path.split(xml_path)[0])
+    copy_xml_with_newpath(mask_xml_path, xml_path, mask_data_path_rel, path_type='absolute', data_format=data_format)
     _update_image_name(xml_path, image_name)
     _resolution_to_micrometer(xml_path)
 

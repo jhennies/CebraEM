@@ -38,7 +38,16 @@ def run_membrane_prediction(
     if 'mask' in input_dict:
         if verbose:
             print(f'Computing with mask ...')
-        return compute_task_with_mask(_run_cebra_net, raw, input_dict['mask'], mask_ids=mask_ids, halo=halo, verbose=verbose)
+        return compute_task_with_mask(
+            _run_cebra_net,
+            raw,
+            input_dict['mask'],
+            mask_ids=mask_ids,
+            halo=halo,
+            dilate_mask=8,
+            add_halo_outside_mask=True,
+            verbose=verbose
+        )
     else:
         if verbose:
             print(f'Computing without mask ...')
@@ -95,11 +104,13 @@ def run_supervoxels(
 
             max_val = 0
             for idx, p in enumerate(pos):
-                result_vol[pos_t[idx]] = compute_task_with_mask(run_sv, mem[p], mask[p], mask_ids, halo=halo)[
-                                            hl[0]: -hl[0],
-                                            hl[1]: -hl[1],
-                                            hl[2]: -hl[2],
-                                         ] + max_val
+                result_vol[pos_t[idx]] = compute_task_with_mask(
+                    run_sv, mem[p], mask[p], mask_ids, halo=halo, dilate_mask=4, add_halo_outside_mask=False
+                )[
+                    hl[0]: -hl[0],
+                    hl[1]: -hl[1],
+                    hl[2]: -hl[2],
+                ] + max_val
                 max_val = result_vol.max()
             return result_vol
 
@@ -117,7 +128,7 @@ def run_supervoxels(
     if 'mask' in input_dict:
 
         mask = input_dict['mask']
-        return compute_task_with_mask(run_sv, mem, mask, mask_ids=mask_ids, halo=halo)
+        return compute_task_with_mask(run_sv, mem, mask, mask_ids=mask_ids, halo=halo, dilate_mask=4, add_halo_outside_mask=False)
     else:
         return run_sv(mem)
 

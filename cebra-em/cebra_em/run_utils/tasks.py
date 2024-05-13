@@ -110,7 +110,17 @@ def apply_normalization(
     return raw
 
 
-def compute_task_with_mask(func, vol, mask, mask_ids, halo=None, pad_result_vol=True, verbose=False):
+def compute_task_with_mask(
+        func,
+        vol,
+        mask,
+        mask_ids,
+        halo=None,
+        pad_result_vol=True,
+        dilate_mask=0,
+        add_halo_outside_mask=False,
+        verbose=False
+):
     """
 
     :param func: The function running the task with this signature:
@@ -167,18 +177,34 @@ def compute_task_with_mask(func, vol, mask, mask_ids, halo=None, pad_result_vol=
     if verbose:
         print(f'Mask contains zeros, cropping to bounds ...')
     # Crop the bounding rect of the mask
-    bounds = crop_zero_padding_3d(bin_mask, add_halo=halo)
+    if dilate_mask:
+        from scipy.ndimage import maximum_filter
+        bin_mask_dil = maximum_filter(bin_mask, dilate_mask)
+        # # if (bin_mask_dil != bin_mask).all():
+        # from random import randint
+        # rand_mask_val = randint(0, 999)
+        # print(f'rand_mask_val = {rand_mask_val}')
+        # from h5py import File
+        # with File(f'/media/julian/Data/tmp/dil_mask_{rand_mask_val}.h5', mode='w') as f:
+        #     f.create_dataset('bin_mask', data=bin_mask.astype('uint8') * 255, compression='gzip')
+        #     f.create_dataset('bin_mask_dil', data=bin_mask_dil.astype('uint8') * 255, compression='gzip')
+    else:
+        bin_mask_dil = bin_mask
+    bounds = crop_zero_padding_3d(bin_mask_dil, add_halo=add_halo_outside_mask and halo)
+    # print(f'bounds = {bounds}')
+    # print(f'vol.shape = {vol.shape}')
     if np.array(vol).ndim == 3:
         vol_in = vol[bounds]
     elif np.array(vol).ndim == 4:
         vol_in = [v[bounds] for v in vol]
     else:
         raise RuntimeError('Only 3 or 4 dimensional arrays implemented!')
+    # print(f'vol_in.shape = {vol_in.shape}')
 
     # Compute the respective subarea
     res = func(vol_in, mask=bin_mask[bounds])
 
-    print(f'pad_result_vol = {pad_result_vol}')
+    # print(f'pad_result_vol = {pad_result_vol}')
     if pad_result_vol:
 
         if verbose:
@@ -197,7 +223,7 @@ def compute_task_with_mask(func, vol, mask, mask_ids, halo=None, pad_result_vol=
         if verbose:
             print(f'Removing everything outside the mask ...')
         # Remove everything outside the mask
-        vol_out[np.logical_not(bin_mask)] = 0
+        vol_out[np.logical_not(bin_mask_dil)] = 0
         if verbose:
             print(f'np.unique(vol_out) = {np.unique(vol_out)}')
 

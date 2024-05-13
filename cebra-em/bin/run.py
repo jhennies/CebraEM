@@ -233,7 +233,7 @@ def run(
 
         prepare_stitching(
             target,
-            parameters['beta'],
+            parameters['beta'][0],
             roi=roi,
             unit=unit,
             project_path=project_path,
