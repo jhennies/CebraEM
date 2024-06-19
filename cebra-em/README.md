@@ -167,7 +167,7 @@ Then repeat with further iterations until the result is satisfactory (usually 2 
 Once a resulting segmentation is satisfactory, it needs to be stitched. For this run for example
 
 ```
-cem-run stitch-mito-it01 --param beta=0.7
+cem-run stitch-mito_it01 --param beta=0.7
 ```
 
 This will stitch the mitochondria segmentation of iteration 01 (mito_it01) with beta = 0.7.
