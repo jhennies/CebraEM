@@ -5,9 +5,6 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 
 from pybdv.metadata import get_data_path, get_attributes, get_resolution
-from mobie.utils import require_dataset_and_view
-from mobie.xml_utils import copy_xml_with_newpath
-from mobie.metadata.source_metadata import add_source_to_dataset
 from cebra_em_core.project_utils.config import absolute_path, get_config, add_to_config_json, get_config_filepath
 from cebra_em_core.dataset.bdv_utils import is_h5, get_shape, create_empty_dataset
 from pybdv.util import get_key, open_file
@@ -23,18 +20,42 @@ def get_mobie_project_path(project_path=None, relpath=False):
         return absolute_path(mobie_rel, project_path=project_path)
 
 
-def _update_image_name(xml_path, image_name):
-    et = ET.parse(xml_path).getroot()
-    setups = et.find("SequenceDescription").find("ViewSetups").findall("ViewSetup")
-    for vs in setups:
-        if vs.find('id').text == '0':
-            nm = vs.find('name')
-            nm.text = image_name
-    tree = ET.ElementTree(et)
-    tree.write(xml_path)
+def copy_bdv_xml(xml_in, xml_out):
+
+    root = ET.parse(xml_in).getroot()
+
+    # Change the location of the data
+    seqdesc = root.find('SequenceDescription')
+    imgload = seqdesc.find('ImageLoader')
+    data_format = imgload.get('format').split('.')[-1]
+    dataloc = imgload.find(data_format)
+
+    data_path = dataloc.text
+
+    out_data_path = os.path.relpath(
+        os.path.join(os.path.dirname(xml_in), data_path),
+        os.path.dirname(xml_out)
+    )
+
+    dataloc.set('type', 'relative')
+    dataloc.text = out_data_path
+
+    tree = ET.ElementTree(root)
+    tree.write(xml_out)
 
 
-def _resolution_to_micrometer(xml_path):
+# def _update_image_name(xml_path, image_name):
+#     et = ET.parse(xml_path).getroot()
+#     setups = et.find("SequenceDescription").find("ViewSetups").findall("ViewSetup")
+#     for vs in setups:
+#         if vs.find('id').text == '0':
+#             nm = vs.find('name')
+#             nm.text = image_name
+#     tree = ET.ElementTree(et)
+#     tree.write(xml_path)
+
+
+def resolution_to_micrometer(xml_path):
     et = ET.parse(xml_path).getroot()
     # Change the unit in the view setups
     setups = et.find("SequenceDescription").find("ViewSetups").findall("ViewSetup")
@@ -65,79 +86,61 @@ def _resolution_to_micrometer(xml_path):
     tree.write(xml_path)
 
 
-def init_with_raw(mobie_project_path, dataset_name, raw_xml_path, image_name, project_path=None, verbose=False):
+def get_mobie_table_path(project_path=None):
+    from cebra_em_core.project_utils.project import get_current_project_path
+    project_path = get_current_project_path(project_path)
 
-    if is_h5(raw_xml_path):
-        data_format = 'bdv.hdf5'
-    else:
-        data_format = 'bdv.n5'
+    return os.path.join(project_path, 'mobie.csv')
 
-    # Generate the folder structure for the Mobie project
-    # dataset_folder = create_dataset_structure(mobie_project_path, dataset_name, [data_format, 'bdv.n5'])
-    dataset_folder = os.path.join(mobie_project_path, dataset_name)
-    assert dataset_folder is not None
-    if verbose:
-        print(f'dataset_folder = {dataset_folder}')
 
-    # Get the location of the raw data from the xml file
-    raw_data_path = get_data_path(raw_xml_path, return_absolute_path=True)
+def append_mobie_table(table_filepath, entry):
 
-    view = require_dataset_and_view(
-        root=mobie_project_path,
-        dataset_name=dataset_name,
-        file_format=data_format,
-        source_type='image',
-        source_name=image_name,
-        menu_name=None,
-        view=None,
-        is_default_dataset=True,
-        contrast_limits=[0, 255]
-    )
+    import pandas as pd
 
-    print(f'raw_data_path = {raw_data_path}')
-    print(f'mobie_project_path = {mobie_project_path}')
-    print(f'dataset_folder = {dataset_folder}')
+    table_data = pd.DataFrame()
+    if os.path.exists(table_filepath):
+        table_data = pd.read_csv(table_filepath, sep='\t')
 
-    # The target xml file in the new Mobie project
-    xml_path = os.path.join(dataset_folder, 'images', '{}', f'{image_name}.xml')
-    xml_path = xml_path.format(data_format.replace('.', '-'))
-    raw_data_path = os.path.relpath(raw_data_path, os.path.split(xml_path)[0])
-    copy_xml_with_newpath(raw_xml_path, xml_path, raw_data_path, path_type='relative', data_format=data_format)
-    # copy_xml_with_newpath(raw_xml_path, xml_path, raw_data_path, path_type='absolute', data_format=data_format)
-    _update_image_name(xml_path, image_name)
-    _resolution_to_micrometer(xml_path)
+    new_table_data = pd.concat([table_data, pd.DataFrame(entry)], ignore_index=True, sort=False)
+    new_table_data = new_table_data.fillna('')
 
-    # Add the metadata
-    # add_source_metadata(
-    #     dataset_folder, 'image', image_name, xml_path,
-    #     overwrite=True, view=view
-    # )
-    add_source_to_dataset(
-        dataset_folder, 'image', image_name, xml_path,
-        overwrite=True, view=view
-    )
+    new_table_data.to_csv(table_filepath, index=False, sep='\t')
 
-    raw_attributes = get_attributes(xml_path, 0)
-    raw_resolution = get_resolution(xml_path, 0)
-    raw_shape = get_shape(xml_path, 0)
-    if verbose:
-        print('raw_attributes = {}'.format(raw_attributes))
-        print('raw_resolution = {}'.format(raw_resolution))
-        print('raw_shape = {}'.format(raw_shape))
 
-    dataset_rel = os.path.join(
-        get_config('main', project_path=project_path)['mobie_project_path'],
-        dataset_name
+def init_with_raw(mobie_data_path, raw_xml_path, image_name, project_path=None, verbose=False):
+
+    new_xml_path = os.path.join(mobie_data_path, f'{image_name}.xml')
+    copy_bdv_xml(raw_xml_path, new_xml_path)
+    resolution_to_micrometer(new_xml_path)
+
+    mobie_table_path = get_mobie_table_path(project_path=project_path)
+
+    # Create the mobie project table
+    append_mobie_table(
+        mobie_table_path,
+        dict(
+            uri=[new_xml_path],
+            type=['intensities'],
+            view=['em-raw'],
+            group=['inputs']
+        )
     )
 
     # Update the main config json
     add_to_config_json(
         get_config_filepath('main', project_path=project_path),
-        {'dataset_folder': dataset_rel},
-        verbose=verbose
+        {'mobie_table_filepath': mobie_table_path}
     )
 
     # Update the raw config json
+    raw_attributes = get_attributes(new_xml_path, 0)
+    raw_resolution = get_resolution(new_xml_path, 0)
+    raw_shape = get_shape(new_xml_path, 0)
+    if verbose:
+        print('raw_attributes = {}'.format(raw_attributes))
+        print('raw_resolution = {}'.format(raw_resolution))
+        print('raw_shape = {}'.format(raw_shape))
+
     add_to_config_json(
         get_config_filepath('raw', project_path=project_path),
         {
@@ -146,8 +149,6 @@ def init_with_raw(mobie_project_path, dataset_name, raw_xml_path, image_name, pr
             'xml_path': raw_xml_path
         }
     )
-
-    return dataset_folder, raw_resolution, raw_shape
 
 
 def get_dataset_path(dataset_name, project_path=None, relpath=False):
@@ -160,25 +161,19 @@ def get_dataset_path(dataset_name, project_path=None, relpath=False):
 def _make_empty_dataset(
         image_name,
         shape,
-        dataset_name,
+        mobie_data_path,
         resolution,
-        source_type='segmentation',
-        contrast_limits=None,
+        source_type='intensities',
+        group='intermediates',
         project_path=None,
         verbose=False
 ):
 
-    dataset_path = get_dataset_path(dataset_name, project_path=project_path, relpath=True)
-    if verbose:
-        print(f'dataset_path = {dataset_path}')
-
-    images_path = os.path.join(dataset_path, 'images', 'bdv-n5')
-    # Add image name and replace the project location
-    image_data_path = absolute_path(os.path.join(images_path, f'{image_name}.n5'), project_path=project_path)
+    image_data_path = absolute_path(os.path.join(mobie_data_path, f'{image_name}.n5'), project_path=project_path)
 
     print('Making an empty dataset ...')
 
-    create_empty_dataset(
+    xml_path = create_empty_dataset(
         image_data_path,
         0, 0,
         shape,
@@ -186,45 +181,35 @@ def _make_empty_dataset(
         chunks=None,
         scale_factors=[[2, 2, 2], [2, 2, 2], [4, 4, 4]],
         resolution=resolution,
-        unit='micrometer'
+        unit='micrometer',
+        setup_name=image_name
     )
 
-    # The target xml file in the new Mobie project
-    xml_rel_path = os.path.join(images_path, f'{image_name}.xml')
-    xml_path = absolute_path(xml_rel_path, project_path=project_path)
-    _update_image_name(xml_path, image_name)
+    if verbose:
+        print(f'xml_path = {xml_path}')
 
-    if source_type == 'segmentation':
+    xml_rel_path = os.path.relpath(xml_path, project_path)
+
+    if source_type == 'labels':
         # Add max ID
         with open_file(image_data_path, 'a') as f:
             f[get_key(False, 0, 0, 0)].attrs['maxId'] = 0
 
-    view = require_dataset_and_view(
-        root=get_mobie_project_path(project_path, relpath=False),
-        dataset_name=dataset_name,
-        file_format='bdv.n5',
-        source_type=source_type,
-        source_name=image_name,
-        menu_name=None,
-        view=None,
-        is_default_dataset=False,
-        contrast_limits=contrast_limits
-    )
-
-    # add_source_metadata(
-    #     absolute_path(dataset_path, project_path=project_path), 'image', image_name, xml_path,
-    #     overwrite=True, view=view
-    # )
-    add_source_to_dataset(
-        absolute_path(dataset_path, project_path=project_path), source_type, image_name, xml_path,
-        overwrite=True, view=view
+    append_mobie_table(
+        get_mobie_table_path(project_path=project_path),
+        dict(
+            uri=[xml_path],
+            type=[source_type],
+            view=[image_name],
+            group=[group]
+        )
     )
 
     return xml_rel_path
 
 
 def init_membrane_prediction(
-        dataset_name,
+        mobie_data_path,
         project_path=None,
         verbose=False
 ):
@@ -235,7 +220,7 @@ def init_membrane_prediction(
     raw_resolution = config_raw['resolution']
     raw_shape = config_raw['shape']
 
-    dataset_rel_path = get_dataset_path(dataset_name, project_path, relpath=True)
+    # dataset_rel_path = get_dataset_path(dataset_name, project_path, relpath=True)
 
     if mem_resolution is not None and np.abs(mem_resolution).sum() == 0:
         mem_resolution = None
@@ -244,18 +229,16 @@ def init_membrane_prediction(
 
     # _______________________________________________________________________________
     # Make an empty dataset
-    mem_name = 'em-membrane_prediction'
-    images_rel_path = os.path.join(dataset_rel_path, 'images', 'bdv-n5')
+    mem_name = 'membrane_prediction'
     mem_shape = (np.array(raw_shape) * np.array(raw_resolution) / np.array(mem_resolution)).astype(int).tolist()
 
     print('Making an empty membrane prediction ...')
     xml_rel_path = _make_empty_dataset(
         mem_name,
         mem_shape,
-        dataset_name,
+        mobie_data_path,
         mem_resolution,
-        'image',
-        contrast_limits=[0, 255],
+        'intensities',
         project_path=project_path,
         verbose=verbose
     )
@@ -285,7 +268,7 @@ def init_membrane_prediction(
 
 
 def init_supervoxels(
-        dataset_name,
+        mobie_data_path,
         project_path=None,
         verbose=False
 ):
@@ -299,7 +282,7 @@ def init_supervoxels(
     config_mem = get_config('membrane_prediction', project_path=project_path)
     mem_resolution = config_mem['resolution']
 
-    dataset_rel_path = get_dataset_path(dataset_name, project_path, relpath=True)
+    # dataset_rel_path = get_dataset_path(dataset_name, project_path, relpath=True)
 
     if sv_resolution is not None and np.abs(sv_resolution).sum() == 0:
         sv_resolution = None
@@ -309,16 +292,16 @@ def init_supervoxels(
     # _______________________________________________________________________________
     # Make an empty dataset
     sv_name = 'em-supervoxels'
-    images_rel_path = os.path.join(dataset_rel_path, 'images', 'bdv-n5')
+    # images_rel_path = os.path.join(dataset_rel_path, 'images', 'bdv-n5')
     sv_shape = (np.array(raw_shape) * np.array(raw_resolution) / np.array(sv_resolution)).astype(int).tolist()
 
     print('Making an empty supervoxel dataset ...')
     xml_rel_path = _make_empty_dataset(
         sv_name,
         sv_shape,
-        dataset_name,
+        mobie_data_path,
         sv_resolution,
-        'segmentation',
+        'labels',
         project_path=project_path,
         verbose=verbose
     )
@@ -346,12 +329,7 @@ def init_supervoxels(
     )
 
 
-def init_mask(dataset_folder, mask_xml_path, image_name, project_path=None, verbose=False):
-
-    if is_h5(mask_xml_path):
-        data_format = 'bdv.hdf5'
-    else:
-        data_format = 'bdv.n5'
+def init_mask(mobie_data_path, mask_xml_path, image_name, project_path=None, verbose=False):
 
     config_mask = get_config('mask', project_path=project_path)
     method = config_mask['method']
@@ -370,56 +348,40 @@ def init_mask(dataset_folder, mask_xml_path, image_name, project_path=None, verb
                      'n_pixels']
         data = [[float(idx)] + [0.0] * (len(col_names) - 1) for idx in ids]
 
-        table_folder = os.path.split(table_path)[0]
-        os.makedirs(table_folder, exist_ok=True)
+        table_dirpath = os.path.split(table_path)[0]
+        os.makedirs(table_dirpath, exist_ok=True)
         df = pd.DataFrame(data, columns=col_names)
         df.to_csv(table_path, sep='\t', index=False)
 
-    # Get the location of the mask data from the xml file
-    mask_data_path = get_data_path(mask_xml_path, return_absolute_path=True)
+    new_xml_path = os.path.join(mobie_data_path, f'{image_name}.xml')
+    copy_bdv_xml(mask_xml_path, new_xml_path)
+    resolution_to_micrometer(new_xml_path)
 
-    view = require_dataset_and_view(
-        root=os.path.split(dataset_folder)[0],
-        dataset_name=os.path.split(dataset_folder)[1],
-        file_format=data_format,
-        source_type='segmentation',
-        source_name=image_name,
-        menu_name=None,
-        view=None,
-        is_default_dataset=True
+    mobie_table_path = get_mobie_table_path(project_path=project_path)
+
+    append_mobie_table(
+        mobie_table_path,
+        dict(
+            uri=[new_xml_path],
+            type=['labels'],
+            view=['em-mask'],
+            group=['inputs']
+        )
     )
-    view['sourceDisplays'][0]['segmentationDisplay']['tables'] = ['default.tsv']
 
-    # The target xml file in the Mobie project
-    xml_path = os.path.join(dataset_folder, 'images', '{}', f'{image_name}.xml')
-    xml_path = xml_path.format(data_format.replace('.', '-'))
-    mask_data_path_rel = os.path.relpath(mask_data_path, os.path.split(xml_path)[0])
-    copy_xml_with_newpath(mask_xml_path, xml_path, mask_data_path_rel, path_type='absolute', data_format=data_format)
-    _update_image_name(xml_path, image_name)
-    _resolution_to_micrometer(xml_path)
+    # Add the default table
+    table_filepath = os.path.join(mobie_data_path, 'default.csv')
+    _make_table(table_filepath, args['ids'])
 
-    mask_attributes = get_attributes(xml_path, 0)
-    mask_resolution = get_resolution(xml_path, 0)
-    mask_shape = get_shape(xml_path, 0)
+    # Update the mask config
+    mask_attributes = get_attributes(new_xml_path, 0)
+    mask_resolution = get_resolution(new_xml_path, 0)
+    mask_shape = get_shape(new_xml_path, 0)
     if verbose:
         print('mask_attributes = {}'.format(mask_attributes))
         print('mask_resolution = {}'.format(mask_resolution))
         print('mask_shape = {}'.format(mask_shape))
 
-    # Add the default table
-    table_folder = os.path.join(dataset_folder, 'tables', 'em-mask')
-    _make_table(os.path.join(table_folder, 'default.tsv'), args['ids'])
-
-    # Add the metadata
-    # add_source_metadata(
-    #     dataset_folder, 'segmentation', image_name, xml_path,
-    #     overwrite=True, view=view, table_folder=table_folder
-    # )
-    add_source_to_dataset(
-        dataset_folder, 'segmentation', image_name, xml_path,
-        overwrite=True, table_folder=table_folder, view=view)
-
-    # Update config
     add_to_config_json(
         get_config_filepath('mask', project_path=project_path),
         {

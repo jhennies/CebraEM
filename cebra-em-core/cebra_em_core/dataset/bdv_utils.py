@@ -109,7 +109,7 @@ def create_empty_dataset(
                        overwrite_data=False,
                        enforce_consistency=enforce_consistency)
 
-    return False
+    return xml_path
 
 
 class BdvDatasetAdvanced(BdvDataset):

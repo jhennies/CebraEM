@@ -125,10 +125,9 @@ def init_mobie_dataset(
     os.mkdir(mobie_project_path)
 
     # Initialize the mobie project pointing to the raw data BDV file
-    dataset_name = 'CebraINF'
     image_name = 'em-raw'
-    dataset_folder, _, _ = init_with_raw(
-        mobie_project_path, dataset_name, raw_xml_path, image_name,
+    init_with_raw(
+        mobie_project_path, raw_xml_path, image_name,
         project_path=project_path, verbose=verbose
     )
 
@@ -137,7 +136,7 @@ def init_mobie_dataset(
         if verbose:
             print('Initializing project with mask!')
         init_mask(
-            dataset_folder, mask_xml_path, "em-mask",
+            mobie_project_path, mask_xml_path, "em-mask",
             project_path=project_path,
             verbose=verbose
         )
@@ -147,14 +146,14 @@ def init_mobie_dataset(
 
     # Initialize the membrane prediction
     init_membrane_prediction(
-        dataset_name,
+        mobie_project_path,
         project_path=project_path,
         verbose=verbose
     )
 
     # Initialize the supervoxels
     init_supervoxels(
-        dataset_name,
+        mobie_project_path,
         project_path=project_path,
         verbose=verbose
     )
