@@ -513,19 +513,13 @@ def get_quantiles(
 
             def extract_pixel_values(p):
                 try:
-                    return raw_handle[tuple((np.array(p) + top_left) * scale)]
+                    return raw_handle[tuple(((np.array(p) + top_left) * scale).astype(int))]
                 except ValueError:
                     # This happens when the position is out of bounds in the raw data (due to scaling issues)
                     return None
 
             # Extract the pixel values
 
-            # raw_pixels = np.array(
-            #     [
-            #         raw_handle[tuple((np.array(p) + top_left) * scale)]
-            #         for p in pos
-            #     ]
-            # )
             raw_pixels = [extract_pixel_values(p) for p in pos]
             raw_pixels = np.array([px for px in raw_pixels if px is not None])
             if len(raw_pixels) < pixels_per_object:

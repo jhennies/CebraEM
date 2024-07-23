@@ -8,15 +8,16 @@ def _snakemake(*args, **kwargs):
     # snakemake.snakemake(*args, printrulegraph=True, **kwargs)
     # snakemake.snakemake(*args, printfilegraph=True, **kwargs)
     snakemake.snakemake(*args, **kwargs)
-    print('Snakemake has ended, press "q" + ENTER to continue')
 
 
-def run_snakemake(project_path, verbose=False, return_thread=False, **kwargs):
+def run_snakemake(
+        project_path,
+        verbose=False,
+        **kwargs
+):
 
     import os
-    import snakemake
     import shutil
-    from multiprocessing import Process
     from cebra_em.misc.repo import get_repo_path
 
     project_path = os.path.abspath(project_path)
@@ -28,49 +29,14 @@ def run_snakemake(project_path, verbose=False, return_thread=False, **kwargs):
     if verbose:
         print(f'kwargs = {kwargs}')
 
-    if return_thread:
-        snk_func = snakemake.snakemake
-    else:
-        snk_func = _snakemake
+    snk_func = _snakemake
 
     # Copy the main snakemake file to the project
     snk_file = os.path.join(project_path, 'snakemake', 'run_main.smk')
     shutil.copy(os.path.join(get_repo_path(), 'snakefiles', 'run_main.smk'), snk_file)
 
     # Starting snakemake process
-    snk_p = Process(
-        target=snk_func,
-        args=(snk_file,),
-        kwargs=kwargs
-    )
-    snk_p.start()
-
-    if return_thread:
-        return snk_p
-    else:
-        key = ''
-        while key.lower() != 'q':
-            key = input()
-
-        if snk_p.is_alive():
-            print('Terminating Snakemake ...')
-            snk_p.terminate()
-
-        # Waiting for snakemake to finish
-        snk_p.join()
-
-
-# def _parameter_str_to_dict(params):
-#     if params is None:
-#         return dict()
-#     params = str.split(params, '=')
-#     param_dict = dict()
-#     for idx in range(0, len(params), 2):
-#         try:
-#             param_dict[params[idx]] = int(params[idx + 1])
-#         except ValueError:
-#             param_dict[params[idx]] = float(params[idx + 1])
-#     return param_dict
+    snk_func(snk_file, **kwargs)
 
 
 def _parameter_str_to_dict(params):
@@ -100,7 +66,7 @@ def run(
         unlock=False,
         quiet=False,
         dryrun=False,
-        return_thread=False,
+        # return_thread=False,
         cluster=None,
         qos='normal',
         rerun=False,
@@ -143,16 +109,6 @@ def run(
         print(f'roi = {roi}')
         print(f'unit = {unit}')
         print(f'dryrun = {dryrun}')
-
-    # lock_fp, lock_status = lock_project(project_path=project_path)
-    # if lock_status == 'is_locked_error':
-    #     print('Project is locked, another instance is already running.')
-    #     print('If you are sure that this is not the case, delete the lock file:')
-    #     print(f'{lock_fp}')
-    #     return 1
-    # elif lock_status == 'could_not_lock_error':
-    #     print('Could not lock the project. No write permission?')
-    #     return 1
 
     # Create or clean the run requests folder
     if not os.path.exists(os.path.join(project_path, '.run_requests')):
@@ -280,14 +236,7 @@ def run(
             verbose=verbose
         )
 
-    # Run snakemake
-    if return_thread:
-        return run_snakemake(project_path, verbose=verbose, return_thread=return_thread, **kwargs)
-    else:
-        run_snakemake(project_path, verbose=verbose, **kwargs)
-
-    # unlock_project(project_path=project_path)
-    return 0
+    run_snakemake(project_path, verbose=verbose, **kwargs)
 
 
 def main():
@@ -310,7 +259,7 @@ def main():
     parser.add_argument('-par', '--parameters', nargs='+', type=str, default=None,
                         help='Parameters that are fed to the workflow within run.json["misc"]\n'
                              'For example when running stitching, define the beta-map: '
-                             'run.py -t stitch-seg_map --param beta=0.6')
+                             'run.py stitch-seg_map --par beta=0.6')
     parser.add_argument('-r', '--roi', type=float, default=None, nargs=6,
                         metavar=('Z', 'Y', 'X', 'depth', 'height', 'width'),
                         help='Defines a region of interest to which the requested run is confined')

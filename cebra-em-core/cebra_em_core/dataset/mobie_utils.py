@@ -384,7 +384,7 @@ def init_mask(mobie_data_path, mask_xml_path, image_name, project_path=None, ver
             type=['labels'],
             view=['em-mask'],
             group=['inputs'],
-            table=[os.path.relpath(table_filepath)]
+            labels_table=[os.path.relpath(table_filepath, project_path)]
         )
     )
 
