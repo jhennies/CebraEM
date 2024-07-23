@@ -398,9 +398,11 @@ def init_beta_map(
     if 'segmentations' in config_seg and name in config_seg['segmentations']:
         return
 
+    mobie_project_path = get_mobie_project_path(project_path=project_path)
+
     # Initialize the Mobie project
     init_segmentation_map(
-        name, base_segmentation, 'CebraINF', beta, stitched=stitched, project_path=project_path, verbose=verbose
+        name, base_segmentation, mobie_project_path, beta, stitched=stitched, project_path=project_path, verbose=verbose
     )
 
 

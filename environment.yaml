@@ -9,3 +9,4 @@ dependencies:
   - vigra
   - bioimageio.core=0.5.11
   - bioimageio.spec=0.4.9.post5
+  - scikit-learn<=1.4.2

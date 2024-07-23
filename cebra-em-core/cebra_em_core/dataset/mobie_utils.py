@@ -119,7 +119,8 @@ def init_with_raw(mobie_data_path, raw_xml_path, image_name, project_path=None, 
     append_mobie_table(
         mobie_table_path,
         dict(
-            uri=[new_xml_path],
+            uri=[os.path.relpath(new_xml_path, project_path)],
+            # uri=[new_xml_path],
             type=['intensities'],
             view=['em-raw'],
             group=['inputs']
@@ -177,7 +178,7 @@ def _make_empty_dataset(
         image_data_path,
         0, 0,
         shape,
-        data_dtype='uint64' if source_type == 'segmentation' else 'uint8',
+        data_dtype='uint64' if source_type == 'labels' else 'uint8',
         chunks=None,
         scale_factors=[[2, 2, 2], [2, 2, 2], [4, 4, 4]],
         resolution=resolution,
@@ -195,10 +196,18 @@ def _make_empty_dataset(
         with open_file(image_data_path, 'a') as f:
             f[get_key(False, 0, 0, 0)].attrs['maxId'] = 0
 
+    if verbose:
+        print('Appending mobie table ...')
+        print(f'table_path = {get_mobie_table_path(project_path=project_path)}')
+        print(f'xml_path = {xml_path}')
+        print(f'image_name = {image_name}')
+        print(f'group = {group}')
+
     append_mobie_table(
         get_mobie_table_path(project_path=project_path),
         dict(
-            uri=[xml_path],
+            uri=[os.path.relpath(xml_path, project_path)],
+            # uri=[xml_path],
             type=[source_type],
             view=[image_name],
             group=[group]
@@ -238,7 +247,7 @@ def init_membrane_prediction(
         mem_shape,
         mobie_data_path,
         mem_resolution,
-        'intensities',
+        source_type='intensities',
         project_path=project_path,
         verbose=verbose
     )
@@ -291,7 +300,7 @@ def init_supervoxels(
 
     # _______________________________________________________________________________
     # Make an empty dataset
-    sv_name = 'em-supervoxels'
+    sv_name = 'supervoxels'
     # images_rel_path = os.path.join(dataset_rel_path, 'images', 'bdv-n5')
     sv_shape = (np.array(raw_shape) * np.array(raw_resolution) / np.array(sv_resolution)).astype(int).tolist()
 
@@ -301,7 +310,7 @@ def init_supervoxels(
         sv_shape,
         mobie_data_path,
         sv_resolution,
-        'labels',
+        source_type='labels',
         project_path=project_path,
         verbose=verbose
     )
@@ -331,6 +340,9 @@ def init_supervoxels(
 
 def init_mask(mobie_data_path, mask_xml_path, image_name, project_path=None, verbose=False):
 
+    from cebra_em_core.project_utils.project import get_current_project_path
+    project_path = get_current_project_path(project_path=project_path)
+
     config_mask = get_config('mask', project_path=project_path)
     method = config_mask['method']
     args = config_mask['args']
@@ -357,21 +369,24 @@ def init_mask(mobie_data_path, mask_xml_path, image_name, project_path=None, ver
     copy_bdv_xml(mask_xml_path, new_xml_path)
     resolution_to_micrometer(new_xml_path)
 
+    # Add the default table
+    table_filepath = os.path.join(mobie_data_path, 'mask.csv')
+    _make_table(table_filepath, args['ids'])
+
+    # Now append the entry to the general mobie table
     mobie_table_path = get_mobie_table_path(project_path=project_path)
 
     append_mobie_table(
         mobie_table_path,
         dict(
-            uri=[new_xml_path],
+            uri=[os.path.relpath(new_xml_path, project_path)],
+            # uri=[new_xml_path],
             type=['labels'],
             view=['em-mask'],
-            group=['inputs']
+            group=['inputs'],
+            table=[os.path.relpath(table_filepath)]
         )
     )
-
-    # Add the default table
-    table_filepath = os.path.join(mobie_data_path, 'default.csv')
-    _make_table(table_filepath, args['ids'])
 
     # Update the mask config
     mask_attributes = get_attributes(new_xml_path, 0)
@@ -397,7 +412,7 @@ def init_mask(mobie_data_path, mask_xml_path, image_name, project_path=None, ver
 def init_segmentation_map(
         seg_name,
         base_name,
-        dataset_name,
+        mobie_data_path,
         beta,
         project_path=None,
         stitched=False,
@@ -431,8 +446,10 @@ def init_segmentation_map(
     xml_rel_path = _make_empty_dataset(
         seg_name_hyph,
         seg_shape,
-        dataset_name,
+        mobie_data_path,
         seg_resolution,
+        source_type='labels',
+        group='segmentations' if not stitched else 'stitched',
         project_path=project_path,
         verbose=verbose
     )
