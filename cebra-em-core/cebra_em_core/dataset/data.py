@@ -2,10 +2,6 @@
 import sys
 import numpy as np
 import os
-import scipy.ndimage as ndi
-from pybdv.util import open_file
-from cebra_em_core.dataset.alignment import xcorr_on_volume
-from concurrent.futures import ThreadPoolExecutor
 
 
 def crop_zero_padding_3d(dat, return_as_arrays=False, add_halo=None):
@@ -58,6 +54,9 @@ def _apply_transform(x,
     # Returns
         The transformed version of the input.
     """
+
+    import scipy.ndimage as ndi
+
     x = np.rollaxis(x, channel_axis, 0)
     final_affine_matrix = transform_matrix[:ndim, :ndim]
     final_offset = transform_matrix[:ndim, ndim]
@@ -207,6 +206,10 @@ def load_data(
         xcorr=False,
         verbose=False
 ):
+
+    from pybdv.util import open_file
+    from cebra_em_core.dataset.alignment import xcorr_on_volume
+
     shape = np.array(shape)
     with open_file(input_path, mode='r') as f:
 
@@ -362,6 +365,8 @@ def quantile_norm(volume, qlow, qhigh, verbose=False):
 
 def small_objects_to_zero(m, size_filter, verbose=False, n_workers=os.cpu_count()):
 
+    from concurrent.futures import ThreadPoolExecutor
+
     def _to_zero(idx, obj_id):
         sys.stdout.write('\r' + 'Identifying small objects: {} %'.format(int(100 * float(idx + 1) / float(len(smalls)))))
         m[m == obj_id] = 0
@@ -385,6 +390,8 @@ def small_objects_to_zero(m, size_filter, verbose=False, n_workers=os.cpu_count(
 
 
 def relabel_consecutive(map, sort_by_size=False, n_workers=os.cpu_count()):
+
+    from concurrent.futures import ThreadPoolExecutor
 
     def _relabel(idx, label, segment):
         sys.stdout.write('\r' + 'Relabelling: {} %'.format(int(100 * float(idx + 1) / float(len(relabel_dict)))))
@@ -429,6 +436,8 @@ def get_quantiles(
         debug=False,
         verbose=False
 ):
+
+    from pybdv.util import open_file
 
     if seg is not None:
         if seg_ids is None:

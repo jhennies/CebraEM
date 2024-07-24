@@ -2,24 +2,23 @@
 import os
 import numpy as np
 import re
-import time
-from glob import glob
 
-import xml.etree.ElementTree as ET
-from pybdv.metadata import get_data_path
-from pybdv.util import HDF5_EXTENSIONS
-from pybdv.util import get_key, open_file
-from pybdv.converter import normalize_output_path
-from pybdv.metadata import write_n5_metadata, write_h5_metadata, write_xml_metadata, validate_attributes
 from pybdv.bdv_datasets import BdvDataset
 
 
 def is_h5(xml_path):
+
+    from pybdv.metadata import get_data_path
+    from pybdv.util import HDF5_EXTENSIONS
+
     path = get_data_path(xml_path)
     return os.path.splitext(path)[1].lower() in HDF5_EXTENSIONS
 
 
 def get_shape(xml_path, setup_id):
+
+    import xml.etree.ElementTree as ET
+
     tree = ET.parse(xml_path)
     root = tree.getroot()
     seqdesc = root.find('SequenceDescription')
@@ -44,6 +43,10 @@ def create_empty_dataset(
         attributes=None,
         verbose=False
 ):
+
+    from pybdv.converter import normalize_output_path
+    from pybdv.metadata import write_n5_metadata, write_h5_metadata, write_xml_metadata, validate_attributes
+    from pybdv.util import get_key, open_file
 
     if verbose:
         print('data_shape = {}'.format(data_shape))
@@ -156,6 +159,8 @@ class BdvDatasetAdvanced(BdvDataset):
         Use this to update the largest present id in the dataset if you employ a stitching method with unique == True.
         The id is automatically updated if new data is written.
         """
+        from pybdv.util import get_key, open_file
+
         data_path = self._path
         with open_file(data_path, 'a') as f:
             key = get_key(self._is_h5, self._timepoint, self._setup_id, 0)
@@ -163,6 +168,9 @@ class BdvDatasetAdvanced(BdvDataset):
                 f[key].attrs['maxId'] = idx
 
     def get_max_id(self):
+
+        from pybdv.util import get_key, open_file
+
         data_path = self._path
         with open_file(data_path, 'r') as f:
             key = get_key(self._is_h5, self._timepoint, self._setup_id, 0)

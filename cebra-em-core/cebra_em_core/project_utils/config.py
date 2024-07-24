@@ -2,11 +2,10 @@
 import os
 import json
 import numpy as np
-from cebra_em_core.project_utils.project import get_current_project_path
-from cebra_em_core.project_utils.params import load_params
 
 
 def absolute_path(path, project_path=None):
+    from cebra_em_core.project_utils.project import get_current_project_path
     project_path = get_current_project_path(project_path=project_path)
     return path.format(project_path=project_path)
 
@@ -19,6 +18,7 @@ def get_mask_xml(project_path=None):
 
 
 def get_config_path(relpath=False, project_path=None):
+    from cebra_em_core.project_utils.project import get_current_project_path
     project_path = get_current_project_path(project_path=project_path)
 
     if relpath:
@@ -70,26 +70,12 @@ def add_to_config_json(filename, data, verbose=False):
 
     config = extend_dict(config, data)
 
-    # for k, v in data.items():
-    #     if k not in config.keys():
-    #         config[k] = {}
-    #     if type(v) == dict:
-    #         for kk, vv in v.items():
-    #             if type(vv) == np.ndarray:
-    #                 config[k][kk] = vv.tolist()
-    #             else:
-    #                 config[k][kk] = vv
-    #     else:
-    #         if type(v) == np.ndarray:
-    #             config[k] = v.tolist()
-    #         else:
-    #             config[k] = v
-
     with open(filename, 'w') as f:
         json.dump(config, f, indent=2)
 
 
 def init_image_config(image_name, project_path=None, force=False):
+    from cebra_em_core.project_utils.params import load_params
 
     if not force:
         assert image_name not in get_config('main', project_path=project_path)['configs']
@@ -110,6 +96,7 @@ def init_image_config(image_name, project_path=None, force=False):
 
 
 def init_mask_config(mask_xml, project_path=None, force=False):
+    from cebra_em_core.project_utils.params import load_params
 
     if not force:
         assert 'mask' not in get_config('main', project_path=project_path)['configs']
@@ -124,6 +111,7 @@ def init_mask_config(mask_xml, project_path=None, force=False):
 
 
 def init_raw_config(raw_data_xml, project_path=None, force=False):
+    from cebra_em_core.project_utils.params import load_params
 
     if not force:
         assert 'raw' not in get_config('main', project_path=project_path)['configs']

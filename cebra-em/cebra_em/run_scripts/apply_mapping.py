@@ -2,12 +2,9 @@
 import numpy as np
 import pickle
 import json
-import os
+
 from pybdv.metadata import get_data_path
 from pybdv.util import open_file, get_key
-
-# from pybdv.bdv_datasets import BdvDataset
-
 from cebra_em_core.project_utils.config import get_config, absolute_path
 from cebra_em_core.project_utils.project import get_current_project_path
 from cebra_em_core.dataset.bdv_utils import is_h5
@@ -43,22 +40,6 @@ def load_data(data_path, data_key, position, shape):
             position[2]: position[2] + shape[2]
         ]
     return data
-
-
-# def save_data(data, data_path, position, shape):
-#     bdv_ds = BdvDataset(
-#         data_path,
-#         timepoint=0,
-#         setup_id=0,
-#         downscale_mode='nearest',  # It's always a segmentation
-#         n_threads=1,
-#         verbose=True
-#     )
-#     bdv_ds[
-#         position[0]: position[0] + shape[0],
-#         position[1]: position[1] + shape[1],
-#         position[2]: position[2] + shape[2]
-#     ] = data
 
 
 if __name__ == '__main__':

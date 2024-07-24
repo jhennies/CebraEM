@@ -1,6 +1,5 @@
 
-# TODO This is deprecated, using the bioimageio.core functionality now
-#   Currently this is still used in CebraANN though
+# Note: This is deprecated, using the bioimageio.core functionality now
 
 try:
     import torch as t

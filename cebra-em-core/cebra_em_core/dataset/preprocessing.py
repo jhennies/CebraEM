@@ -2,10 +2,6 @@
 from glob import glob
 import os
 import numpy as np
-from tifffile import imread, imsave
-from pybdv import make_bdv
-from pybdv.util import open_file, get_key
-from h5py import File
 
 from .data import (
     small_objects_to_zero,
@@ -29,6 +25,8 @@ def _clip_values(im, values):
 
 def read_volume_from_tif_stack(in_path, roi, clip_values, verbose=False):
 
+    from tifffile import imread
+
     if roi is not None:
         xyr = np.s_[roi[1]: roi[1] + roi[4], roi[0]: roi[0] + roi[3]]
         zr = np.s_[roi[2]: roi[2] + roi[5]]
@@ -50,6 +48,9 @@ def read_volume_from_tif_stack(in_path, roi, clip_values, verbose=False):
 
 
 def read_volume_from_container(in_filepath, roi, clip_values, key, axes_order='zyx'):
+
+    from pybdv.util import open_file
+    from h5py import File
 
     if axes_order == 'zyx':
         axes = dict(z=0, y=1, x=2)
@@ -110,7 +111,6 @@ def connected_components_analysis(volume):
     from vigra.analysis import labelVolumeWithBackground, relabelConsecutive
     volume = labelVolumeWithBackground(volume.astype('uint32'), background_value=0)
     volume = relabel_consecutive(volume, sort_by_size=True)
-    # volume = relabelConsecutive(volume, keep_zeros=True)[0]
     return volume
 
 
@@ -143,6 +143,8 @@ def convert_to_bdv(
         axes_order='zyx',
         verbose=False
 ):
+
+    from pybdv import make_bdv
 
     # Currently CebraEM internally only uses micrometer, hence I am only supporting it here as well
     if unit != 'micrometer':
@@ -225,6 +227,8 @@ def normalize_instances(
         scale_mode='mean',
         verbose=False,
 ):
+
+    from pybdv.util import open_file, get_key
 
     print(f'Fetching inputs ...')
     # Read the segmentation

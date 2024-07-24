@@ -1,7 +1,6 @@
 
 import torch.nn as nn
 from torch import cat
-from torch import optim
 try:
     from torchsummary import summary
 except:

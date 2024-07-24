@@ -1,9 +1,6 @@
 
 import numpy as np
 from elf.segmentation.workflows import FEATURE_NAMES
-from vigra.analysis import labelVolume
-
-from cebra_em_core.segmentation.elf_utils import predict_node_classification_mc_wf, node_classification_mc_wf
 
 
 def predict_mc_wf_classifiers(
@@ -16,6 +13,8 @@ def predict_mc_wf_classifiers(
         resolution=(1., 1., 1.),
         verbose=False
 ):
+    from vigra.analysis import labelVolume
+    from cebra_em_core.segmentation.elf_utils import predict_node_classification_mc_wf
 
     data_raw = input_vols[0]
     data_mem = input_vols[1]
@@ -80,6 +79,7 @@ def multicut_from_predicted(
         beta,
         verbose=False
 ):
+    from cebra_em_core.segmentation.elf_utils import node_classification_mc_wf
 
     if verbose:
         print('multicut_from_predicted()')

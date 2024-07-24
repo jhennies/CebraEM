@@ -2,15 +2,11 @@
 import os
 import numpy as np
 import xml.etree.ElementTree as ET
-import pandas as pd
-
-from pybdv.metadata import get_data_path, get_attributes, get_resolution
-from cebra_em_core.project_utils.config import absolute_path, get_config, add_to_config_json, get_config_filepath
-from cebra_em_core.dataset.bdv_utils import is_h5, get_shape, create_empty_dataset
-from pybdv.util import get_key, open_file
 
 
 def get_mobie_project_path(project_path=None, relpath=False):
+
+    from cebra_em_core.project_utils.config import absolute_path, get_config
 
     mobie_rel = get_config('main', project_path=project_path)['mobie_project_path']
 
@@ -42,17 +38,6 @@ def copy_bdv_xml(xml_in, xml_out):
 
     tree = ET.ElementTree(root)
     tree.write(xml_out)
-
-
-# def _update_image_name(xml_path, image_name):
-#     et = ET.parse(xml_path).getroot()
-#     setups = et.find("SequenceDescription").find("ViewSetups").findall("ViewSetup")
-#     for vs in setups:
-#         if vs.find('id').text == '0':
-#             nm = vs.find('name')
-#             nm.text = image_name
-#     tree = ET.ElementTree(et)
-#     tree.write(xml_path)
 
 
 def resolution_to_micrometer(xml_path):
@@ -108,6 +93,10 @@ def append_mobie_table(table_filepath, entry):
 
 
 def init_with_raw(mobie_data_path, raw_xml_path, image_name, project_path=None, verbose=False):
+
+    from pybdv.metadata import get_attributes, get_resolution
+    from cebra_em_core.project_utils.config import add_to_config_json, get_config_filepath
+    from cebra_em_core.dataset.bdv_utils import get_shape
 
     new_xml_path = os.path.join(mobie_data_path, f'{image_name}.xml')
     copy_bdv_xml(raw_xml_path, new_xml_path)
@@ -170,6 +159,10 @@ def _make_empty_dataset(
         verbose=False
 ):
 
+    from cebra_em_core.project_utils.config import absolute_path
+    from cebra_em_core.dataset.bdv_utils import create_empty_dataset
+    from pybdv.util import get_key, open_file
+
     image_data_path = absolute_path(os.path.join(mobie_data_path, f'{image_name}.n5'), project_path=project_path)
 
     print('Making an empty dataset ...')
@@ -222,6 +215,9 @@ def init_membrane_prediction(
         project_path=None,
         verbose=False
 ):
+
+    from cebra_em_core.project_utils.config import get_config, add_to_config_json, get_config_filepath
+
     config_mem_fp = get_config_filepath('membrane_prediction', project_path=project_path)
     config_mem = get_config('membrane_prediction', project_path=project_path)
     mem_resolution = config_mem['resolution']
@@ -282,6 +278,8 @@ def init_supervoxels(
         verbose=False
 ):
 
+    from cebra_em_core.project_utils.config import get_config, add_to_config_json, get_config_filepath
+
     config_sv_fp = get_config_filepath('supervoxels', project_path=project_path)
     config_sv = get_config('supervoxels', project_path=project_path)
     sv_resolution = config_sv['resolution']
@@ -339,6 +337,11 @@ def init_supervoxels(
 
 
 def init_mask(mobie_data_path, mask_xml_path, image_name, project_path=None, verbose=False):
+
+    import pandas as pd
+    from pybdv.metadata import get_attributes, get_resolution
+    from cebra_em_core.project_utils.config import get_config, add_to_config_json, get_config_filepath
+    from cebra_em_core.dataset.bdv_utils import get_shape
 
     from cebra_em_core.project_utils.project import get_current_project_path
     project_path = get_current_project_path(project_path=project_path)
@@ -418,6 +421,8 @@ def init_segmentation_map(
         stitched=False,
         verbose=False
 ):
+
+    from cebra_em_core.project_utils.config import get_config, add_to_config_json, get_config_filepath
 
     config_seg_fp = get_config_filepath(base_name, project_path=project_path)
     config_seg = get_config(base_name, project_path=project_path)

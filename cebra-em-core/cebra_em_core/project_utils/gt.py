@@ -1,20 +1,7 @@
 
-from cebra_em_core.project_utils.project import get_current_project_path
-from cebra_em_core.project_utils.config import (
-    get_config,
-    get_config_filepath,
-    add_to_config_json,
-    absolute_path,
-)
-from cebra_em_core.dataset.bdv_utils import bdv2pos
-from cebra_em_core.dataset.data import crop_and_scale
-
-import re
-import numpy as np
-from pybdv.metadata import get_data_path
-from pybdv.util import open_file, get_key
 import os
-from glob import glob
+import numpy as np
+import re
 
 
 def id2str(cube_id):
@@ -29,6 +16,12 @@ def init_gt_cube(
         no_padding=False,
         verbose=False
 ):
+    from cebra_em_core.project_utils.config import (
+        get_config,
+        get_config_filepath,
+        add_to_config_json
+    )
+    from cebra_em_core.dataset.bdv_utils import bdv2pos
 
     name = 'gt'
 
@@ -94,6 +87,15 @@ def extract_gt(
         raw_fp, mem_fp, sv_fp,
         project_path=None, verbose=False
 ):
+    from cebra_em_core.project_utils.config import (
+        get_config,
+        get_config_filepath,
+        add_to_config_json,
+        absolute_path,
+    )
+    from cebra_em_core.dataset.data import crop_and_scale
+    from pybdv.metadata import get_data_path
+    from pybdv.util import open_file, get_key
 
     name = 'gt'
 
@@ -198,6 +200,11 @@ def extract_gt(
 
 
 def _validate_inputs(cube_id, organelle_id, image_id, project_path=None):
+    from glob import glob
+    from cebra_em_core.project_utils.config import (
+        get_config,
+        absolute_path,
+    )
 
     config_gt = get_config('gt', project_path=project_path)
     config_main = get_config('main', project_path=project_path)
@@ -268,6 +275,11 @@ def link_gt_cubes(
         project_path=None,
         verbose=False
 ):
+    from cebra_em_core.project_utils.config import (
+        get_config,
+        get_config_filepath,
+        add_to_config_json
+    )
 
     config_gt_fp = get_config_filepath('gt', project_path=project_path)
     config_gt = get_config('gt', project_path=project_path)
@@ -300,6 +312,10 @@ def link_gt_cubes(
 
 
 def get_associated_gt_cubes(image, project_path=None):
+    from cebra_em_core.project_utils.config import (
+        get_config,
+        absolute_path
+    )
 
     config_gt = get_config('gt', project_path=project_path)
 
@@ -338,6 +354,7 @@ def get_associated_gt_cubes(image, project_path=None):
 
 
 def log_gt_cube(cube_id, status, position, shape, links=None, project_path=None):
+    from cebra_em_core.project_utils.config import get_config, absolute_path
 
     print('')
     print('____________________________________________________________________________________')
@@ -406,6 +423,7 @@ def log_dataset(dataset, project_path=None):
 
 
 def log_datasets(project_path=None):
+    from cebra_em_core.project_utils.config import get_config
 
     print('')
     print('>> DATASETS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
@@ -434,6 +452,7 @@ def log_datasets(project_path=None):
 
 
 def log_gt_cubes(val=False, project_path=None):
+    from cebra_em_core.project_utils.config import get_config
 
     print('')
     print('>> CUBES >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')

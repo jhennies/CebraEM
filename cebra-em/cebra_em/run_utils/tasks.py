@@ -1,7 +1,5 @@
 
 import numpy as np
-from cebra_em_core.dataset.data import crop_and_scale
-from cebra_em_core.dataset.data import crop_zero_padding_3d
 
 
 def load_data(
@@ -16,6 +14,7 @@ def load_data(
         xcorr_on_raw=False,
         verbose=False
 ):
+    from cebra_em_core.dataset.data import crop_and_scale
 
     output = {}
     for idx, input_layer in enumerate(dep_datasets):
@@ -134,6 +133,7 @@ def compute_task_with_mask(
     :param verbose:
     :return:
     """
+    from cebra_em_core.dataset.data import crop_zero_padding_3d
 
     vol = np.array(vol)
 

@@ -4,10 +4,6 @@ import pickle
 import os
 import json
 
-from cebra_em_core.project_utils.dependencies import find_dependencies
-from cebra_em_core.project_utils.config import get_config, absolute_path
-from cebra_em.misc.repo import get_repo_path
-
 
 def _snakemake_path(project_path):
 
@@ -27,6 +23,8 @@ def generate_run_json(
         debug=False,
         verbose=False
 ):
+    from cebra_em_core.project_utils.dependencies import find_dependencies
+    from cebra_em_core.project_utils.config import get_config, absolute_path
 
     def _find_target_indices(positions, batch_shape, unit='px', resolution=None, roi=None):
 
@@ -91,6 +89,8 @@ def generate_run_json(
 
 
 def prepare_run_snakefile(targets, project_path, verbose=False):
+    from cebra_em_core.project_utils.config import get_config
+    from cebra_em.misc.repo import get_repo_path
 
     if targets == 'gt_cubes' or targets == 'val_cubes':
         targets = ['supervoxels']
@@ -282,6 +282,7 @@ def find_non_processed_items(items):
 
 
 def prepare_gt_extract(project_path=None, verbose=False):
+    from cebra_em_core.project_utils.config import get_config
 
     name = 'gt'
 
@@ -314,6 +315,8 @@ def prepare_stitching(
         project_path=None,
         verbose=False
 ):
+    from cebra_em.misc.repo import get_repo_path
+
     if verbose:
         print(f'Running stitching for {target}')
 

@@ -1,10 +1,6 @@
 
 import sys
 import os
-from shutil import copy
-import json
-from cebra_em_core.misc.repo import get_repo_path
-from cebra_em_core.project_utils.project import get_current_project_path
 
 
 if sys.platform == 'linux' or sys.platform == 'darwin':
@@ -18,6 +14,8 @@ else:
 
 
 def get_params_path(image_name, project_path=None):
+    from cebra_em_core.project_utils.project import get_current_project_path
+
     project_path = get_current_project_path(project_path=project_path)
     return os.path.join(project_path, 'params', f'{image_name}.json')
 
@@ -28,6 +26,8 @@ def copy_default_params(
         project_path=None,
         verbose=False
 ):
+    from shutil import copy
+    from cebra_em_core.misc.repo import get_repo_path
 
     if target_names is None:
         target_names = params
@@ -50,6 +50,7 @@ def copy_default_params(
 
 
 def load_params(image_name, project_path=None):
+    import json
 
     with open(get_params_path(image_name, project_path=project_path), mode='r') as f:
         return json.load(f)
