@@ -176,7 +176,7 @@ This will stitch the mitochondria segmentation of iteration 01 (mito_it01) with 
 
 A CebraEM project is wrapped around a MoBIE project and can be directly opened within the MoBIE viewer (https://github.com/mobie/mobie-viewer-fiji) (1). 
 
-After successful installation of MoBIE (see [main readme](../README.md#installation-of-the-mobie-browser)) you can open a CebraEM/MoBIE project using ```Fiji -> Plugins -> MoBIE -> Open -> Open Collection Table...```
+After successful installation of MoBIE (see [Installation of the MoBIE browser](../README.md#installation-of-the-mobie-browser)) you can open a CebraEM/MoBIE project using ```Fiji -> Plugins -> MoBIE -> Open -> Open Collection Table...```
 
 This will pop up a dialog where you need to specify the following:
  - For the field "Table Path", select the file ```mobie.csv``` from your project directory
