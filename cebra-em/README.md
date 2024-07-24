@@ -84,7 +84,25 @@ Look for suitable locations using the MoBIE viewer and note down the coordinates
 cem-init-gt -b "x.xxx, y.yyy, z.zzz"
 ```
 
-for each of the ground truth cubes. 
+for each of the ground truth cubes.
+
+Note that you can make use of MoBIE's position logging:
+1. In the BigDataViewer window hover over the center of the new ground truth cube and press ```C```. This will log the location. \
+In Fiji's log window the output should look like this (shortened for readability): 
+```
+# Current location
+[...]
+## Mouse pointer position
+{"position":[4.032021853546912,2.251951086956522,1.054225972540046],"timepoint":0}
+[...]
+{"normalVector":[0.0,0.0,1.0],"timepoint":0}
+```
+
+3. Copy the entire line below "## Mouse pointer position" which contains the location of your mouse in the dataset
+4. Paste it into your ```cem-init-gt``` command like so **(note the single quotes)**: 
+```
+cem-init-gt -b '{"position":[4.032021853546912,2.251951086956522,1.054225972540046],"timepoint":0}'
+```
 
 To see which ground truth cubes are already initialized run
 
