@@ -30,9 +30,9 @@ def init_gt_cube(
     add_to_config_json(
         config_main_fp,
         {
-            f'{name}_path': '{project_path}' + f'{name}',
+            f'{name}_path': f'{name}',
             'configs': {
-                name: '{project_path}' + f'config/config_{name}.json'
+                name: f'config/config_{name}.json'
             }
         }
     )

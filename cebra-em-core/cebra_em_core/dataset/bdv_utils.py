@@ -15,6 +15,16 @@ def is_h5(xml_path):
     return os.path.splitext(path)[1].lower() in HDF5_EXTENSIONS
 
 
+def get_resolution(xml_filepath, setup_id=0, downsample_level=0):
+    from pybdv.metadata import get_resolution, get_data_path
+    from pybdv.util import get_scale_factors
+
+    scale_factor = get_scale_factors(get_data_path(xml_filepath, return_absolute_path=True), setup_id)[downsample_level]
+    resolution = get_resolution(xml_filepath, setup_id)
+
+    return np.array(resolution) * np.array(scale_factor)
+
+
 def get_shape(xml_path, setup_id):
 
     import xml.etree.ElementTree as ET

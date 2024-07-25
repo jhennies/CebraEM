@@ -179,7 +179,7 @@ def compute_task_positions(image_name, project_path=None, verbose=False):
     try:
         config_mask = get_config('mask', project_path=project_path)
 
-        mask_xml_path = config_mask['xml_path']
+        mask_xml_path = absolute_path(config_mask['xml_path'], project_path=project_path)
         mask_resolution = config_mask['resolution']
         mask_ds_level_for_init = config_mask['ds_level_for_init']
         mask_method = config_mask['method']

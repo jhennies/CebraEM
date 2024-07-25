@@ -179,7 +179,7 @@ def init_dependencies(image_name, project_path=None, n_workers=1, verbose=False)
     else:
         dependencies = None
 
-    dependencies_fp = os.path.join('{project_path}tasks', f'dependencies_{image_name}.pkl')
+    dependencies_fp = os.path.join('tasks', f'dependencies_{image_name}.pkl')
     with open(absolute_path(dependencies_fp, project_path=project_path), 'wb') as f:
         pickle.dump(dependencies, f)
 

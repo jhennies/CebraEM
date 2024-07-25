@@ -228,6 +228,15 @@ def load_data(
     return vol
 
 
+def load_full_downsample_level(
+        input_path,
+        internal_path
+):
+    from pybdv.util import open_file
+    with open_file(input_path, mode='r') as f:
+        return f[internal_path][:]
+
+
 def crop_and_scale(
         input_path,
         position,

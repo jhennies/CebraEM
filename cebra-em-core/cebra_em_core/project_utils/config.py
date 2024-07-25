@@ -7,7 +7,15 @@ import numpy as np
 def absolute_path(path, project_path=None):
     from cebra_em_core.project_utils.project import get_current_project_path
     project_path = get_current_project_path(project_path=project_path)
-    return path.format(project_path=project_path)
+    # return path.format(project_path=project_path)
+    assert not str.startswith(path, '{project_path}'), f'This is deprecated and requires fixing! {path}'
+    return os.path.join(project_path, path)
+
+
+def relative_path(path, project_path=None):
+    from cebra_em_core.project_utils.project import get_current_project_path
+    project_path = get_current_project_path(project_path=project_path)
+    return os.path.relpath(path, project_path)
 
 
 def get_mask_xml(project_path=None):
@@ -84,7 +92,7 @@ def init_image_config(image_name, project_path=None, force=False):
     config_image_fp = os.path.join(get_config_path(project_path=project_path), f'config_{image_name}.json')
     config_image_rel = os.path.join(get_config_path(relpath=True, project_path=project_path), f'config_{image_name}.json')
 
-    add_to_config_json(config_main_fp, {'configs': {image_name: '{project_path}' + config_image_rel}})
+    add_to_config_json(config_main_fp, {'configs': {image_name: config_image_rel}})
     add_to_config_json(
         config_image_fp,
         load_params('general', project_path=project_path)
@@ -105,7 +113,7 @@ def init_mask_config(mask_xml, project_path=None, force=False):
     config_mask_fp = os.path.join(get_config_path(project_path=project_path), 'config_mask.json')
     config_mask_rel = os.path.join(get_config_path(relpath=True, project_path=project_path), 'config_mask.json')
 
-    add_to_config_json(config_main_fp, {'configs': {'mask': '{project_path}' + config_mask_rel}})
+    add_to_config_json(config_main_fp, {'configs': {'mask': config_mask_rel}})
     add_to_config_json(config_mask_fp, {'xml_path': mask_xml})
     add_to_config_json(config_mask_fp, load_params('mask', project_path=project_path))
 
@@ -120,7 +128,7 @@ def init_raw_config(raw_data_xml, project_path=None, force=False):
     config_raw_fp = os.path.join(get_config_path(project_path=project_path), 'config_raw.json')
     config_raw_rel = os.path.join(get_config_path(relpath=True, project_path=project_path), 'config_raw.json')
 
-    add_to_config_json(config_main_fp, {'configs': {'raw': '{project_path}' + config_raw_rel}})
+    add_to_config_json(config_main_fp, {'configs': {'raw': config_raw_rel}})
     add_to_config_json(config_raw_fp, {'xml_path': raw_data_xml})
     add_to_config_json(config_raw_fp, load_params('raw', project_path=project_path))
 
@@ -132,12 +140,12 @@ def init_main_config(project_path=None, verbose=False):
     add_to_config_json(
         config_fp,
         dict(
-            project_path=project_path,
-            tasks_path='{project_path}tasks',
-            params_path='{project_path}params',
-            mobie_project_path='{project_path}data',
+            # project_path=project_path,
+            tasks_path='tasks',
+            params_path='params',
+            mobie_project_path='data',
             configs=dict(
-                main='{project_path}' + config_rel
+                main=config_rel
             )
         ),
         verbose=verbose

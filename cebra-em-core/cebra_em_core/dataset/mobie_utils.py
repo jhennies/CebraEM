@@ -92,10 +92,32 @@ def append_mobie_table(table_filepath, entry):
     new_table_data.to_csv(table_filepath, index=False, sep='\t')
 
 
+def update_mobie_table_entry(table_filepath, entry, uri):
+
+    import pandas as pd
+    mobie_table = pd.read_csv(table_filepath, sep='\t')
+
+    row_index = mobie_table[mobie_table['uri'] == entry.iloc[0]['uri']].index
+    mobie_table.loc[row_index, :] = entry.iloc[0].values
+
+    mobie_table.to_csv(table_filepath, index=False, sep='\t')
+
+
+def create_labels_table(table_filepath, table_data):
+
+    import pandas as pd
+
+    table_data = pd.DataFrame(table_data)
+    print(table_data)
+    table_data.to_csv(table_filepath, index=False, sep='\t')
+
+
 def init_with_raw(mobie_data_path, raw_xml_path, image_name, project_path=None, verbose=False):
 
     from pybdv.metadata import get_attributes, get_resolution
-    from cebra_em_core.project_utils.config import add_to_config_json, get_config_filepath
+    from cebra_em_core.project_utils.config import (
+        add_to_config_json, get_config_filepath, relative_path
+    )
     from cebra_em_core.dataset.bdv_utils import get_shape
 
     new_xml_path = os.path.join(mobie_data_path, f'{image_name}.xml')
@@ -108,10 +130,10 @@ def init_with_raw(mobie_data_path, raw_xml_path, image_name, project_path=None, 
     append_mobie_table(
         mobie_table_path,
         dict(
-            uri=[os.path.relpath(new_xml_path, project_path)],
+            uri=[relative_path(new_xml_path, project_path)],
             # uri=[new_xml_path],
             type=['intensities'],
-            view=['em-raw'],
+            view=['raw'],
             group=['inputs']
         )
     )
@@ -119,7 +141,7 @@ def init_with_raw(mobie_data_path, raw_xml_path, image_name, project_path=None, 
     # Update the main config json
     add_to_config_json(
         get_config_filepath('main', project_path=project_path),
-        {'mobie_table_filepath': mobie_table_path}
+        {'mobie_table_filepath': relative_path(mobie_table_path, project_path)}
     )
 
     # Update the raw config json
@@ -136,7 +158,7 @@ def init_with_raw(mobie_data_path, raw_xml_path, image_name, project_path=None, 
         {
             'resolution': raw_resolution if type(raw_resolution) != np.ndarray else raw_resolution.tolist(),
             'shape': raw_shape,
-            'xml_path': raw_xml_path
+            'xml_path': relative_path(new_xml_path, project_path)
         }
     )
 
@@ -159,7 +181,7 @@ def _make_empty_dataset(
         verbose=False
 ):
 
-    from cebra_em_core.project_utils.config import absolute_path
+    from cebra_em_core.project_utils.config import absolute_path, relative_path
     from cebra_em_core.dataset.bdv_utils import create_empty_dataset
     from pybdv.util import get_key, open_file
 
@@ -182,7 +204,7 @@ def _make_empty_dataset(
     if verbose:
         print(f'xml_path = {xml_path}')
 
-    xml_rel_path = os.path.relpath(xml_path, project_path)
+    xml_rel_path = relative_path(xml_path, project_path)
 
     if source_type == 'labels':
         # Add max ID
@@ -199,7 +221,7 @@ def _make_empty_dataset(
     append_mobie_table(
         get_mobie_table_path(project_path=project_path),
         dict(
-            uri=[os.path.relpath(xml_path, project_path)],
+            uri=[relative_path(xml_path, project_path)],
             # uri=[xml_path],
             type=[source_type],
             view=[image_name],
@@ -340,7 +362,9 @@ def init_mask(mobie_data_path, mask_xml_path, image_name, project_path=None, ver
 
     import pandas as pd
     from pybdv.metadata import get_attributes, get_resolution
-    from cebra_em_core.project_utils.config import get_config, add_to_config_json, get_config_filepath
+    from cebra_em_core.project_utils.config import (
+        get_config, add_to_config_json, get_config_filepath, relative_path
+    )
     from cebra_em_core.dataset.bdv_utils import get_shape
 
     from cebra_em_core.project_utils.project import get_current_project_path
@@ -382,12 +406,12 @@ def init_mask(mobie_data_path, mask_xml_path, image_name, project_path=None, ver
     append_mobie_table(
         mobie_table_path,
         dict(
-            uri=[os.path.relpath(new_xml_path, project_path)],
+            uri=[relative_path(new_xml_path, project_path)],
             # uri=[new_xml_path],
             type=['labels'],
-            view=['em-mask'],
+            view=['mask'],
             group=['inputs'],
-            labels_table=[os.path.relpath(table_filepath, project_path)]
+            labels_table=[relative_path(table_filepath, project_path)]
         )
     )
 
@@ -405,7 +429,7 @@ def init_mask(mobie_data_path, mask_xml_path, image_name, project_path=None, ver
         {
             'resolution': mask_resolution if type(mask_resolution) != np.ndarray else mask_resolution.tolist(),
             'shape': mask_shape,
-            'xml_path': mask_xml_path
+            'xml_path': relative_path(new_xml_path, project_path)
         }
     )
 
@@ -440,7 +464,7 @@ def init_segmentation_map(
 
     # _______________________________________________________________________________
     # Make an empty dataset
-    seg_name_hyph = seg_name.replace('_', '-', 1)
+    # seg_name_hyph = seg_name.replace('_', '-', 1)
     # stitched_name_hyph = f'{seg_name_hyph}_stitch'
     seg_shape = (
             np.array(raw_shape) * np.array(raw_resolution) / np.array(seg_resolution).astype(float)
@@ -449,7 +473,7 @@ def init_segmentation_map(
     # The non-stitched dataset
 
     xml_rel_path = _make_empty_dataset(
-        seg_name_hyph,
+        seg_name,
         seg_shape,
         mobie_data_path,
         seg_resolution,
