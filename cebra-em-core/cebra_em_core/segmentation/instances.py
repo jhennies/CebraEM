@@ -56,7 +56,7 @@ def find_bounding_boxes(segmentation, ids=None, resolution=(1., 1., 1.), verbose
     return bounding_boxes
 
 
-def update_mobie_table(
+def update_labels_table(
         target,
         initial_downsample_level=3,
         final_downsample_level=1,
@@ -66,19 +66,24 @@ def update_mobie_table(
 ):
 
     from cebra_em_core.dataset.data import load_full_downsample_level
-    from cebra_em_core.project_utils.config import get_config, absolute_path
+    from cebra_em_core.project_utils.config import get_config, absolute_path, relative_path
     from pybdv.metadata import get_data_path, get_key
     from cebra_em_core.dataset.bdv_utils import get_resolution
     from cebra_em_core.dataset.bdv_utils import is_h5
 
     # Load the data for the instance search
-    config_target = get_config(target, project_path)
-    target_xml_path = absolute_path(config_target['xml_path'], project_path=project_path)
-    target_path = get_data_path(target_xml_path, return_absolute_path=True)
-    internal_path = get_key(is_h5(target_xml_path), 0, 0, initial_downsample_level)
-    resolution = get_resolution(target_xml_path, setup_id=0, downsample_level=initial_downsample_level)
+    if target == 'mask':
+        from cebra_em_core.project_utils.config import get_mask_xml
+        target_xml_path = get_mask_xml(project_path=project_path)
+    else:
+        from cebra_em_core.project_utils.config import get_segmentation_xml
+        target_xml_path = get_segmentation_xml(target, project_path=project_path)
+    target_xml_path_abs = absolute_path(target_xml_path, project_path=project_path)
+    target_path = get_data_path(target_xml_path_abs, return_absolute_path=True)
+    internal_path = get_key(is_h5(target_xml_path_abs), 0, 0, initial_downsample_level)
+    resolution = get_resolution(target_xml_path_abs, setup_id=0, downsample_level=initial_downsample_level)
     if verbose:
-        print(f'target_xml_path = {target_xml_path}')
+        print(f'target_xml_path_abs = {target_xml_path_abs}')
         print(f'target_path = {target_path}')
         print(f'internal_path = {internal_path}')
         print(f'resolution = {resolution}')
@@ -95,6 +100,7 @@ def update_mobie_table(
         print('Finding bounding boxes ...')
     ids = None
     if target == 'mask':
+        config_target = get_config(target, project_path)
         ids = config_target['args']['ids']
     bounding_boxes = find_bounding_boxes(init_segmentation, ids=ids, resolution=resolution, verbose=verbose)
 
@@ -122,6 +128,6 @@ def update_mobie_table(
     from cebra_em_core.dataset.mobie_utils import update_mobie_table_entry, get_mobie_table_path
     update_mobie_table_entry(
         get_mobie_table_path(project_path),
-        dict(labels_table=os.path.relpath(labels_table_filepath, mobie_project_dirpath)),
-        config_target
+        ['labels_table', relative_path(labels_table_filepath, project_path)],
+        ['uri', target_xml_path]
     )

@@ -26,7 +26,7 @@ setup(
             'cem-link-gt = bin.link_gt:main',
             'cem-log-gt = bin.log_gt:main',
             'cem-run = bin.run:main',
-            'update_mobie_table = bin.update_mobie_table:main'
+            'cem-update-labels-table = bin.update_labels_table:main'
         ]
     },
     install_requires=[

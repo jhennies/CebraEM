@@ -92,13 +92,15 @@ def append_mobie_table(table_filepath, entry):
     new_table_data.to_csv(table_filepath, index=False, sep='\t')
 
 
-def update_mobie_table_entry(table_filepath, entry, uri):
+def update_mobie_table_entry(table_filepath, entry, item):
+    assert len(entry) == 2, 'entry should be a list with two items: a column header and a value'
+    assert len(item) == 2, 'item should be a list with two items: a column header and a value to look for'
 
     import pandas as pd
     mobie_table = pd.read_csv(table_filepath, sep='\t')
 
-    row_index = mobie_table[mobie_table['uri'] == entry.iloc[0]['uri']].index
-    mobie_table.loc[row_index, :] = entry.iloc[0].values
+    row_index = mobie_table[mobie_table[item[0]] == item[1]].index[0]
+    mobie_table.at[row_index, entry[0]] = entry[1]
 
     mobie_table.to_csv(table_filepath, index=False, sep='\t')
 

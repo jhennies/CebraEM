@@ -34,9 +34,9 @@ def main():
     cores = args.cores
     verbose = args.verbose
 
-    from cebra_em_core.segmentation.instances import update_mobie_table
+    from cebra_em_core.segmentation.instances import update_labels_table
 
-    update_mobie_table(
+    update_labels_table(
         target,
         initial_downsample_level=initial_downsample_level,
         final_downsample_level=final_downsample_level,

@@ -25,6 +25,20 @@ def get_mask_xml(project_path=None):
         return None
 
 
+def get_segmentation_xml(name, project_path=None):
+
+    stitched = False
+    if str.endswith(name, 'stitched'):
+        stitched = True
+        name = name[:-len('_stitched')]
+    import re
+    basename = re.sub(r'_b0_\d+$', '', name)
+    config = get_config(basename, project_path=project_path)
+    segmentation_info = config['segmentations'][name]
+
+    return segmentation_info['xml_path_stitched'] if stitched else segmentation_info['xml_path']
+
+
 def get_config_path(relpath=False, project_path=None):
     from cebra_em_core.project_utils.project import get_current_project_path
     project_path = get_current_project_path(project_path=project_path)
