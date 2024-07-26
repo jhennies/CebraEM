@@ -193,6 +193,7 @@ def run(
             roi=roi,
             unit=unit,
             project_path=project_path,
+            run_params=parameters,
             verbose=verbose
         )
     else:

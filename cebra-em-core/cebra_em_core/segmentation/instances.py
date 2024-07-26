@@ -5,11 +5,6 @@ import numpy as np
 
 def find_bounding_boxes(segmentation, ids=None, resolution=(1., 1., 1.), verbose=False):
 
-    import pandas as pd
-
-    # Get the shape of the 3D array
-    shape = segmentation.shape
-
     # Get all non-zero voxel coordinates and their corresponding instance IDs
     coords = np.argwhere(segmentation > 0)
     instance_ids = segmentation[coords[:, 0], coords[:, 1], coords[:, 2]]
@@ -35,7 +30,6 @@ def find_bounding_boxes(segmentation, ids=None, resolution=(1., 1., 1.), verbose
         # Calculate the bounding box
         z_min, y_min, x_min = instance_coords.min(axis=0)
         z_max, y_max, x_max = instance_coords.max(axis=0)
-        print(instance_coords)
         anchor_z, anchor_y, anchor_x = instance_coords.mean(axis=0)
 
         # Store the bounding box

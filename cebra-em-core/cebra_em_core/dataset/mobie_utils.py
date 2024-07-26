@@ -110,7 +110,6 @@ def create_labels_table(table_filepath, table_data):
     import pandas as pd
 
     table_data = pd.DataFrame(table_data)
-    print(table_data)
     table_data.to_csv(table_filepath, index=False, sep='\t')
 
 
@@ -133,7 +132,6 @@ def init_with_raw(mobie_data_path, raw_xml_path, image_name, project_path=None, 
         mobie_table_path,
         dict(
             uri=[relative_path(new_xml_path, project_path)],
-            # uri=[new_xml_path],
             type=['intensities'],
             view=['raw'],
             group=['inputs']

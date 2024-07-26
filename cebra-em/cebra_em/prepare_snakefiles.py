@@ -21,6 +21,7 @@ def generate_run_json(
         misc=None,
         project_path=None,
         debug=False,
+        run_params=None,
         verbose=False
 ):
     from cebra_em_core.project_utils.dependencies import find_dependencies
@@ -69,18 +70,21 @@ def generate_run_json(
     if targets == 'gt_cubes' or targets == 'val_cubes':
         run_type = targets
         targets = ['supervoxels']
+        run_targets = targets
     elif targets[:7] == 'stitch-':
         run_type = 'stitch'
+        run_targets = [f'{targets[7:]}_b{str.replace(str(run_params["beta"][0]), ".", "_")}']
         targets = [targets[7:]]
     else:
         run_type = 'run'
+        run_targets = targets
 
     with open(run_json_fp, mode='w') as f:
         json.dump(
             {
                 'run_type': run_type,
-                'targets': targets,
-                'target_ids': {tgt: _target_ids_from_roi(tgt, roi, unit) for tgt in targets},
+                'targets': run_targets,
+                'target_ids': {tgt: _target_ids_from_roi(targets[idx], roi, unit) for idx, tgt in enumerate(run_targets)},
                 'verbose': verbose,
                 'misc': misc,
                 'debug': debug
@@ -313,6 +317,7 @@ def prepare_stitching(
         roi=None,
         unit='px',
         project_path=None,
+        run_params=None,
         verbose=False
 ):
     from cebra_em.misc.repo import get_repo_path
@@ -333,6 +338,7 @@ def prepare_stitching(
         unit=unit,
         misc=dict(beta=beta),
         project_path=project_path,
+        run_params=run_params,
         verbose=verbose
     )
 
@@ -348,7 +354,9 @@ def prepare_stitching(
     with open(src, mode='r') as f:
         source_block = f.read()
 
-    source_block = source_block.replace('<name>', target[7:])
+    snk_target_name = f'{target[7:]}_b{str.replace(str(run_params["beta"][0]), ".", "_")}'
+    source_block = source_block.replace('<name>', snk_target_name)
+    # source_block = source_block.replace('<basename>', target[7:])
 
     print(source_block)
 

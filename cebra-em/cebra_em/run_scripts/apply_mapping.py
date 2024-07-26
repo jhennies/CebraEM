@@ -45,6 +45,8 @@ def load_data(data_path, data_key, position, shape):
 if __name__ == '__main__':
 
     image = snakemake.params['image_name']
+    import re
+    image_base = re.sub(r'_b0_\d+$', '', image)
     cube_idx = snakemake.wildcards['idx']
 
     print(f">>> STARTING: Apply mapping for {image}[{cube_idx}]")
@@ -61,18 +63,18 @@ if __name__ == '__main__':
     output = snakemake.output[0]
 
     # Get the config
-    config_seg = get_config(image, project_path=project_path)
+    config_seg = get_config(image_base, project_path=project_path)
     positions_fp = absolute_path(config_seg['positions'], project_path=project_path)
     # data_xml_path = absolute_path(config_seg['xml_path'])
     # stitched_data_xml = absolute_path(config_seg['stitched_dataset']['xml_path'], project_path=project_path)
     # stitched_data_path = get_data_path(stitched_data_xml, return_absolute_path=True)
 
-    stitched_img_xml_rel_path = config_seg['segmentations'][f'{image}_b{str.replace(str(beta), ".", "_")}']['xml_path_stitched']
+    stitched_img_xml_rel_path = config_seg['segmentations'][image]['xml_path_stitched']
     stitched_img_data_path = get_data_path(
         absolute_path(stitched_img_xml_rel_path, project_path=project_path),
         return_absolute_path=True
     )
-    img_xml_rel_path = config_seg['segmentations'][f'{image}_b{str.replace(str(beta), ".", "_")}']['xml_path']
+    img_xml_rel_path = config_seg['segmentations'][image]['xml_path']
     img_xml_abs_path = absolute_path(img_xml_rel_path, project_path=project_path)
 
     # Get shape and position
