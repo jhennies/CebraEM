@@ -92,6 +92,35 @@ def append_mobie_table(table_filepath, entry):
     new_table_data.to_csv(table_filepath, index=False, sep='\t')
 
 
+def replace_mobie_table(table_filepath, entries):
+
+    import pandas as pd
+
+    table_data = pd.DataFrame(entries)
+    table_data.to_csv(table_filepath, index=False, sep='\t')
+
+
+def order_mobie_table_entries(entries):
+
+    import pandas as pd
+
+    # Find all ground truth entries
+    input_entries = entries[entries['group'] == 'a) Inputs']
+    intermediate_entries = entries[entries['group'] == 'b) Intermediates']
+    gt_entries = entries[entries['group'] == 'c) Ground truth']
+    segmentation_entries = entries[entries['group'] == 'd) Segmentations']
+    stitched_entries = entries[entries['group'] == 'e) Stitched']
+
+    # Paste it back together
+    entries = pd.concat(
+        [input_entries, intermediate_entries, gt_entries, segmentation_entries, stitched_entries],
+        axis=0,
+        ignore_index=True
+    )
+
+    return entries
+
+
 def update_mobie_table_entry(table_filepath, entry, item):
     assert len(entry) == 2, 'entry should be a list with two items: a column header and a value'
     assert len(item) == 2, 'item should be a list with two items: a column header and a value to look for'
@@ -134,7 +163,7 @@ def init_with_raw(mobie_data_path, raw_xml_path, image_name, project_path=None, 
             uri=[relative_path(new_xml_path, project_path)],
             type=['intensities'],
             view=['raw'],
-            group=['inputs']
+            group=['a) Inputs']
         )
     )
 
@@ -176,7 +205,7 @@ def _make_empty_dataset(
         mobie_data_path,
         resolution,
         source_type='intensities',
-        group='intermediates',
+        group='b) Intermediates',
         project_path=None,
         verbose=False
 ):
@@ -266,6 +295,7 @@ def init_membrane_prediction(
         mobie_data_path,
         mem_resolution,
         source_type='intensities',
+        group='b) Intermediates',
         project_path=project_path,
         verbose=verbose
     )
@@ -331,6 +361,7 @@ def init_supervoxels(
         mobie_data_path,
         sv_resolution,
         source_type='labels',
+        group='b) Intermediates',
         project_path=project_path,
         verbose=verbose
     )
@@ -410,7 +441,7 @@ def init_mask(mobie_data_path, mask_xml_path, image_name, project_path=None, ver
             # uri=[new_xml_path],
             type=['labels'],
             view=['mask'],
-            group=['inputs'],
+            group=['a) Inputs'],
             labels_table=[relative_path(table_filepath, project_path)]
         )
     )
@@ -478,7 +509,7 @@ def init_segmentation_map(
         mobie_data_path,
         seg_resolution,
         source_type='labels',
-        group='segmentations' if not stitched else 'stitched',
+        group='d) Segmentations' if not stitched else 'e) Stitched',
         project_path=project_path,
         verbose=verbose
     )

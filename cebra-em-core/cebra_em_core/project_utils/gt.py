@@ -55,9 +55,11 @@ def init_gt_cube(
 
     print(f'New cube id: {cube_id}')
 
+    resolution = get_config('supervoxels', project_path)['resolution']
+
     if bdv_position is not None:
         assert position is None, 'Supply either bdv_position or position, not both!'
-        pos = bdv2pos(bdv_position, resolution=get_config('supervoxels', project_path)['resolution'], verbose=verbose)
+        pos = bdv2pos(bdv_position, resolution=resolution, verbose=verbose)
     else:
         assert position is not None, 'No position supplied, use either position or bdv_position!'
         pos = position
@@ -76,7 +78,8 @@ def init_gt_cube(
                 'position': pos,
                 'position_center': pos_center,  # This is what the user originally selected, not actually used though
                 'shape': shape,
-                'no_padding': no_padding
+                'no_padding': no_padding,
+                'resolution': resolution
             }
         }
     )
@@ -94,6 +97,7 @@ def extract_gt(
         absolute_path,
     )
     from cebra_em_core.dataset.data import crop_and_scale
+    from cebra_em_core.dataset.bdv_utils import create_simple_bdv_h5_dataset, add_xml_to_simple_bdv_h5_dataset
     from pybdv.metadata import get_data_path
     from pybdv.util import open_file, get_key
 
@@ -142,8 +146,11 @@ def extract_gt(
         verbose=verbose
     )
 
-    with open_file(raw_fp, 'w') as f:
-        f.create_dataset('data', data=raw, compression='gzip')
+    # with open_file(raw_fp, 'w') as f:
+    #     f.create_dataset('data', data=raw, compression='gzip')
+    create_simple_bdv_h5_dataset(raw_fp, raw)
+    raw_xml_path = f'{os.path.splitext(raw_fp)[0]}-{cube_id}.xml'
+    add_xml_to_simple_bdv_h5_dataset(raw_fp, unit='micrometer', resolution=output_res, xml_path=raw_xml_path)
 
     # Extracting membrane prediction
     input_res = config_mem['resolution']
@@ -168,8 +175,11 @@ def extract_gt(
         verbose=verbose
     )
 
-    with open_file(mem_fp, 'w') as f:
-        f.create_dataset('data', data=mem, compression='gzip')
+    # with open_file(mem_fp, 'w') as f:
+    #     f.create_dataset('data', data=mem, compression='gzip')
+    create_simple_bdv_h5_dataset(mem_fp, mem)
+    mem_xml_path = f'{os.path.splitext(mem_fp)[0]}-{cube_id}.xml'
+    add_xml_to_simple_bdv_h5_dataset(mem_fp, unit='micrometer', resolution=output_res, xml_path=mem_xml_path)
 
     # Extracting supervoxels
     input_res = config_sv['resolution']
@@ -185,8 +195,11 @@ def extract_gt(
         verbose=verbose
     )
 
-    with open_file(sv_fp, 'w') as f:
-        f.create_dataset('data', data=sv, compression='gzip')
+    # with open_file(sv_fp, 'w') as f:
+    #     f.create_dataset('data', data=sv, compression='gzip')
+    create_simple_bdv_h5_dataset(sv_fp, sv)
+    sv_xml_path = f'{os.path.splitext(sv_fp)[0]}-{cube_id}.xml'
+    add_xml_to_simple_bdv_h5_dataset(sv_fp, unit='micrometer', resolution=output_res, xml_path=sv_xml_path)
 
     # Update gt config:  set 'status' to 'ready'
     add_to_config_json(
@@ -215,8 +228,8 @@ def _validate_inputs(cube_id, organelle_id, image_id, project_path=None):
     annotation_folder = absolute_path(config_main['gt_path'], project_path=project_path)
     available_annotations = [os.path.split(x)[1] for x in glob(os.path.join(annotation_folder, cube_id, '*.h5'))]
 
-    if f'{organelle_id}.h5' not in available_annotations:
-        print(f'The specified annotation "{organelle_id}" in cube "{cube_id}" is not available.')
+    assert f'{organelle_id}.h5' in available_annotations, \
+        'The requested annotation is not available! Annotate the organelle first before linking to a segmentation dataset!'
 
     assert image_id in config_main['configs'].keys(), \
         'Specified dataset does not exist!'
@@ -228,6 +241,8 @@ def generate_cube_to_image_link(
         val=False,
         verbose=False
 ):
+
+    cube_config_entry = cube_config_entry.copy()
 
     def _find_existing():
         try:
@@ -269,6 +284,75 @@ def generate_cube_to_image_link(
     return cube_config_entry
 
 
+def gt_cubes_to_mobie_table(
+        cube_ids, organelle, image_name, project_path=None, verbose=False
+):
+
+    view_name = f'gt_{image_name}'
+    group_name = 'c) Ground truth'
+
+    import pandas as pd
+    from cebra_em_core.dataset.mobie_utils import replace_mobie_table, get_mobie_table_path, order_mobie_table_entries
+    from cebra_em_core.project_utils.config import get_config
+
+    # Fetch MoBIE table
+    mobie_table_path = get_mobie_table_path(project_path=project_path)
+    mobie_table = pd.read_csv(mobie_table_path, sep='\t')
+
+    # Determine if the image_name already has entries (specifically the raw.xml entry)
+    # Clear the image_name entries
+    entries_this_image_name = mobie_table[mobie_table['view'] == view_name]
+    entries_this_image_name = entries_this_image_name[entries_this_image_name['uri'] != 'data/raw.xml']
+    mobie_table = mobie_table[mobie_table['view'] != view_name]
+
+    if len(entries_this_image_name) > 0:
+        region_map = entries_this_image_name.iloc[0]['region_map']
+    else:
+        if np.isnan(mobie_table['region_map'].max()):
+            region_map = 0
+        else:
+            region_map = mobie_table['region_map'].max() + 1
+
+    # Add the old and new image_name entries
+    new_entries = pd.DataFrame(
+        dict(
+            uri=['data/raw.xml'],
+            type=['intensities'],
+            view=[view_name],
+            group=[group_name]
+        )
+    )
+    new_entries = pd.concat([new_entries, entries_this_image_name], axis=0, ignore_index=True)
+    gt_path = get_config('main', project_path=project_path)['gt_path']
+    config_gt = get_config('gt', project_path=project_path)
+    affines = []
+    for cube_id in cube_ids:
+        config_gt_cube = config_gt[id2str(cube_id)]
+        affine = np.eye(3, 4)
+        affine[:, 3] = (np.array(config_gt_cube['position'])) * np.array(config_gt_cube['resolution'])
+        affines.append(f"({','.join([str(x) for x in affine.flatten()])})")
+    new_entries = pd.concat(
+        [
+            new_entries,
+            pd.DataFrame(dict(
+                uri=[os.path.join(gt_path, id2str(cube_id), f'{organelle}-{id2str(cube_id)}.xml') for cube_id in cube_ids],
+                type=['labels'] * len(cube_ids),
+                view=[view_name] * len(cube_ids),
+                group=[group_name] * len(cube_ids),
+                affine=[affine for affine in affines],
+                region_map=[region_map] * len(cube_ids)
+            ))
+        ], axis=0, ignore_index=True
+    )
+    print(f'new_entries = {new_entries}')
+
+    # Write back to file
+    replace_mobie_table(
+        mobie_table_path,
+        order_mobie_table_entries(pd.concat([new_entries, mobie_table], axis=0, ignore_index=True))
+    )
+
+
 def link_gt_cubes(
         cube_ids, organelle, image_name,
         val=False,
@@ -288,6 +372,9 @@ def link_gt_cubes(
     for cube_id in cube_ids:
         assert id2str(cube_id) in config_gt.keys(), f'This cube does not have a config entry: {cube_id}'
 
+    # Update the MoBIE table
+    gt_cubes_to_mobie_table(cube_ids, organelle, image_name, project_path=project_path, verbose=verbose)
+
     # Link the cubes
     for cube_id in cube_ids:
 
@@ -302,6 +389,10 @@ def link_gt_cubes(
             val=val, verbose=verbose
         )
 
+        if verbose:
+            print(f'cube_config_entry:')
+            print(cube_config_entry)
+
         # Update the config
         add_to_config_json(
             config_gt_fp,
@@ -309,6 +400,8 @@ def link_gt_cubes(
         )
 
         print(f'Cube {cube_id} linked successfully to {image_name} :-)')
+
+
 
 
 def get_associated_gt_cubes(image, project_path=None):

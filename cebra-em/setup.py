@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='cebra-em',
-    version='0.1.0',
+    version='0.1.1',
     author='jhennies',
     author_email='hennies@embl.de',
     packages=['cebra_em'],

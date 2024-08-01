@@ -125,6 +125,41 @@ def create_empty_dataset(
     return xml_path
 
 
+def create_simple_bdv_h5_dataset(path, data, attrs=None):
+    from pybdv.util import open_file
+    from pybdv.metadata import get_key, write_h5_metadata
+
+    key = get_key(True, 0, 0, 0)
+
+    with open_file(path, mode='w') as f:
+        d = f.create_dataset(key, data=data, compression='gzip')
+        if attrs is not None:
+            for k, v in attrs.items():
+                d.attrs[k] = v
+
+    write_h5_metadata(path, [[1, 1, 1]], 0, 0, overwrite=True)
+
+
+def add_xml_to_simple_bdv_h5_dataset(path, unit='micrometer', resolution=(0.01, 0.01, 0.01), xml_path=None):
+    from pybdv.metadata import write_xml_metadata
+    if xml_path is None:
+        xml_path = f'{os.path.splitext(path)[0]}.xml'
+    attributes = {'channel': {'id': 1}}
+    write_xml_metadata(
+        xml_path, path, unit, resolution, True, 0, 0, 's0', None, attributes,
+        overwrite=True, overwrite_data=False, enforce_consistency=True
+    )
+
+
+def read_simple_bdv_h5_dataset(path, return_attrs=False):
+    from pybdv.util import open_file
+    from pybdv.metadata import get_key
+    with open_file(path, mode='r') as f:
+        if return_attrs:
+            return f[get_key(True, 0, 0, 0)][:], dict(f[get_key(True, 0, 0, 0)].attrs)
+        return f[get_key(True, 0, 0, 0)][:]
+
+
 class BdvDatasetAdvanced(BdvDataset):
 
     def __init__(

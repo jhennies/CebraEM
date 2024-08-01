@@ -295,11 +295,13 @@ class CebraAnnWidget(QWidget):
     def _save_layer(self, name, data=None, attrs=None):
         fp = self._project.get_absolute_path(name=name)
         data = data if data is not None else self.viewer.layers[name].data
-        with File(fp, mode='w') as f:
-            d = f.create_dataset('data', data=data, compression='gzip')
-            if attrs is not None:
-                for k, v in attrs.items():
-                    d.attrs[k] = v
+        from cebra_em_core.dataset.bdv_utils import create_simple_bdv_h5_dataset
+        create_simple_bdv_h5_dataset(fp, data, attrs=attrs)
+        # with File(fp, mode='w') as f:
+        #     d = f.create_dataset('data', data=data, compression='gzip')
+        #     if attrs is not None:
+        #         for k, v in attrs.items():
+        #             d.attrs[k] = v
 
     def _save_project(self):
 
@@ -448,12 +450,12 @@ class CebraAnnWidget(QWidget):
 
     def _load_supervoxels(self):
 
-        # Load supervoxels
-        with File(self._project.get_absolute_path(self._project.sv), mode='r') as f:
-            sv = f['data'][:]
-            attrs = f['data'].attrs
+        from cebra_em_core.dataset.bdv_utils import read_simple_bdv_h5_dataset
 
-            is_unique = False if 'is_unique' not in attrs else attrs['is_unique']
+        sv, attrs = read_simple_bdv_h5_dataset(self._project.get_absolute_path(self._project.sv), return_attrs=True)
+
+        print(attrs)
+        is_unique = False if 'is_unique' not in attrs else attrs['is_unique']
 
         if not is_unique:
             dtype = sv.dtype
@@ -480,21 +482,23 @@ class CebraAnnWidget(QWidget):
 
     def _load_data(self):
 
+        from cebra_em_core.dataset.bdv_utils import read_simple_bdv_h5_dataset
+
         data = dict()
 
         if self._project.raw is not None:
-            data['raw'] = File(self._project.get_absolute_path(self._project.raw), mode='r')['data'][:]
+            data['raw'] = read_simple_bdv_h5_dataset(self._project.get_absolute_path(self._project.raw))
         if self._project.mem is not None:
-            data['mem'] = File(self._project.get_absolute_path(self._project.mem), mode='r')['data'][:]
+            data['mem'] = read_simple_bdv_h5_dataset(self._project.get_absolute_path(self._project.mem))
         if self._project.sv is not None:
             data['sv'] = self._load_supervoxels()
         if self._project.pre_merge is not None:
-            data['pre_merge'] = File(self._project.get_absolute_path(self._project.pre_merge), mode='r')['data'][:]
+            data['pre_merge'] = read_simple_bdv_h5_dataset(self._project.get_absolute_path(self._project.pre_merge))
         if self._project.instances is not None:
-            data['instances'] = File(self._project.get_absolute_path(self._project.instances), mode='r')['data'][:]
+            data['instances'] = read_simple_bdv_h5_dataset(self._project.get_absolute_path(self._project.instances))
         if len(self._project.semantics) > 0:
             for sem_name, sem in self._project.semantics.items():
-                data[sem_name] = File(self._project.get_absolute_path(sem), mode='r')['data'][:]
+                data[sem_name] = read_simple_bdv_h5_dataset(self._project.get_absolute_path(sem))
 
         if len(data) > 0:
             translations = self._project.get_translations({k: v.shape for k, v in data.items()})
