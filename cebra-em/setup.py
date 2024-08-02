@@ -26,7 +26,8 @@ setup(
             'cem-link-gt = bin.link_gt:main',
             'cem-log-gt = bin.log_gt:main',
             'cem-run = bin.run:main',
-            'cem-update-labels-table = bin.update_labels_table:main'
+            'cem-update-labels-table = bin.update_labels_table:main',
+            'cem-import-annotation = bin.import_annotation:main'
         ]
     },
     install_requires=[

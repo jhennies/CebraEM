@@ -8,6 +8,24 @@ def id2str(cube_id):
     return 'gt{:03d}'.format(cube_id)
 
 
+def get_gt_cube_ids(project_path=None):
+
+    from cebra_em_core.project_utils.config import get_config
+    gt_config = get_config('gt', project_path=project_path)
+
+    return [v['id'] for k, v in gt_config.items()]
+
+
+def get_gt_dirpath(cube_id, project_path=None):
+    from cebra_em_core.project_utils.config import get_config, absolute_path
+    return absolute_path(
+        os.path.join(
+            get_config('main', project_path=project_path)['gt_path'],
+            id2str(cube_id)),
+        project_path=project_path
+    )
+
+
 def init_gt_cube(
         project_path=None,
         shape=(256, 256, 256),
@@ -344,7 +362,7 @@ def gt_cubes_to_mobie_table(
             ))
         ], axis=0, ignore_index=True
     )
-    print(f'new_entries = {new_entries}')
+    # print(f'new_entries = {new_entries}')
 
     # Write back to file
     replace_mobie_table(
@@ -364,6 +382,7 @@ def link_gt_cubes(
         get_config_filepath,
         add_to_config_json
     )
+    from cebra_em_core.dataset.bdv_utils import add_xml_to_simple_bdv_h5_dataset
 
     config_gt_fp = get_config_filepath('gt', project_path=project_path)
     config_gt = get_config('gt', project_path=project_path)
@@ -371,9 +390,6 @@ def link_gt_cubes(
     # Check all cube_ids and make sure that the respective entries all exist
     for cube_id in cube_ids:
         assert id2str(cube_id) in config_gt.keys(), f'This cube does not have a config entry: {cube_id}'
-
-    # Update the MoBIE table
-    gt_cubes_to_mobie_table(cube_ids, organelle, image_name, project_path=project_path, verbose=verbose)
 
     # Link the cubes
     for cube_id in cube_ids:
@@ -399,9 +415,18 @@ def link_gt_cubes(
             {id2str(cube_id): cube_config_entry}
         )
 
+        # Add an xml
+        cube_filepath = os.path.join(get_gt_dirpath(cube_id, project_path), f'{organelle}.h5')
+        xml_filepath = os.path.join(get_gt_dirpath(cube_id, project_path), f'{organelle}-{id2str(cube_id)}.xml')
+        add_xml_to_simple_bdv_h5_dataset(
+            cube_filepath,
+            unit='micrometer', resolution=cube_config_entry['resolution'], xml_path=xml_filepath
+        )
+
         print(f'Cube {cube_id} linked successfully to {image_name} :-)')
 
-
+    # Update the MoBIE table
+    gt_cubes_to_mobie_table(cube_ids, organelle, image_name, project_path=project_path, verbose=verbose)
 
 
 def get_associated_gt_cubes(image, project_path=None):

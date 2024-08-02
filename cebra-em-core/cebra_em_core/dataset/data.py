@@ -559,3 +559,22 @@ def get_quantiles(
         quantiles[idx] = this_quantiles
 
     return quantiles
+
+
+def crop_center(vol, shape):
+
+    vol_shape = np.array(vol.shape)
+    shape = np.array(shape)
+
+    if np.abs(vol_shape - shape).max() != 0:
+
+        start = ((vol_shape - shape) / 2).astype('int')
+        vol = vol[
+              start[0]: start[0] + shape[0],
+              start[1]: start[1] + shape[1],
+              start[2]: start[2] + shape[2]
+        ]
+
+    assert np.abs(np.array(vol.shape) - shape).max() == 0
+
+    return vol
