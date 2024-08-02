@@ -167,8 +167,7 @@ def extract_gt(
     # with open_file(raw_fp, 'w') as f:
     #     f.create_dataset('data', data=raw, compression='gzip')
     create_simple_bdv_h5_dataset(raw_fp, raw)
-    raw_xml_path = f'{os.path.splitext(raw_fp)[0]}-{cube_id}.xml'
-    add_xml_to_simple_bdv_h5_dataset(raw_fp, unit='micrometer', resolution=output_res, xml_path=raw_xml_path)
+    add_xml_to_simple_bdv_h5_dataset(raw_fp, unit='micrometer', resolution=output_res)
 
     # Extracting membrane prediction
     input_res = config_mem['resolution']
@@ -196,8 +195,7 @@ def extract_gt(
     # with open_file(mem_fp, 'w') as f:
     #     f.create_dataset('data', data=mem, compression='gzip')
     create_simple_bdv_h5_dataset(mem_fp, mem)
-    mem_xml_path = f'{os.path.splitext(mem_fp)[0]}-{cube_id}.xml'
-    add_xml_to_simple_bdv_h5_dataset(mem_fp, unit='micrometer', resolution=output_res, xml_path=mem_xml_path)
+    add_xml_to_simple_bdv_h5_dataset(mem_fp, unit='micrometer', resolution=output_res)
 
     # Extracting supervoxels
     input_res = config_sv['resolution']
@@ -216,8 +214,7 @@ def extract_gt(
     # with open_file(sv_fp, 'w') as f:
     #     f.create_dataset('data', data=sv, compression='gzip')
     create_simple_bdv_h5_dataset(sv_fp, sv)
-    sv_xml_path = f'{os.path.splitext(sv_fp)[0]}-{cube_id}.xml'
-    add_xml_to_simple_bdv_h5_dataset(sv_fp, unit='micrometer', resolution=output_res, xml_path=sv_xml_path)
+    add_xml_to_simple_bdv_h5_dataset(sv_fp, unit='micrometer', resolution=output_res)
 
     # Update gt config:  set 'status' to 'ready'
     add_to_config_json(
@@ -353,7 +350,8 @@ def gt_cubes_to_mobie_table(
         [
             new_entries,
             pd.DataFrame(dict(
-                uri=[os.path.join(gt_path, id2str(cube_id), f'{organelle}-{id2str(cube_id)}.xml') for cube_id in cube_ids],
+                uri=[os.path.join(gt_path, id2str(cube_id), f'{organelle}.xml') for cube_id in cube_ids],
+                name=[f'{organelle}-{id2str(cube_id)}' for cube_id in cube_ids],
                 type=['labels'] * len(cube_ids),
                 view=[view_name] * len(cube_ids),
                 group=[group_name] * len(cube_ids),
@@ -417,10 +415,9 @@ def link_gt_cubes(
 
         # Add an xml
         cube_filepath = os.path.join(get_gt_dirpath(cube_id, project_path), f'{organelle}.h5')
-        xml_filepath = os.path.join(get_gt_dirpath(cube_id, project_path), f'{organelle}-{id2str(cube_id)}.xml')
         add_xml_to_simple_bdv_h5_dataset(
             cube_filepath,
-            unit='micrometer', resolution=cube_config_entry['resolution'], xml_path=xml_filepath
+            unit='micrometer', resolution=cube_config_entry['resolution']
         )
 
         print(f'Cube {cube_id} linked successfully to {image_name} :-)')
