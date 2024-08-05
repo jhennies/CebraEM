@@ -113,7 +113,12 @@ def vol_to_bdv(
     # idx, path, name = block_description['idx'], block_description['path'], block_description['name']
     # ts = request_run(idx, path=os.path.join(path, f'.run_requests'), name=name, verbose=verbose)
     # Write the data
-    bdv_ds[s_] = volume
+    try:
+        bdv_ds[s_] = volume
+    except FileNotFoundError:
+        # This happens if another process is working on it. So let's just wait three seconds and try again
+        time.sleep(3)
+        bdv_ds[s_] = volume
     # # Remove block
     # remove_request(idx, ts, path=os.path.join(path, f'.run_requests'), name=name)
 
