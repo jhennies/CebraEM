@@ -223,7 +223,7 @@ def _make_empty_dataset(
         0, 0,
         shape,
         data_dtype='uint64' if source_type == 'labels' else 'uint8',
-        chunks=None,
+        chunks=[64, 128, 128],
         scale_factors=[[2, 2, 2], [2, 2, 2], [4, 4, 4]],
         resolution=resolution,
         unit='micrometer',
@@ -382,7 +382,8 @@ def init_supervoxels(
                 "background_value": None,
                 "downscale_mode": "nearest",
                 "unique_labels": True,
-                "dtype": "uint64"
+                "dtype": "uint64",
+                "block_max": 100000
             }
         },
         verbose=verbose
@@ -543,7 +544,8 @@ def init_segmentation_map(
                             "background_value": 0,
                             "downscale_mode": "nearest",
                             "unique_labels": True,
-                            "dtype": "uint64"
+                            "dtype": "uint64",
+                            "block_max": 100000
                         },
                         'add_dependencies': [],
                         # 'prepare': 'segmentation'

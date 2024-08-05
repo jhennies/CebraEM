@@ -215,7 +215,8 @@ def run(
             config_seg = get_config(target, project_path=project_path)
         beta_targets.extend([f'{target}_b{str.replace(str(beta), ".", "_")}' for beta in betas])
         # Initialize the beta maps (if they don't exist yet)
-        print(beta_targets)
+        if verbose:
+            print(beta_targets)
         for idx, bm in enumerate(beta_targets):
             if bm not in config_seg['segmentations'].keys():
                 print(f'Initializing beta map: {bm}')
