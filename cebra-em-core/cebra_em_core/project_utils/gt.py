@@ -323,7 +323,7 @@ def gt_cubes_to_mobie_table(
     if len(entries_this_image_name) > 0:
         region_map = entries_this_image_name.iloc[0]['region_map']
     else:
-        if np.isnan(mobie_table['region_map'].max()):
+        if 'region_map' not in mobie_table or np.isnan(mobie_table['region_map'].max()):
             region_map = 0
         else:
             region_map = mobie_table['region_map'].max() + 1
