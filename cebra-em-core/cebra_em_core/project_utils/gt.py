@@ -344,7 +344,7 @@ def gt_cubes_to_mobie_table(
     for cube_id in cube_ids:
         config_gt_cube = config_gt[id2str(cube_id)]
         affine = np.eye(3, 4)
-        affine[:, 3] = (np.array(config_gt_cube['position'])) * np.array(config_gt_cube['resolution'])
+        affine[:, 3] = (np.array(config_gt_cube['position'])[::-1]) * np.array(config_gt_cube['resolution'])
         affines.append(f"({','.join([str(x) for x in affine.flatten()])})")
     new_entries = pd.concat(
         [
