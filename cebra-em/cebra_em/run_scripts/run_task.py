@@ -324,8 +324,6 @@ if __name__ == '__main__':
         downscale_mode=data_writing['downscale_mode'],
         halo=halo,
         background_value=data_writing['background_value'],
-        # unique=False,  # data_writing['unique_labels'],
-        # update_max_id=False,  # data_writing['unique_labels'],
         cast_type=data_writing['dtype'] if 'dtype' in data_writing.keys() else None,
         block_description=dict(
             path=project_path,

@@ -141,6 +141,17 @@ if __name__ == '__main__':
     with open(positions_fp, 'rb') as f:
         pos = pickle.load(f)[idx]
 
+    if data_writing['unique_labels']:
+        assert 'dtype' in data_writing
+        assert 'block_max' in data_writing
+        seg = seg.astype(data_writing['dtype'])
+        if verbose:
+            print(f'idx = {idx}')
+            print(f'seg.max() = {seg.max()}')
+        seg += idx * data_writing['block_max']
+        if verbose:
+            print(f'seg.max() = {seg.max()}')
+
     vol_to_bdv(
         seg,
         dataset_path=ds_path,
@@ -148,8 +159,6 @@ if __name__ == '__main__':
         downscale_mode=data_writing['downscale_mode'],
         halo=halo,
         background_value=data_writing['background_value'],
-        unique=data_writing['unique_labels'],
-        update_max_id=data_writing['unique_labels'],
         cast_type=data_writing['dtype'] if 'dtype' in data_writing.keys() else None,
         block_description=dict(
             path=project_path,

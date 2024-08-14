@@ -127,8 +127,6 @@ if __name__ == '__main__':
         downscale_mode='nearest',
         halo=None,
         background_value=0,
-        unique=False,
-        update_max_id=False,
         cast_type=None,
         block_description=dict(
             path=project_path,
