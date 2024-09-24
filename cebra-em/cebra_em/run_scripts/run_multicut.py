@@ -148,7 +148,8 @@ if __name__ == '__main__':
         if verbose:
             print(f'idx = {idx}')
             print(f'seg.max() = {seg.max()}')
-        seg += idx * data_writing['block_max']
+        seg[seg > 0] = seg[seg > 0] + idx * data_writing['block_max']
+        # seg += idx * data_writing['block_max']
         if verbose:
             print(f'seg.max() = {seg.max()}')
 

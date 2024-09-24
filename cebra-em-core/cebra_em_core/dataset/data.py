@@ -249,7 +249,7 @@ def crop_and_scale(
         order=1,
         xcorr=False,
         extended_return=False,
-        verbose=False,
+        verbose=False
 ):
     """
     Extracts and scales a volume from a dataset to match a certain output shape and resolution
