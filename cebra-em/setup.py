@@ -27,7 +27,8 @@ setup(
             'cem-log-gt = bin.log_gt:main',
             'cem-run = bin.run:main',
             'cem-update-labels-table = bin.update_labels_table:main',
-            'cem-import-annotation = bin.import_annotation:main'
+            'cem-import-annotation = bin.import_annotation:main',
+            'cem-rm-map = bin.remove_map:main'
         ]
     },
     install_requires=[
