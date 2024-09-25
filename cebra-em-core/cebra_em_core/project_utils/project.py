@@ -148,8 +148,9 @@ def remove_segmentation_meta(name, project_path=None, verbose=False, debug=False
 
     print(f'Cleaning up metadata for: {name}\n')
 
+    from cebra_em_core.project_utils.gt import remove_gt_links
+    remove_tasks(name, project_path, verbose=verbose, debug=debug)
+    remove_gt_links(name, project_path=project_path, verbose=verbose, debug=debug)
     delete_segmentation_config(name, project_path=project_path, verbose=verbose, debug=debug)
     remove_config_link(name, project_path=project_path, verbose=verbose, debug=debug)
-    from cebra_em_core.project_utils.gt import remove_gt_links
-    remove_gt_links(name, project_path=project_path, verbose=verbose, debug=debug)
 

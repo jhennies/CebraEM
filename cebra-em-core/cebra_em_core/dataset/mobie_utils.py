@@ -578,10 +578,14 @@ def _find_bdv_paths(dirpath, name):
     xml_files = glob(os.path.join(dirpath, f'{name}_b0_*.xml'))
 
     # Make sure to match only with a numeric pattern at the variable position
-    regex = re.compile(rf'{re.escape(name)}_b0_\d+\.xml')
+    regex1 = re.compile(rf'{re.escape(name)}_b0_\d+\.xml')
+    regex2 = re.compile(rf'{re.escape(name)}_b0_\d+\_stitched.xml')
 
     # Filter the files using the regex
-    xml_files = [f for f in xml_files if regex.search(os.path.basename(f))]
+    xml_files = [
+        f for f in xml_files
+        if regex1.search(os.path.basename(f)) or regex2.search(os.path.basename(f))
+    ]
 
     # Get the data locations as well
     data_paths = [get_data_path(filepath, return_absolute_path=True) for filepath in xml_files]
