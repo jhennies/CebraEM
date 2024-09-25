@@ -99,12 +99,10 @@ def unlock_project(project_path=None):
         return 'is_unlocked_error'
 
 
-def remove_segmentation_meta(name, project_path=None, verbose=False, debug=False):
-
-    print(f'Cleaning up metadata for: {name}\n')
-
+def delete_segmentation_config(name, project_path=None, verbose=False, debug=False):
     from cebra_em_core.project_utils.config import get_config_filepath
 
+    # Removing segmentation config
     config_filepath = get_config_filepath(name, project_path)
 
     if verbose:
@@ -118,6 +116,27 @@ def remove_segmentation_meta(name, project_path=None, verbose=False, debug=False
             os.remove(config_filepath)
     except Exception as e:
         print(f'Error deleting {config_filepath}: {e}')
+
+
+def remove_config_link(name, project_path=None, verbose=False, debug=False):
+
+    from cebra_em_core.project_utils.config import get_config
+    config_main = get_config('main', project_path)
+
+    if verbose:
+        print(config_main)
+
+
+def remove_segmentation_meta(name, project_path=None, verbose=False, debug=False):
+
+    print(f'Cleaning up metadata for: {name}\n')
+
+    delete_segmentation_config(name, project_path=project_path, verbose=verbose, debug=debug)
+    remove_config_link(name, project_path=None, verbose=verbose, debug=debug)
+
+
+
+
 
 
 
