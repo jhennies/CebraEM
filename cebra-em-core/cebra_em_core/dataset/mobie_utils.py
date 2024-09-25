@@ -609,9 +609,9 @@ def remove_datasets(
         print(f'Found these bdv xmls:       {xml_filepaths}')
         print(f'Found these bdv data paths: {data_paths}')
 
-    print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
+    print('\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
     print(f'You are about to remove these files:')
-    for idx, fp in xml_filepaths:
+    for idx, fp in enumerate(xml_filepaths):
         print(fp)
         print(data_paths[idx])
     print('\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
