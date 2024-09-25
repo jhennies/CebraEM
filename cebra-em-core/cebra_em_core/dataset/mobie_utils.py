@@ -568,3 +568,32 @@ def init_segmentation_map(
         )
 
 
+def _find_bdv_paths(dirpath, name):
+
+    from glob import glob
+
+    files = glob(os.path.join(dirpath, f'{name}.*'))
+    assert len(files) == 1 or len(files) == 2
+
+    return files
+
+
+def remove_dataset(
+        name,
+        project_path=None,
+        verbose=False
+):
+
+    if verbose:
+        print(f'About to remove dataset: {name}')
+
+    mobie_project_path = get_mobie_project_path(project_path=project_path, relpath=False)
+
+    bdv_paths = _find_bdv_paths(mobie_project_path, name)
+
+    if verbose:
+        print(f'Found these bdv locations: {bdv_paths}')
+
+
+
+
