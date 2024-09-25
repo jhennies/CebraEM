@@ -190,3 +190,11 @@ def init_dependencies(image_name, project_path=None, n_workers=1, verbose=False)
         }
     )
 
+
+def get_dependencies_filepath(name, project_path=None, relpath=False):
+    from cebra_em_core.project_utils.config import get_config, absolute_path
+    config = get_config(name, project_path)
+
+    if relpath:
+        return config['dependencies']
+    return absolute_path(config['dependencies'], project_path)

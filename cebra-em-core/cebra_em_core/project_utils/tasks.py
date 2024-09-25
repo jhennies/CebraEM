@@ -225,3 +225,12 @@ def compute_task_positions(image_name, project_path=None, verbose=False):
         }
     )
 
+
+def get_positions_filepath(name, project_path=None, relpath=False):
+
+    from cebra_em_core.project_utils.config import get_config, absolute_path
+    config = get_config(name, project_path)
+
+    if relpath:
+        return config['positions']
+    return absolute_path(config['positions'], project_path)

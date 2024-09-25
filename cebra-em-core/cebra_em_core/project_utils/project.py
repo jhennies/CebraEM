@@ -144,12 +144,36 @@ def remove_config_link(name, project_path=None, verbose=False, debug=False):
             json.dump(config_main, f, indent=2)
 
 
+def remove_tasks(name, project_path=None, verbose=False, debug=False):
+
+    from cebra_em_core.project_utils.dependencies import get_dependencies_filepath
+    from cebra_em_core.project_utils.tasks import get_positions_filepath
+
+    dep_fp = get_dependencies_filepath(name, project_path, relpath=False)
+    pos_fp = get_positions_filepath(name, project_path, relpath=False)
+
+    try:
+        print(f'Deleting: {dep_fp}')
+        if not debug:
+            os.remove(dep_fp)
+    except Exception as e:
+        print(f'Error deleting {dep_fp}: {e}')
+
+    try:
+        print(f'Deleting: {pos_fp}')
+        if not debug:
+            os.remove(pos_fp)
+    except Exception as e:
+        print(f'Error deleting {pos_fp}: {e}')
+
+
 def remove_segmentation_meta(name, project_path=None, verbose=False, debug=False):
 
     print(f'Cleaning up metadata for: {name}\n')
 
     from cebra_em_core.project_utils.gt import remove_gt_links
     remove_tasks(name, project_path, verbose=verbose, debug=debug)
+    # remove_workflow_files(name, project_path, verbose=verbose, debug=debug)
     remove_gt_links(name, project_path=project_path, verbose=verbose, debug=debug)
     delete_segmentation_config(name, project_path=project_path, verbose=verbose, debug=debug)
     remove_config_link(name, project_path=project_path, verbose=verbose, debug=debug)
