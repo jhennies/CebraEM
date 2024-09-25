@@ -413,15 +413,15 @@ def init_beta_map(
     )
 
 
-def remove_map(
+def remove_segmentation(
         map_name,
         project_path=None,
         verbose=False
 ):
     from cebra_em_core.dataset.mobie_utils import remove_datasets
-    # from cebra_em_core.project_utils.project import remove_map_meta
+    # from cebra_em_core.project_utils.project import remove_segmentation_meta
 
     not_removed = remove_datasets(map_name, project_path=project_path, verbose=verbose, debug=True)
     if not_removed:
         return
-    # remove_map_meta(map_name, project_path=project_path, verbose=verbose)
+    # remove_segmentation_meta(map_name, project_path=project_path, verbose=verbose)

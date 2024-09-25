@@ -28,7 +28,7 @@ setup(
             'cem-run = bin.run:main',
             'cem-update-labels-table = bin.update_labels_table:main',
             'cem-import-annotation = bin.import_annotation:main',
-            'cem-rm-map = bin.remove_map:main'
+            'cem-rm-segmentation = bin.remove_segmentation:main'
         ]
     },
     install_requires=[
