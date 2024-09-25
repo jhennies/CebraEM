@@ -418,8 +418,10 @@ def remove_map(
         project_path=None,
         verbose=False
 ):
-    from cebra_em_core.dataset.mobie_utils import remove_dataset
+    from cebra_em_core.dataset.mobie_utils import remove_datasets
     # from cebra_em_core.project_utils.project import remove_map_meta
 
-    remove_dataset(map_name, project_path=project_path, verbose=verbose)
+    not_removed = remove_datasets(map_name, project_path=project_path, verbose=verbose, debug=True)
+    if not_removed:
+        return
     # remove_map_meta(map_name, project_path=project_path, verbose=verbose)

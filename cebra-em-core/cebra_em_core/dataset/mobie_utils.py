@@ -589,11 +589,14 @@ def _find_bdv_paths(dirpath, name):
     return xml_files, data_paths
 
 
-def remove_dataset(
+def remove_datasets(
         name,
         project_path=None,
-        verbose=False
+        verbose=False,
+        debug=False
 ):
+
+    import shutil
 
     if verbose:
         print(f'About to remove dataset: {name}')
@@ -605,3 +608,33 @@ def remove_dataset(
     if verbose:
         print(f'Found these bdv xmls:       {xml_filepaths}')
         print(f'Found these bdv data paths: {data_paths}')
+
+    print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
+    print(f'You are about to remove these files:')
+    for idx, fp in xml_filepaths:
+        print(fp)
+        print(data_paths[idx])
+    print('\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
+    confirmation = input('Continue? [y/N]: ').strip().lower()
+
+    if confirmation == 'y':
+        for dp in data_paths:
+            try:
+                if verbose:
+                    print(f'removing: dp')
+                if not debug:
+                    shutil.rmtree(dp)
+            except Exception as e:
+                print(f'Error deleting {dp}: {e}')
+        for fp in xml_filepaths:
+            try:
+                if verbose:
+                    print(f'removing: fp')
+                if not debug:
+                    os.remove(fp)
+            except Exception as e:
+                print(f'Error deleting {fp}: {e}')
+
+        return 0
+
+    return 1
