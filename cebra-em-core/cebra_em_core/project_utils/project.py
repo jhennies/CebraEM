@@ -124,7 +124,12 @@ def remove_config_link(name, project_path=None, verbose=False, debug=False):
     config_main = get_config('main', project_path)
 
     if verbose:
-        print(config_main)
+        print(config_main['configs'])
+
+    del(config_main['configs'][name])
+
+    if verbose:
+        print(config_main['configs'])
 
 
 def remove_segmentation_meta(name, project_path=None, verbose=False, debug=False):
