@@ -573,7 +573,7 @@ def _find_bdv_paths(dirpath, name):
     from glob import glob
 
     files = glob(os.path.join(dirpath, f'{name}.*'))
-    assert len(files) == 1 or len(files) == 2, f'Too many or too few files: {files}'
+    assert len(files) == 1 or len(files) == 2, f'Too many or too few files in {dirpath} with {name}: {files}'
 
     return files
 
