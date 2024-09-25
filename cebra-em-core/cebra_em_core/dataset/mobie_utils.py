@@ -573,7 +573,8 @@ def _find_bdv_paths(dirpath, name):
     from glob import glob
 
     files = glob(os.path.join(dirpath, f'{name}_b*.*'))
-    assert len(files) == 1 or len(files) == 2, f'Too many or too few files in {dirpath} with {name}: {files}'
+    assert len(files) == 2, f'Too many or too few files in {dirpath} with {name}: {files}'
+    assert os.path.splitext(files[0])[0] == os.path.splitext(files[1])[0], f'file basenames must be equal!'
 
     return files
 
