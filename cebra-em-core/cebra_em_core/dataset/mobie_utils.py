@@ -571,12 +571,22 @@ def init_segmentation_map(
 def _find_bdv_paths(dirpath, name):
 
     from glob import glob
+    import re
+    from pybdv.metadata import get_data_path
 
-    files = glob(os.path.join(dirpath, f'{name}_b*.*'))
-    assert len(files) == 2, f'Too many or too few files in {dirpath} with {name}: {files}'
-    assert os.path.splitext(files[0])[0] == os.path.splitext(files[1])[0], f'file basenames must be equal!'
+    # Match the general file format
+    xml_files = glob(os.path.join(dirpath, f'{name}_b0_*.xml'))
 
-    return files
+    # Make sure to match only with a numeric pattern at the variable position
+    regex = re.compile(rf'{re.escape(name)}_b0_\d+\.xml')
+
+    # Filter the files using the regex
+    xml_files = [f for f in xml_files if regex.search(os.path.basename(f))]
+
+    # Get the data locations as well
+    data_paths = [get_data_path(filepath, return_absolute_path=True) for filepath in xml_files]
+
+    return xml_files, data_paths
 
 
 def remove_dataset(
@@ -590,11 +600,8 @@ def remove_dataset(
 
     mobie_project_path = get_mobie_project_path(project_path=project_path, relpath=False)
 
-    bdv_paths = _find_bdv_paths(mobie_project_path, name)
+    xml_filepaths, data_paths = _find_bdv_paths(mobie_project_path, name)
 
     if verbose:
-        print(f'Found these bdv locations: {bdv_paths}')
-
-
-
-
+        print(f'Found these bdv xmls:       {xml_filepaths}')
+        print(f'Found these bdv data paths: {data_paths}')
