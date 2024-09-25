@@ -424,4 +424,4 @@ def remove_segmentation(
     not_removed = remove_datasets(seg_name, project_path=project_path, verbose=verbose, debug=True)
     if not_removed:
         return
-    remove_segmentation_meta(seg_name, project_path=project_path, verbose=verbose, debug=True)
+    remove_segmentation_meta(seg_name, project_path=project_path, verbose=verbose, debug=False)

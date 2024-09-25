@@ -120,7 +120,7 @@ def delete_segmentation_config(name, project_path=None, verbose=False, debug=Fal
 
 def remove_config_link(name, project_path=None, verbose=False, debug=False):
 
-    from cebra_em_core.project_utils.config import get_config
+    from cebra_em_core.project_utils.config import get_config, get_config_filepath
     config_main = get_config('main', project_path)
 
     if verbose:
@@ -135,6 +135,11 @@ def remove_config_link(name, project_path=None, verbose=False, debug=False):
         for k, v in config_main['configs'].items():
             print(f'{k}: {v}')
         print('')
+
+    if not debug:
+        config_main_fp = get_config_filepath('main', project_path)
+        with open(config_main_fp, 'w') as f:
+            json.dump(config_main, f, indent=2)
 
 
 def remove_segmentation_meta(name, project_path=None, verbose=False, debug=False):
