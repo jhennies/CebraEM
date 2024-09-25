@@ -600,3 +600,11 @@ def log_gt_cubes(val=False, project_path=None):
     print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     print('')
 
+
+def remove_gt_links(image_name, project_path=None, verbose=False, debug=False):
+
+    trains, vals = get_associated_gt_cubes(image_name, project_path)
+
+    if verbose:
+        print(trains)
+        print(vals)
