@@ -634,6 +634,7 @@ def remove_datasets(
             except Exception as e:
                 print(f'Error deleting {fp}: {e}')
 
+        print('')
         return 0
 
     return 1
