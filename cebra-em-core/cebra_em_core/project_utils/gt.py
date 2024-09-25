@@ -604,6 +604,9 @@ def log_gt_cubes(val=False, project_path=None):
 def remove_gt_links(image_name, project_path=None, verbose=False, debug=False):
 
     from cebra_em_core.project_utils.config import get_config, get_config_filepath
+    import json
+
+    print(f'Removing all ground truth links to {image_name}')
 
     config_gt = get_config('gt', project_path)
 
@@ -629,4 +632,7 @@ def remove_gt_links(image_name, project_path=None, verbose=False, debug=False):
             print(f'cube_id = {cube_id}')
             print(cube_config['links'])
 
-
+    if not debug:
+        config_gt_fp = get_config_filepath('gt', project_path)
+        with open(config_gt_fp, 'w') as f:
+            json.dump(config_gt, f, indent=2)
