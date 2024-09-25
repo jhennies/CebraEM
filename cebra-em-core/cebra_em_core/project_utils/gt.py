@@ -603,8 +603,34 @@ def log_gt_cubes(val=False, project_path=None):
 
 def remove_gt_links(image_name, project_path=None, verbose=False, debug=False):
 
-    trains, vals = get_associated_gt_cubes(image_name, project_path)
+    # trains, vals = get_associated_gt_cubes(image_name, project_path)
+    #
+    # if verbose:
+    #     print(trains)
+    #     print(vals)
+    #
+    # if len(trains) > 0:
+    #     for k in trains.keys():
 
-    if verbose:
-        print(trains)
-        print(vals)
+    from cebra_em_core.project_utils.config import get_config, get_config_filepath
+
+    config_gt = get_config('gt', project_path)
+
+    print('')
+    print(config_gt)
+
+    for cube_id, cube_config in config_gt.items():
+
+        if 'links' in cube_config:
+            new_links = []
+            for link in cube_config['links']:
+                if link['image'] != image_name:
+                    new_links.append(link)
+
+            config_gt[cube_id]['links'] = new_links
+
+    print('')
+    print(config_gt)
+
+
+
