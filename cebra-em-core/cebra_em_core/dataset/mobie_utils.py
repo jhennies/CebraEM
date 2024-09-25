@@ -610,26 +610,25 @@ def remove_datasets(
         print(f'Found these bdv data paths: {data_paths}')
 
     print('\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
-    print(f'You are about to permanently remove these files:')
+    print(f'You are about to permanently delete these files:')
     for idx, fp in enumerate(xml_filepaths):
         print(fp)
         print(data_paths[idx])
     print('\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
     confirmation = input('Continue? [y/N]: ').strip().lower()
+    print('')
 
     if confirmation == 'y':
         for dp in data_paths:
             try:
-                if verbose:
-                    print(f'removing: {dp}')
+                print(f'Deleting: {dp}')
                 if not debug:
                     shutil.rmtree(dp)
             except Exception as e:
                 print(f'Error deleting {dp}: {e}')
         for fp in xml_filepaths:
             try:
-                if verbose:
-                    print(f'removing: {fp}')
+                print(f'Deleting: {fp}')
                 if not debug:
                     os.remove(fp)
             except Exception as e:

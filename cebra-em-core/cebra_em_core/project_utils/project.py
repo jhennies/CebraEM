@@ -97,3 +97,14 @@ def unlock_project(project_path=None):
         return ''
     else:
         return 'is_unlocked_error'
+
+
+def remove_segmentation_meta(name, project_path=None, verbose=False):
+
+    from cebra_em_core.project_utils.config import get_config_filepath
+
+    config_filepath = get_config_filepath(name, project_path)
+
+    if verbose:
+        print(f'config_filepath = {config_filepath}')
+
