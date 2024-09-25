@@ -621,7 +621,7 @@ def remove_datasets(
         for dp in data_paths:
             try:
                 if verbose:
-                    print(f'removing: dp')
+                    print(f'removing: {dp}')
                 if not debug:
                     shutil.rmtree(dp)
             except Exception as e:
@@ -629,7 +629,7 @@ def remove_datasets(
         for fp in xml_filepaths:
             try:
                 if verbose:
-                    print(f'removing: fp')
+                    print(f'removing: {fp}')
                 if not debug:
                     os.remove(fp)
             except Exception as e:
