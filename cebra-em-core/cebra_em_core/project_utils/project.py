@@ -167,7 +167,7 @@ def remove_tasks(name, project_path=None, verbose=False, debug=False):
         print(f'Error deleting {pos_fp}: {e}')
 
 
-def remove_workflow_files(name, project_path=None, verbose=False, debug=debug):
+def remove_workflow_files(name, project_path=None, verbose=False, debug=False):
 
     from glob import glob
     import re
