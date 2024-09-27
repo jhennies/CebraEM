@@ -180,9 +180,10 @@ def remove_workflow_files(name, project_path=None, verbose=False, debug=False):
     filepaths = glob(os.path.join(snk_dirpath, f'*_{name}_*'))
 
     # Set up some regexes that match the possible files
-    regex1 = re.compile(rf'run_{re.escape(name)}_\d+\.pkl')
-    regex2 = re.compile(rf'run_multicut_{re.escape(name)}_0.\d+\_\d+\.json')
+    regex1 = re.compile(rf'run_{re.escape(name)}_\d+.pkl')
+    regex2 = re.compile(rf'run_multicut_{re.escape(name)}_0.\d+_\d+.json')
     regex3 = re.compile(rf'train_{re.escape(name)}_n?rf.pkl')
+    regex4 = re.compile(rf'*_mapping_{re.escape(name)}_0.\d+(_\d+)?.json')
 
     # Filter the files using the regex
     filepaths = [
@@ -190,7 +191,8 @@ def remove_workflow_files(name, project_path=None, verbose=False, debug=False):
         if (
             regex1.search(os.path.basename(fp)) or
             regex2.search(os.path.basename(fp)) or
-            regex3.search(os.path.basename(fp))
+            regex3.search(os.path.basename(fp)) or
+            regex4.search(os.path.basename(fp))
         )
     ]
 
