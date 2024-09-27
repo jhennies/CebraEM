@@ -174,7 +174,7 @@ def remove_workflow_files(name, project_path=None, verbose=False, debug=False):
 
     project_path = get_current_project_path(project_path)
 
-    snk_dirpath = os.path.join(project_path)
+    snk_dirpath = os.path.join(project_path, 'snk_wf')
 
     # Match the general file format
     filepaths = glob(os.path.join(snk_dirpath, f'*_{name}_*'))
