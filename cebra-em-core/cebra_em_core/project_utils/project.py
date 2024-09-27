@@ -201,13 +201,11 @@ def remove_workflow_files(name, project_path=None, verbose=False, debug=False):
     if verbose:
         print('\nRemoving these files:\n')
         print(sorted([os.path.split(fp)[1] for fp in filepaths]))
-        # for fp in filepaths:
-        #     print(fp)
         print('')
 
     for fp in filepaths:
         try:
-            print(f'Deleting: {fp}')
+            # print(f'Deleting: {fp}')
             if not debug:
                 os.remove(fp)
         except Exception as e:
