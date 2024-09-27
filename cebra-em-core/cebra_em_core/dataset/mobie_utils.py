@@ -92,6 +92,19 @@ def append_mobie_table(table_filepath, entry):
     new_table_data.to_csv(table_filepath, index=False, sep='\t')
 
 
+def remove_mobie_table_entry(uri, table_filepath, verbose=False, debug=False):
+
+    import pandas as pd
+
+    table_data = pd.read_csv(table_filepath, sep='\t')
+    if verbose:
+        print(table_data)
+    table_data = table_data[table_data['uri'] != uri]
+
+    if verbose:
+        print(table_data)
+
+
 def replace_mobie_table(table_filepath, entries):
 
     import pandas as pd
@@ -601,6 +614,7 @@ def remove_datasets(
 ):
 
     import shutil
+    from cebra_em_core.project_utils.config import relative_path
 
     if verbose:
         print(f'About to remove dataset: {name}')
@@ -640,5 +654,10 @@ def remove_datasets(
         except Exception as e:
             print(f'Error deleting {fp}: {e}')
 
+        print(f'Removing MoBIE table entry for {fp}')
+        rel_fp = relative_path(fp, project_path)
+        remove_mobie_table_entry(rel_fp)
+
     print('')
+
     return 0
