@@ -101,7 +101,7 @@ def remove_mobie_table_entry(table_filepath, value, row='uri', verbose=False, de
         print(table_data)
 
     table_data = table_data[table_data[row] != value]
-    new_table_data = table_data.fillna('')
+    table_data = table_data.fillna('')
 
     if verbose:
         print(table_data)
