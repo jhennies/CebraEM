@@ -179,11 +179,6 @@ def remove_workflow_files(name, project_path=None, verbose=False, debug=False):
     # Match the general file format
     filepaths = glob(os.path.join(snk_dirpath, f'*_{name}_*'))
 
-    print('\nCandidates for removal:\n')
-    for fp in filepaths:
-        print(fp)
-    print('')
-
     # Set up some regexes that match the possible files
     regex1 = re.compile(rf'run_{re.escape(name)}_\d+\.pkl')
     regex2 = re.compile(rf'run_multicut_{re.escape(name)}_0.\d+\_\d+\.json')
@@ -201,6 +196,7 @@ def remove_workflow_files(name, project_path=None, verbose=False, debug=False):
 
     if verbose:
         print('\nRemoving these files:\n')
+        print(filepaths)
         for fp in filepaths:
             print(fp)
         print('')
