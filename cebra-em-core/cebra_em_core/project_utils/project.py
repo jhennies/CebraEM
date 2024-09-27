@@ -167,13 +167,47 @@ def remove_tasks(name, project_path=None, verbose=False, debug=False):
         print(f'Error deleting {pos_fp}: {e}')
 
 
+def remove_workflow_files(name, project_path=None, verbose=False, debug=debug):
+
+    from glob import glob
+    import re
+
+    project_path = get_current_project_path(project_path)
+
+    snk_dirpath = os.path.join(project_path)
+
+    # Match the general file format
+    filepaths = glob(os.path.join(snk_dirpath, f'*_{name}_*'))
+
+    # Set up some regexes that match the possible files
+    regex1 = re.compile(rf'run_{re.escape(name)}_\d+\.pkl')
+    regex2 = re.compile(rf'run_multicut_{re.escape(name)}_0.\d+\_\d+\.json')
+    regex3 = re.compile(rf'train_{re.escape(name)}_n?rf.pkl')
+
+    # Filter the files using the regex
+    filepaths = [
+        fp for fp in filepaths
+        if (
+            regex1.search(os.path.basename(fp)) or
+            regex2.search(os.path.basename(fp)) or
+            regex3.search(os.path.basename(fp))
+        )
+    ]
+
+    if verbose:
+        print('\nRemoving these files:\n')
+        for fp in filepaths:
+            print(fp)
+        print('')
+
+
 def remove_segmentation_meta(name, project_path=None, verbose=False, debug=False):
 
     print(f'Cleaning up metadata for: {name}\n')
 
     from cebra_em_core.project_utils.gt import remove_gt_links
     remove_tasks(name, project_path, verbose=verbose, debug=debug)
-    # remove_workflow_files(name, project_path, verbose=verbose, debug=debug)
+    remove_workflow_files(name, project_path=project_path, verbose=verbose, debug=debug)
     remove_gt_links(name, project_path=project_path, verbose=verbose, debug=debug)
     delete_segmentation_config(name, project_path=project_path, verbose=verbose, debug=debug)
     remove_config_link(name, project_path=project_path, verbose=verbose, debug=debug)
