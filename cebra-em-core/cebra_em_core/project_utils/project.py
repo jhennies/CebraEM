@@ -183,7 +183,7 @@ def remove_workflow_files(name, project_path=None, verbose=False, debug=False):
     regex1 = re.compile(rf'run_{re.escape(name)}_\d+\.pkl')
     regex2 = re.compile(rf'run_multicut_{re.escape(name)}_0.\d+_\d+\.json')
     regex3 = re.compile(rf'train_{re.escape(name)}_n?rf\.pkl')
-    regex4 = re.compile(rf'.+_mapping_{re.escape(name)}_0.\d+(_\d+)?\.json')
+    regex4 = re.compile(rf'.+_mapping_{re.escape(name)}_b0.\d+(_\d+)?\.json')
 
     # Filter the files using the regex
     filepaths = [
