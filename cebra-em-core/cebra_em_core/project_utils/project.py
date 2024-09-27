@@ -223,3 +223,5 @@ def remove_segmentation_meta(name, project_path=None, verbose=False, debug=False
     delete_segmentation_config(name, project_path=project_path, verbose=verbose, debug=debug)
     remove_config_link(name, project_path=project_path, verbose=verbose, debug=debug)
 
+    print('')
+
