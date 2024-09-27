@@ -104,6 +104,9 @@ def remove_mobie_table_entry(uri, table_filepath, verbose=False, debug=False):
     if verbose:
         print(table_data)
 
+    if not debug:
+        table_data.to_csv(table_filepath, index=False, sep='\t')
+
 
 def replace_mobie_table(table_filepath, entries):
 
