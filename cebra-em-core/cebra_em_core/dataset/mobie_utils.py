@@ -579,7 +579,7 @@ def _find_bdv_paths(dirpath, name):
 
     # Make sure to match only with a numeric pattern at the variable position
     regex1 = re.compile(rf'{re.escape(name)}_b0_\d+\.xml')
-    regex2 = re.compile(rf'{re.escape(name)}_b0_\d+\_stitched.xml')
+    regex2 = re.compile(rf'{re.escape(name)}_b0_\d+_stitched\.xml')
 
     # Filter the files using the regex
     xml_files = [
