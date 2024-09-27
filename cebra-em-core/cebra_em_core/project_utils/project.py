@@ -172,6 +172,8 @@ def remove_workflow_files(name, project_path=None, verbose=False, debug=False):
     from glob import glob
     import re
 
+    print(f"Deleting {name}'s workflow files in directory ./snk_wf")
+
     project_path = get_current_project_path(project_path)
 
     snk_dirpath = os.path.join(project_path, 'snk_wf')
@@ -202,6 +204,14 @@ def remove_workflow_files(name, project_path=None, verbose=False, debug=False):
         # for fp in filepaths:
         #     print(fp)
         print('')
+
+    for fp in filepaths:
+        try:
+            print(f'Deleting: {fp}')
+            if not debug:
+                os.remove(fp)
+        except Exception as e:
+            print(f'Error deleting {fp}: {e}')
 
 
 def remove_segmentation_meta(name, project_path=None, verbose=False, debug=False):

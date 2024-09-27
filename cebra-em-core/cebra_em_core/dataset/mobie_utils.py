@@ -622,23 +622,23 @@ def remove_datasets(
     confirmation = input('Continue? [y/N]: ').strip().lower()
     print('')
 
-    if confirmation == 'y':
-        for dp in data_paths:
-            try:
-                print(f'Deleting: {dp}')
-                if not debug:
-                    shutil.rmtree(dp)
-            except Exception as e:
-                print(f'Error deleting {dp}: {e}')
-        for fp in xml_filepaths:
-            try:
-                print(f'Deleting: {fp}')
-                if not debug:
-                    os.remove(fp)
-            except Exception as e:
-                print(f'Error deleting {fp}: {e}')
+    if confirmation != 'y':
+        return 1
 
-        print('')
-        return 0
+    for dp in data_paths:
+        try:
+            print(f'Deleting: {dp}')
+            if not debug:
+                shutil.rmtree(dp)
+        except Exception as e:
+            print(f'Error deleting {dp}: {e}')
+    for fp in xml_filepaths:
+        try:
+            print(f'Deleting: {fp}')
+            if not debug:
+                os.remove(fp)
+        except Exception as e:
+            print(f'Error deleting {fp}: {e}')
 
-    return 1
+    print('')
+    return 0
