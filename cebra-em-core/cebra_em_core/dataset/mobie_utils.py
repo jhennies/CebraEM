@@ -92,14 +92,15 @@ def append_mobie_table(table_filepath, entry):
     new_table_data.to_csv(table_filepath, index=False, sep='\t')
 
 
-def remove_mobie_table_entry(uri, table_filepath, verbose=False, debug=False):
+def remove_mobie_table_entry(table_filepath, value, row='uri', verbose=False, debug=False):
 
     import pandas as pd
 
     table_data = pd.read_csv(table_filepath, sep='\t')
     if verbose:
         print(table_data)
-    table_data = table_data[table_data['uri'] != uri]
+
+    table_data = table_data[table_data[row] != value]
 
     if verbose:
         print(table_data)
@@ -659,7 +660,18 @@ def remove_datasets(
 
         rel_fp = relative_path(fp, project_path)
         print(f'Removing MoBIE table entry for {rel_fp}')
-        remove_mobie_table_entry(rel_fp, get_mobie_table_path(project_path), verbose=verbose, debug=debug)
+        remove_mobie_table_entry(
+            get_mobie_table_path(project_path),
+            rel_fp, row='uri',
+            verbose=verbose, debug=debug
+        )
+
+    print(f'Removing Ground Truth views for {name}')
+    remove_mobie_table_entry(
+        get_mobie_table_path(project_path),
+        f'gt_{name}', row='view',
+        verbose=verbose, debug=debug
+    )
 
     print('')
 
