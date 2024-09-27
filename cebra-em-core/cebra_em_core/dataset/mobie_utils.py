@@ -656,7 +656,7 @@ def remove_datasets(
 
         rel_fp = relative_path(fp, project_path)
         print(f'Removing MoBIE table entry for {rel_fp}')
-        remove_mobie_table_entry(rel_fp, get_mobie_table_path(project_path))
+        remove_mobie_table_entry(rel_fp, get_mobie_table_path(project_path), verbose=verbose, debug=debug)
 
     print('')
 
