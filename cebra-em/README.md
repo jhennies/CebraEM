@@ -190,6 +190,25 @@ cem-run stitch-mito_it01 --param beta=0.7
 
 This will stitch the mitochondria segmentation of iteration 01 (mito_it01) with beta = 0.7.
 
+### Removing a segmentation
+
+You can completely remove a segmentation from the CebraEM project with the command
+
+```
+cem-rm-segmentation mito_it01
+```
+
+Note that this physically deletes the segmentation map as well as all associated project files and project metadata 
+that points to this dataset. 
+
+To check which dataset is removed use
+
+```
+cem-rm-segmentation mito_it01 -d 
+```
+
+The ```-d```/```--debug``` triggers a dry-run which will not delete anything and only show what would be done.
+
 ## Visualize with MoBIE
 
 A CebraEM project is wrapped around a MoBIE project and can be directly opened within the MoBIE viewer (https://github.com/mobie/mobie-viewer-fiji) (1). 
