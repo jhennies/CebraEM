@@ -175,7 +175,7 @@ cem-link-gt 0 1 2 3 mito mito_it01
 Run the second iteration (also consider different values for beta if necessary by adding e.g. ```--param beta=0.6,0.7,0.8```)
 
 ```
-cem-run -t mito_it01
+cem-run mito_it01
 ```
 
 Then repeat with further iterations until the result is satisfactory (usually 2 to 3 iterations yield good results).
