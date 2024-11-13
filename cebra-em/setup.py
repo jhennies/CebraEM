@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='cebra-em',
-    version='0.0.3',
+    version='0.1.1',
     author='jhennies',
     author_email='hennies@embl.de',
     packages=['cebra_em'],
@@ -26,7 +26,9 @@ setup(
             'cem-link-gt = bin.link_gt:main',
             'cem-log-gt = bin.log_gt:main',
             'cem-run = bin.run:main',
-            # 'update_mobie_table = bin.update_mobie_table:main'  # Not implemented yet
+            'cem-update-labels-table = bin.update_labels_table:main',
+            'cem-import-annotation = bin.import_annotation:main',
+            'cem-rm-segmentation = bin.remove_segmentation:main'
         ]
     },
     install_requires=[

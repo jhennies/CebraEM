@@ -1,11 +1,7 @@
 
 import sys
 import numpy as np
-import pickle
 import os
-from concurrent.futures import ThreadPoolExecutor
-
-from cebra_em_core.project_utils.config import get_config, get_config_filepath, absolute_path, add_to_config_json
 
 
 def find_dependencies(
@@ -67,6 +63,7 @@ def make_dependencies(
         n_workers=1,
         verbose=False
 ):
+    from concurrent.futures import ThreadPoolExecutor
 
     if depends_on == depends_on_nothing or depends_on == depends_on_raw:
 
@@ -103,6 +100,8 @@ def make_dependencies(
 
 
 def init_dependencies(image_name, project_path=None, n_workers=1, verbose=False):
+    import pickle
+    from cebra_em_core.project_utils.config import get_config, get_config_filepath, absolute_path, add_to_config_json
 
     # _______________________________________________________________________________
     # Retrieving settings
@@ -180,7 +179,7 @@ def init_dependencies(image_name, project_path=None, n_workers=1, verbose=False)
     else:
         dependencies = None
 
-    dependencies_fp = os.path.join('{project_path}tasks', f'dependencies_{image_name}.pkl')
+    dependencies_fp = os.path.join('tasks', f'dependencies_{image_name}.pkl')
     with open(absolute_path(dependencies_fp, project_path=project_path), 'wb') as f:
         pickle.dump(dependencies, f)
 
@@ -191,3 +190,11 @@ def init_dependencies(image_name, project_path=None, n_workers=1, verbose=False)
         }
     )
 
+
+def get_dependencies_filepath(name, project_path=None, relpath=False):
+    from cebra_em_core.project_utils.config import get_config, absolute_path
+    config = get_config(name, project_path)
+
+    if relpath:
+        return config['dependencies']
+    return absolute_path(config['dependencies'], project_path)

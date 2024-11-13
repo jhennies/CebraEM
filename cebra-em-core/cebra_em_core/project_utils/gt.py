@@ -1,24 +1,29 @@
 
-from cebra_em_core.project_utils.project import get_current_project_path
-from cebra_em_core.project_utils.config import (
-    get_config,
-    get_config_filepath,
-    add_to_config_json,
-    absolute_path,
-)
-from cebra_em_core.dataset.bdv_utils import bdv2pos
-from cebra_em_core.dataset.data import crop_and_scale
-
-import re
-import numpy as np
-from pybdv.metadata import get_data_path
-from pybdv.util import open_file, get_key
 import os
-from glob import glob
+import numpy as np
+import re
 
 
 def id2str(cube_id):
     return 'gt{:03d}'.format(cube_id)
+
+
+def get_gt_cube_ids(project_path=None):
+
+    from cebra_em_core.project_utils.config import get_config
+    gt_config = get_config('gt', project_path=project_path)
+
+    return [v['id'] for k, v in gt_config.items()]
+
+
+def get_gt_dirpath(cube_id, project_path=None):
+    from cebra_em_core.project_utils.config import get_config, absolute_path
+    return absolute_path(
+        os.path.join(
+            get_config('main', project_path=project_path)['gt_path'],
+            id2str(cube_id)),
+        project_path=project_path
+    )
 
 
 def init_gt_cube(
@@ -29,6 +34,12 @@ def init_gt_cube(
         no_padding=False,
         verbose=False
 ):
+    from cebra_em_core.project_utils.config import (
+        get_config,
+        get_config_filepath,
+        add_to_config_json
+    )
+    from cebra_em_core.dataset.bdv_utils import bdv2pos
 
     name = 'gt'
 
@@ -37,9 +48,9 @@ def init_gt_cube(
     add_to_config_json(
         config_main_fp,
         {
-            f'{name}_path': '{project_path}' + f'{name}',
+            f'{name}_path': f'{name}',
             'configs': {
-                name: '{project_path}' + f'config/config_{name}.json'
+                name: f'config/config_{name}.json'
             }
         }
     )
@@ -62,9 +73,11 @@ def init_gt_cube(
 
     print(f'New cube id: {cube_id}')
 
+    resolution = get_config('supervoxels', project_path)['resolution']
+
     if bdv_position is not None:
         assert position is None, 'Supply either bdv_position or position, not both!'
-        pos = bdv2pos(bdv_position, resolution=get_config('supervoxels', project_path)['resolution'], verbose=verbose)
+        pos = bdv2pos(bdv_position, resolution=resolution, verbose=verbose)
     else:
         assert position is not None, 'No position supplied, use either position or bdv_position!'
         pos = position
@@ -83,7 +96,8 @@ def init_gt_cube(
                 'position': pos,
                 'position_center': pos_center,  # This is what the user originally selected, not actually used though
                 'shape': shape,
-                'no_padding': no_padding
+                'no_padding': no_padding,
+                'resolution': resolution
             }
         }
     )
@@ -94,6 +108,16 @@ def extract_gt(
         raw_fp, mem_fp, sv_fp,
         project_path=None, verbose=False
 ):
+    from cebra_em_core.project_utils.config import (
+        get_config,
+        get_config_filepath,
+        add_to_config_json,
+        absolute_path,
+    )
+    from cebra_em_core.dataset.data import crop_and_scale
+    from cebra_em_core.dataset.bdv_utils import create_simple_bdv_h5_dataset, add_xml_to_simple_bdv_h5_dataset
+    from pybdv.metadata import get_data_path
+    from pybdv.util import open_file, get_key
 
     name = 'gt'
 
@@ -140,8 +164,10 @@ def extract_gt(
         verbose=verbose
     )
 
-    with open_file(raw_fp, 'w') as f:
-        f.create_dataset('data', data=raw, compression='gzip')
+    # with open_file(raw_fp, 'w') as f:
+    #     f.create_dataset('data', data=raw, compression='gzip')
+    create_simple_bdv_h5_dataset(raw_fp, raw)
+    add_xml_to_simple_bdv_h5_dataset(raw_fp, unit='micrometer', resolution=output_res)
 
     # Extracting membrane prediction
     input_res = config_mem['resolution']
@@ -166,8 +192,10 @@ def extract_gt(
         verbose=verbose
     )
 
-    with open_file(mem_fp, 'w') as f:
-        f.create_dataset('data', data=mem, compression='gzip')
+    # with open_file(mem_fp, 'w') as f:
+    #     f.create_dataset('data', data=mem, compression='gzip')
+    create_simple_bdv_h5_dataset(mem_fp, mem)
+    add_xml_to_simple_bdv_h5_dataset(mem_fp, unit='micrometer', resolution=output_res)
 
     # Extracting supervoxels
     input_res = config_sv['resolution']
@@ -183,8 +211,10 @@ def extract_gt(
         verbose=verbose
     )
 
-    with open_file(sv_fp, 'w') as f:
-        f.create_dataset('data', data=sv, compression='gzip')
+    # with open_file(sv_fp, 'w') as f:
+    #     f.create_dataset('data', data=sv, compression='gzip')
+    create_simple_bdv_h5_dataset(sv_fp, sv)
+    add_xml_to_simple_bdv_h5_dataset(sv_fp, unit='micrometer', resolution=output_res)
 
     # Update gt config:  set 'status' to 'ready'
     add_to_config_json(
@@ -198,6 +228,11 @@ def extract_gt(
 
 
 def _validate_inputs(cube_id, organelle_id, image_id, project_path=None):
+    from glob import glob
+    from cebra_em_core.project_utils.config import (
+        get_config,
+        absolute_path,
+    )
 
     config_gt = get_config('gt', project_path=project_path)
     config_main = get_config('main', project_path=project_path)
@@ -208,8 +243,8 @@ def _validate_inputs(cube_id, organelle_id, image_id, project_path=None):
     annotation_folder = absolute_path(config_main['gt_path'], project_path=project_path)
     available_annotations = [os.path.split(x)[1] for x in glob(os.path.join(annotation_folder, cube_id, '*.h5'))]
 
-    if f'{organelle_id}.h5' not in available_annotations:
-        print(f'The specified annotation "{organelle_id}" in cube "{cube_id}" is not available.')
+    assert f'{organelle_id}.h5' in available_annotations, \
+        'The requested annotation is not available! Annotate the organelle first before linking to a segmentation dataset!'
 
     assert image_id in config_main['configs'].keys(), \
         'Specified dataset does not exist!'
@@ -221,6 +256,8 @@ def generate_cube_to_image_link(
         val=False,
         verbose=False
 ):
+
+    cube_config_entry = cube_config_entry.copy()
 
     def _find_existing():
         try:
@@ -262,12 +299,88 @@ def generate_cube_to_image_link(
     return cube_config_entry
 
 
+def gt_cubes_to_mobie_table(
+        cube_ids, organelle, image_name, project_path=None, verbose=False
+):
+
+    view_name = f'gt_{image_name}'
+    group_name = 'c) Ground truth'
+
+    import pandas as pd
+    from cebra_em_core.dataset.mobie_utils import replace_mobie_table, get_mobie_table_path, order_mobie_table_entries
+    from cebra_em_core.project_utils.config import get_config
+
+    # Fetch MoBIE table
+    mobie_table_path = get_mobie_table_path(project_path=project_path)
+    mobie_table = pd.read_csv(mobie_table_path, sep='\t')
+
+    # Determine if the image_name already has entries (specifically the raw.xml entry)
+    # Clear the image_name entries
+    entries_this_image_name = mobie_table[mobie_table['view'] == view_name]
+    entries_this_image_name = entries_this_image_name[entries_this_image_name['uri'] != 'data/raw.xml']
+    mobie_table = mobie_table[mobie_table['view'] != view_name]
+
+    if len(entries_this_image_name) > 0:
+        region_map = entries_this_image_name.iloc[0]['region_map']
+    else:
+        if 'region_map' not in mobie_table or np.isnan(mobie_table['region_map'].max()):
+            region_map = 0
+        else:
+            region_map = mobie_table['region_map'].max() + 1
+
+    # Add the old and new image_name entries
+    new_entries = pd.DataFrame(
+        dict(
+            uri=['data/raw.xml'],
+            type=['intensities'],
+            view=[view_name],
+            group=[group_name]
+        )
+    )
+    new_entries = pd.concat([new_entries, entries_this_image_name], axis=0, ignore_index=True)
+    gt_path = get_config('main', project_path=project_path)['gt_path']
+    config_gt = get_config('gt', project_path=project_path)
+    affines = []
+    for cube_id in cube_ids:
+        config_gt_cube = config_gt[id2str(cube_id)]
+        affine = np.eye(3, 4)
+        affine[:, 3] = (np.array(config_gt_cube['position'])[::-1]) * np.array(config_gt_cube['resolution'])
+        affines.append(f"({','.join([str(x) for x in affine.flatten()])})")
+    new_entries = pd.concat(
+        [
+            new_entries,
+            pd.DataFrame(dict(
+                uri=[os.path.join(gt_path, id2str(cube_id), f'{organelle}.xml') for cube_id in cube_ids],
+                name=[f'{organelle}-{id2str(cube_id)}' for cube_id in cube_ids],
+                type=['labels'] * len(cube_ids),
+                view=[view_name] * len(cube_ids),
+                group=[group_name] * len(cube_ids),
+                affine=[affine for affine in affines],
+                region_map=[region_map] * len(cube_ids)
+            ))
+        ], axis=0, ignore_index=True
+    )
+    # print(f'new_entries = {new_entries}')
+
+    # Write back to file
+    replace_mobie_table(
+        mobie_table_path,
+        order_mobie_table_entries(pd.concat([new_entries, mobie_table], axis=0, ignore_index=True))
+    )
+
+
 def link_gt_cubes(
         cube_ids, organelle, image_name,
         val=False,
         project_path=None,
         verbose=False
 ):
+    from cebra_em_core.project_utils.config import (
+        get_config,
+        get_config_filepath,
+        add_to_config_json
+    )
+    from cebra_em_core.dataset.bdv_utils import add_xml_to_simple_bdv_h5_dataset
 
     config_gt_fp = get_config_filepath('gt', project_path=project_path)
     config_gt = get_config('gt', project_path=project_path)
@@ -290,16 +403,34 @@ def link_gt_cubes(
             val=val, verbose=verbose
         )
 
+        if verbose:
+            print(f'cube_config_entry:')
+            print(cube_config_entry)
+
         # Update the config
         add_to_config_json(
             config_gt_fp,
             {id2str(cube_id): cube_config_entry}
         )
 
+        # Add an xml
+        cube_filepath = os.path.join(get_gt_dirpath(cube_id, project_path), f'{organelle}.h5')
+        add_xml_to_simple_bdv_h5_dataset(
+            cube_filepath,
+            unit='micrometer', resolution=cube_config_entry['resolution']
+        )
+
         print(f'Cube {cube_id} linked successfully to {image_name} :-)')
+
+    # Update the MoBIE table
+    gt_cubes_to_mobie_table(cube_ids, organelle, image_name, project_path=project_path, verbose=verbose)
 
 
 def get_associated_gt_cubes(image, project_path=None):
+    from cebra_em_core.project_utils.config import (
+        get_config,
+        absolute_path
+    )
 
     config_gt = get_config('gt', project_path=project_path)
 
@@ -338,6 +469,7 @@ def get_associated_gt_cubes(image, project_path=None):
 
 
 def log_gt_cube(cube_id, status, position, shape, links=None, project_path=None):
+    from cebra_em_core.project_utils.config import get_config, absolute_path
 
     print('')
     print('____________________________________________________________________________________')
@@ -406,6 +538,7 @@ def log_dataset(dataset, project_path=None):
 
 
 def log_datasets(project_path=None):
+    from cebra_em_core.project_utils.config import get_config
 
     print('')
     print('>> DATASETS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
@@ -434,6 +567,7 @@ def log_datasets(project_path=None):
 
 
 def log_gt_cubes(val=False, project_path=None):
+    from cebra_em_core.project_utils.config import get_config
 
     print('')
     print('>> CUBES >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
@@ -466,3 +600,39 @@ def log_gt_cubes(val=False, project_path=None):
     print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
     print('')
 
+
+def remove_gt_links(image_name, project_path=None, verbose=False, debug=False):
+
+    from cebra_em_core.project_utils.config import get_config, get_config_filepath
+    import json
+
+    print(f'Removing all ground truth links to {image_name}')
+
+    config_gt = get_config('gt', project_path)
+
+    if verbose:
+        print('')
+        for cube_id, cube_config in config_gt.items():
+            print(f'cube_id = {cube_id}')
+            print(cube_config['links'])
+
+    for cube_id, cube_config in config_gt.items():
+
+        if 'links' in cube_config:
+            new_links = []
+            for link in cube_config['links']:
+                if link['image'] != image_name:
+                    new_links.append(link)
+
+            config_gt[cube_id]['links'] = new_links
+
+    if verbose:
+        print('')
+        for cube_id, cube_config in config_gt.items():
+            print(f'cube_id = {cube_id}')
+            print(cube_config['links'])
+
+    if not debug:
+        config_gt_fp = get_config_filepath('gt', project_path)
+        with open(config_gt_fp, 'w') as f:
+            json.dump(config_gt, f, indent=2)

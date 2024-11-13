@@ -2,10 +2,6 @@
 import sys
 import numpy as np
 import os
-import scipy.ndimage as ndi
-from pybdv.util import open_file
-from cebra_em_core.dataset.alignment import xcorr_on_volume
-from concurrent.futures import ThreadPoolExecutor
 
 
 def crop_zero_padding_3d(dat, return_as_arrays=False, add_halo=None):
@@ -58,6 +54,9 @@ def _apply_transform(x,
     # Returns
         The transformed version of the input.
     """
+
+    import scipy.ndimage as ndi
+
     x = np.rollaxis(x, channel_axis, 0)
     final_affine_matrix = transform_matrix[:ndim, :ndim]
     final_offset = transform_matrix[:ndim, ndim]
@@ -207,6 +206,10 @@ def load_data(
         xcorr=False,
         verbose=False
 ):
+
+    from pybdv.util import open_file
+    from cebra_em_core.dataset.alignment import xcorr_on_volume
+
     shape = np.array(shape)
     with open_file(input_path, mode='r') as f:
 
@@ -225,6 +228,15 @@ def load_data(
     return vol
 
 
+def load_full_downsample_level(
+        input_path,
+        internal_path
+):
+    from pybdv.util import open_file
+    with open_file(input_path, mode='r') as f:
+        return f[internal_path][:]
+
+
 def crop_and_scale(
         input_path,
         position,
@@ -237,7 +249,7 @@ def crop_and_scale(
         order=1,
         xcorr=False,
         extended_return=False,
-        verbose=False,
+        verbose=False
 ):
     """
     Extracts and scales a volume from a dataset to match a certain output shape and resolution
@@ -362,6 +374,8 @@ def quantile_norm(volume, qlow, qhigh, verbose=False):
 
 def small_objects_to_zero(m, size_filter, verbose=False, n_workers=os.cpu_count()):
 
+    from concurrent.futures import ThreadPoolExecutor
+
     def _to_zero(idx, obj_id):
         sys.stdout.write('\r' + 'Identifying small objects: {} %'.format(int(100 * float(idx + 1) / float(len(smalls)))))
         m[m == obj_id] = 0
@@ -385,6 +399,8 @@ def small_objects_to_zero(m, size_filter, verbose=False, n_workers=os.cpu_count(
 
 
 def relabel_consecutive(map, sort_by_size=False, n_workers=os.cpu_count()):
+
+    from concurrent.futures import ThreadPoolExecutor
 
     def _relabel(idx, label, segment):
         sys.stdout.write('\r' + 'Relabelling: {} %'.format(int(100 * float(idx + 1) / float(len(relabel_dict)))))
@@ -429,6 +445,8 @@ def get_quantiles(
         debug=False,
         verbose=False
 ):
+
+    from pybdv.util import open_file
 
     if seg is not None:
         if seg_ids is None:
@@ -513,19 +531,13 @@ def get_quantiles(
 
             def extract_pixel_values(p):
                 try:
-                    return raw_handle[tuple((np.array(p) + top_left) * scale)]
+                    return raw_handle[tuple(((np.array(p) + top_left) * scale).astype(int))]
                 except ValueError:
                     # This happens when the position is out of bounds in the raw data (due to scaling issues)
                     return None
 
             # Extract the pixel values
 
-            # raw_pixels = np.array(
-            #     [
-            #         raw_handle[tuple((np.array(p) + top_left) * scale)]
-            #         for p in pos
-            #     ]
-            # )
             raw_pixels = [extract_pixel_values(p) for p in pos]
             raw_pixels = np.array([px for px in raw_pixels if px is not None])
             if len(raw_pixels) < pixels_per_object:
@@ -547,3 +559,22 @@ def get_quantiles(
         quantiles[idx] = this_quantiles
 
     return quantiles
+
+
+def crop_center(vol, shape):
+
+    vol_shape = np.array(vol.shape)
+    shape = np.array(shape)
+
+    if np.abs(vol_shape - shape).max() != 0:
+
+        start = ((vol_shape - shape) / 2).astype('int')
+        vol = vol[
+              start[0]: start[0] + shape[0],
+              start[1]: start[1] + shape[1],
+              start[2]: start[2] + shape[2]
+        ]
+
+    assert np.abs(np.array(vol.shape) - shape).max() == 0
+
+    return vol

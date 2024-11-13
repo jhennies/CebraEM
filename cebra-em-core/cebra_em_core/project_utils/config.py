@@ -2,13 +2,20 @@
 import os
 import json
 import numpy as np
-from cebra_em_core.project_utils.project import get_current_project_path
-from cebra_em_core.project_utils.params import load_params
 
 
 def absolute_path(path, project_path=None):
+    from cebra_em_core.project_utils.project import get_current_project_path
     project_path = get_current_project_path(project_path=project_path)
-    return path.format(project_path=project_path)
+    # return path.format(project_path=project_path)
+    assert not str.startswith(path, '{project_path}'), f'This is deprecated and requires fixing! {path}'
+    return os.path.join(project_path, path)
+
+
+def relative_path(path, project_path=None):
+    from cebra_em_core.project_utils.project import get_current_project_path
+    project_path = get_current_project_path(project_path=project_path)
+    return os.path.relpath(path, project_path)
 
 
 def get_mask_xml(project_path=None):
@@ -18,7 +25,22 @@ def get_mask_xml(project_path=None):
         return None
 
 
+def get_segmentation_xml(name, project_path=None):
+
+    stitched = False
+    if str.endswith(name, 'stitched'):
+        stitched = True
+        name = name[:-len('_stitched')]
+    import re
+    basename = re.sub(r'_b0_\d+$', '', name)
+    config = get_config(basename, project_path=project_path)
+    segmentation_info = config['segmentations'][name]
+
+    return segmentation_info['xml_path_stitched'] if stitched else segmentation_info['xml_path']
+
+
 def get_config_path(relpath=False, project_path=None):
+    from cebra_em_core.project_utils.project import get_current_project_path
     project_path = get_current_project_path(project_path=project_path)
 
     if relpath:
@@ -70,26 +92,12 @@ def add_to_config_json(filename, data, verbose=False):
 
     config = extend_dict(config, data)
 
-    # for k, v in data.items():
-    #     if k not in config.keys():
-    #         config[k] = {}
-    #     if type(v) == dict:
-    #         for kk, vv in v.items():
-    #             if type(vv) == np.ndarray:
-    #                 config[k][kk] = vv.tolist()
-    #             else:
-    #                 config[k][kk] = vv
-    #     else:
-    #         if type(v) == np.ndarray:
-    #             config[k] = v.tolist()
-    #         else:
-    #             config[k] = v
-
     with open(filename, 'w') as f:
         json.dump(config, f, indent=2)
 
 
 def init_image_config(image_name, project_path=None, force=False):
+    from cebra_em_core.project_utils.params import load_params
 
     if not force:
         assert image_name not in get_config('main', project_path=project_path)['configs']
@@ -98,7 +106,7 @@ def init_image_config(image_name, project_path=None, force=False):
     config_image_fp = os.path.join(get_config_path(project_path=project_path), f'config_{image_name}.json')
     config_image_rel = os.path.join(get_config_path(relpath=True, project_path=project_path), f'config_{image_name}.json')
 
-    add_to_config_json(config_main_fp, {'configs': {image_name: '{project_path}' + config_image_rel}})
+    add_to_config_json(config_main_fp, {'configs': {image_name: config_image_rel}})
     add_to_config_json(
         config_image_fp,
         load_params('general', project_path=project_path)
@@ -110,6 +118,7 @@ def init_image_config(image_name, project_path=None, force=False):
 
 
 def init_mask_config(mask_xml, project_path=None, force=False):
+    from cebra_em_core.project_utils.params import load_params
 
     if not force:
         assert 'mask' not in get_config('main', project_path=project_path)['configs']
@@ -118,12 +127,13 @@ def init_mask_config(mask_xml, project_path=None, force=False):
     config_mask_fp = os.path.join(get_config_path(project_path=project_path), 'config_mask.json')
     config_mask_rel = os.path.join(get_config_path(relpath=True, project_path=project_path), 'config_mask.json')
 
-    add_to_config_json(config_main_fp, {'configs': {'mask': '{project_path}' + config_mask_rel}})
+    add_to_config_json(config_main_fp, {'configs': {'mask': config_mask_rel}})
     add_to_config_json(config_mask_fp, {'xml_path': mask_xml})
     add_to_config_json(config_mask_fp, load_params('mask', project_path=project_path))
 
 
 def init_raw_config(raw_data_xml, project_path=None, force=False):
+    from cebra_em_core.project_utils.params import load_params
 
     if not force:
         assert 'raw' not in get_config('main', project_path=project_path)['configs']
@@ -132,7 +142,7 @@ def init_raw_config(raw_data_xml, project_path=None, force=False):
     config_raw_fp = os.path.join(get_config_path(project_path=project_path), 'config_raw.json')
     config_raw_rel = os.path.join(get_config_path(relpath=True, project_path=project_path), 'config_raw.json')
 
-    add_to_config_json(config_main_fp, {'configs': {'raw': '{project_path}' + config_raw_rel}})
+    add_to_config_json(config_main_fp, {'configs': {'raw': config_raw_rel}})
     add_to_config_json(config_raw_fp, {'xml_path': raw_data_xml})
     add_to_config_json(config_raw_fp, load_params('raw', project_path=project_path))
 
@@ -144,12 +154,12 @@ def init_main_config(project_path=None, verbose=False):
     add_to_config_json(
         config_fp,
         dict(
-            project_path=project_path,
-            tasks_path='{project_path}tasks',
-            params_path='{project_path}params',
-            mobie_project_path='{project_path}data',
+            # project_path=project_path,
+            tasks_path='tasks',
+            params_path='params',
+            mobie_project_path='data',
             configs=dict(
-                main='{project_path}' + config_rel
+                main=config_rel
             )
         ),
         verbose=verbose

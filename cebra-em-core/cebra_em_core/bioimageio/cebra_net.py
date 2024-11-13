@@ -1,13 +1,14 @@
 
-import bioimageio.core
-import xarray as xr
-from cebra_em_core.misc.repo import get_repo_path
 import os
 
 
 def run_cebra_net(
         input_data
 ):
+
+    import bioimageio.core
+    import xarray as xr
+    from cebra_em_core.misc.repo import get_repo_path
 
     # Set up the model
     try:

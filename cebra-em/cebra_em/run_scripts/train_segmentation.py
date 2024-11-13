@@ -12,25 +12,7 @@ from cebra_em_core.segmentation.elf_utils import edge_and_node_training
 
 from cebra_em_core.project_utils.config import get_config
 from cebra_em.run_utils.run_specs import get_run_json
-
-
-def crop_center(vol, shape):
-
-    vol_shape = np.array(vol.shape)
-    shape = np.array(shape)
-
-    if np.abs(vol_shape - shape).max() != 0:
-
-        start = ((vol_shape - shape) / 2).astype('int')
-        vol = vol[
-              start[0]: start[0] + shape[0],
-              start[1]: start[1] + shape[1],
-              start[2]: start[2] + shape[2]
-        ]
-
-    assert np.abs(np.array(vol.shape) - shape).max() == 0
-
-    return vol
+from cebra_em_core.dataset.data import crop_center
 
 
 def get_rf_model(
@@ -58,33 +40,36 @@ def get_rf_model(
     gt_train = []
     sv_train = []
 
+    from pybdv.util import get_key
+    key = get_key(True, 0, 0, 0)
+
     for i in range(n):
 
         # ground truth
         filename = input_gt_files[i]
         with open_file(filename, 'r') as f:
-            gt = f['data'][:].astype(np.float32)
+            gt = f[key][:].astype(np.float32)
             gt_shape = gt.shape
             gt_train.append(gt)
 
         # raw data
         filename = input_raw_files[i]
         with open_file(filename, 'r') as f:
-            raw = f['data'][:].astype(np.float32)
+            raw = f[key][:].astype(np.float32)
             raw = crop_center(raw, gt_shape)
             raw_train.append(raw)
 
         # membrane prediction -- boundaries
         filename = input_mem_files[i]
         with open_file(filename, 'r') as f:
-            mem = f['data'][:].astype(np.float32)
+            mem = f[key][:].astype(np.float32)
             mem = crop_center(mem, gt_shape)
             mem_train.append(mem)
 
         # supervoxels
         filename = input_sv_files[i]
         with open_file(filename, 'r') as f:
-            sv = f['data'][:].astype('uint64')
+            sv = f[key][:].astype('uint64')
             sv = crop_center(sv, gt_shape)
             sv = labelVolume(sv.astype('uint32')).astype('uint16')
             sv_train.append(sv)

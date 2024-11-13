@@ -67,8 +67,8 @@ def vol_to_bdv(
         downscale_mode='mean',
         halo=None,
         background_value=None,
-        unique=False,
-        update_max_id=False,
+        # unique=False,
+        # update_max_id=False,
         cast_type=None,
         block_description=None,
         verbose=False
@@ -103,17 +103,30 @@ def vol_to_bdv(
         downscale_mode=downscale_mode,
         halo=halo,
         background_value=background_value,
-        unique=unique,
-        update_max_id=update_max_id,
+        unique=False,  # unique,
+        update_max_id=False,  # update_max_id,
         n_threads=1,
         verbose=verbose
     )
 
-    # Block from parallel writing
-    idx, path, name = block_description['idx'], block_description['path'], block_description['name']
-    ts = request_run(idx, path=os.path.join(path, f'.run_requests'), name=name, verbose=verbose)
+    # # Block from parallel writing
+    # idx, path, name = block_description['idx'], block_description['path'], block_description['name']
+    # ts = request_run(idx, path=os.path.join(path, f'.run_requests'), name=name, verbose=verbose)
     # Write the data
-    bdv_ds[s_] = volume
-    # Remove block
-    remove_request(idx, ts, path=os.path.join(path, f'.run_requests'), name=name)
+    is_written = False
+    counter = 0
+    while not is_written:
+        try:
+            bdv_ds[s_] = volume
+            is_written = True
+        except FileNotFoundError:
+            # This happens if another process is working on it. So let's just wait three seconds and try again
+            time.sleep(3)
+            counter += 1
+            if counter == 20:
+                print('Giving up writing after 20 iterations!')
+                raise
+
+    # # Remove block
+    # remove_request(idx, ts, path=os.path.join(path, f'.run_requests'), name=name)
 

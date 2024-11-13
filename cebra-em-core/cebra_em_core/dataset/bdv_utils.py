@@ -2,24 +2,33 @@
 import os
 import numpy as np
 import re
-import time
-from glob import glob
 
-import xml.etree.ElementTree as ET
-from pybdv.metadata import get_data_path
-from pybdv.util import HDF5_EXTENSIONS
-from pybdv.util import get_key, open_file
-from pybdv.converter import normalize_output_path
-from pybdv.metadata import write_n5_metadata, write_h5_metadata, write_xml_metadata, validate_attributes
 from pybdv.bdv_datasets import BdvDataset
 
 
 def is_h5(xml_path):
+
+    from pybdv.metadata import get_data_path
+    from pybdv.util import HDF5_EXTENSIONS
+
     path = get_data_path(xml_path)
     return os.path.splitext(path)[1].lower() in HDF5_EXTENSIONS
 
 
+def get_resolution(xml_filepath, setup_id=0, downsample_level=0):
+    from pybdv.metadata import get_resolution, get_data_path
+    from pybdv.util import get_scale_factors
+
+    scale_factor = get_scale_factors(get_data_path(xml_filepath, return_absolute_path=True), setup_id)[downsample_level]
+    resolution = get_resolution(xml_filepath, setup_id)
+
+    return np.array(resolution) * np.array(scale_factor)
+
+
 def get_shape(xml_path, setup_id):
+
+    import xml.etree.ElementTree as ET
+
     tree = ET.parse(xml_path)
     root = tree.getroot()
     seqdesc = root.find('SequenceDescription')
@@ -44,6 +53,10 @@ def create_empty_dataset(
         attributes=None,
         verbose=False
 ):
+
+    from pybdv.converter import normalize_output_path
+    from pybdv.metadata import write_n5_metadata, write_h5_metadata, write_xml_metadata, validate_attributes
+    from pybdv.util import get_key, open_file
 
     if verbose:
         print('data_shape = {}'.format(data_shape))
@@ -109,7 +122,42 @@ def create_empty_dataset(
                        overwrite_data=False,
                        enforce_consistency=enforce_consistency)
 
-    return False
+    return xml_path
+
+
+def create_simple_bdv_h5_dataset(path, data, attrs=None):
+    from pybdv.util import open_file
+    from pybdv.metadata import get_key, write_h5_metadata
+
+    key = get_key(True, 0, 0, 0)
+
+    with open_file(path, mode='w') as f:
+        d = f.create_dataset(key, data=data, compression='gzip')
+        if attrs is not None:
+            for k, v in attrs.items():
+                d.attrs[k] = v
+
+    write_h5_metadata(path, [[1, 1, 1]], 0, 0, overwrite=True)
+
+
+def add_xml_to_simple_bdv_h5_dataset(path, unit='micrometer', resolution=(0.01, 0.01, 0.01), xml_path=None):
+    from pybdv.metadata import write_xml_metadata
+    if xml_path is None:
+        xml_path = f'{os.path.splitext(path)[0]}.xml'
+    attributes = {'channel': {'id': 1}}
+    write_xml_metadata(
+        xml_path, path, unit, resolution, True, 0, 0, 's0', None, attributes,
+        overwrite=True, overwrite_data=False, enforce_consistency=True
+    )
+
+
+def read_simple_bdv_h5_dataset(path, return_attrs=False):
+    from pybdv.util import open_file
+    from pybdv.metadata import get_key
+    with open_file(path, mode='r') as f:
+        if return_attrs:
+            return f[get_key(True, 0, 0, 0)][:], dict(f[get_key(True, 0, 0, 0)].attrs)
+        return f[get_key(True, 0, 0, 0)][:]
 
 
 class BdvDatasetAdvanced(BdvDataset):
@@ -156,6 +204,8 @@ class BdvDatasetAdvanced(BdvDataset):
         Use this to update the largest present id in the dataset if you employ a stitching method with unique == True.
         The id is automatically updated if new data is written.
         """
+        from pybdv.util import get_key, open_file
+
         data_path = self._path
         with open_file(data_path, 'a') as f:
             key = get_key(self._is_h5, self._timepoint, self._setup_id, 0)
@@ -163,6 +213,9 @@ class BdvDatasetAdvanced(BdvDataset):
                 f[key].attrs['maxId'] = idx
 
     def get_max_id(self):
+
+        from pybdv.util import get_key, open_file
+
         data_path = self._path
         with open_file(data_path, 'r') as f:
             key = get_key(self._is_h5, self._timepoint, self._setup_id, 0)

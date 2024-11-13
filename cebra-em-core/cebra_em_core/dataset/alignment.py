@@ -1,14 +1,13 @@
 
 import numpy as np
-from scipy.ndimage import shift
-from vigra.filters import gaussianSmoothing
-from skimage import filters
-from skimage.registration import phase_cross_correlation
-from scipy.signal import medfilt
-from scipy.ndimage import gaussian_filter1d
 
 
 def xcorr(offset_image, image):
+
+    from vigra.filters import gaussianSmoothing
+    from skimage import filters
+    from skimage.registration import phase_cross_correlation
+
     image = gaussianSmoothing(image, 1)
     offset_image = gaussianSmoothing(offset_image, 1)
     image = filters.sobel(image)
@@ -31,11 +30,16 @@ def xcorr_on_pair(fixed, moving, verbose=False):
 
 def displace_slice(image, offset):
 
+    from scipy.ndimage import shift
+
     image = shift(image, -np.round([offset[1], offset[0]]))
     return image
 
 
 def xcorr_on_volume(vol, median_radius=3):
+
+    from scipy.signal import medfilt
+    from scipy.ndimage import gaussian_filter1d
 
     # from h5py import File
     #

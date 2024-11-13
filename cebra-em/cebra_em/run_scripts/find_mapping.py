@@ -119,14 +119,17 @@ if __name__ == '__main__':
     beta = get_run_json(project_path=project_path)['misc']['beta']
 
     image_name = snakemake.params['image_name']
+    import re
+    base_image_name = re.sub(r'_b0_\d+$', '', image_name)
     idx = int(snakemake.wildcards['idx'])
 
     if verbose:
         print(f'image_name = {image_name}')
+        print(f'base_image_name = {base_image_name}')
         print(f'idx = {idx}')
 
-    config_img = get_config(image_name, project_path=project_path)
-    img_xml_rel_path = config_img['segmentations'][f'{image_name}_b{str.replace(str(beta), ".", "_")}']['xml_path']
+    config_img = get_config(base_image_name, project_path=project_path)
+    img_xml_rel_path = config_img['segmentations'][image_name]['xml_path']
     img_xml_path = absolute_path(img_xml_rel_path, project_path=project_path)
 
     positions_fp = absolute_path(config_img['positions'], project_path=project_path)

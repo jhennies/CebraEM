@@ -1,32 +1,6 @@
 
 import os
 import numpy as np
-from shutil import copy
-from cebra_em_core.project_utils.project import make_project_structure
-from cebra_em_core.project_utils.params import copy_default_params, query_parameters
-from cebra_em_core.project_utils.config import (
-    init_mask_config,
-    init_main_config,
-    init_raw_config,
-    init_image_config,
-    get_config,
-    get_mask_xml,
-    set_version,
-    add_to_config_json,
-    get_config_filepath,
-    get_config_path
-)
-from cebra_em_core.project_utils.tasks import compute_task_positions
-from cebra_em_core.project_utils.dependencies import init_dependencies
-from cebra_em_core.dataset.mobie_utils import (
-    get_mobie_project_path,
-    init_with_raw,
-    init_membrane_prediction,
-    init_supervoxels,
-    init_mask,
-    init_segmentation_map
-)
-from cebra_em_core.version import __version__
 
 
 def init_parameters(
@@ -39,6 +13,8 @@ def init_parameters(
         has_mask=False,
         verbose=False
 ):
+    from cebra_em_core.project_utils.params import copy_default_params, query_parameters
+
     if has_mask:
         images = ('raw', 'mask', 'general', 'membrane_prediction', 'supervoxels')
     else:
@@ -76,6 +52,13 @@ def init_configs(
         force=False,
         verbose=False
 ):
+    from cebra_em_core.project_utils.config import (
+        init_mask_config,
+        init_main_config,
+        init_raw_config,
+        init_image_config,
+        set_version
+    )
 
     has_mask = mask_xml is not None
 
@@ -95,6 +78,7 @@ def compute_all_task_positions(
         project_path=None,
         verbose=False
 ):
+    from cebra_em_core.project_utils.tasks import compute_task_positions
 
     for image in images:
         compute_task_positions(image, project_path=project_path, verbose=verbose)
@@ -106,6 +90,7 @@ def init_all_dependencies(
         n_workers=1,
         verbose=False
 ):
+    from cebra_em_core.project_utils.dependencies import init_dependencies
 
     for image in images:
         init_dependencies(image, project_path=project_path, n_workers=n_workers, verbose=verbose)
@@ -115,6 +100,17 @@ def init_mobie_dataset(
         project_path=None,
         verbose=False
 ):
+    from cebra_em_core.project_utils.config import (
+        get_config,
+        get_mask_xml
+    )
+    from cebra_em_core.dataset.mobie_utils import (
+        get_mobie_project_path,
+        init_with_raw,
+        init_membrane_prediction,
+        init_supervoxels,
+        init_mask
+    )
 
     mobie_project_path = get_mobie_project_path(project_path=project_path)
     config_raw = get_config('raw', project_path=project_path)
@@ -125,10 +121,9 @@ def init_mobie_dataset(
     os.mkdir(mobie_project_path)
 
     # Initialize the mobie project pointing to the raw data BDV file
-    dataset_name = 'CebraINF'
-    image_name = 'em-raw'
-    dataset_folder, _, _ = init_with_raw(
-        mobie_project_path, dataset_name, raw_xml_path, image_name,
+    image_name = 'raw'
+    init_with_raw(
+        mobie_project_path, raw_xml_path, image_name,
         project_path=project_path, verbose=verbose
     )
 
@@ -137,7 +132,7 @@ def init_mobie_dataset(
         if verbose:
             print('Initializing project with mask!')
         init_mask(
-            dataset_folder, mask_xml_path, "em-mask",
+            mobie_project_path, mask_xml_path, "mask",
             project_path=project_path,
             verbose=verbose
         )
@@ -147,14 +142,14 @@ def init_mobie_dataset(
 
     # Initialize the membrane prediction
     init_membrane_prediction(
-        dataset_name,
+        mobie_project_path,
         project_path=project_path,
         verbose=verbose
     )
 
     # Initialize the supervoxels
     init_supervoxels(
-        dataset_name,
+        mobie_project_path,
         project_path=project_path,
         verbose=verbose
     )
@@ -202,6 +197,8 @@ def init_project(
     :param verbose:
     :return:
     """
+    from cebra_em_core.project_utils.project import make_project_structure
+    from cebra_em_core.version import __version__
 
     assert project_path is not None
     project_path = os.path.join(os.path.abspath(project_path), '')
@@ -272,6 +269,7 @@ def init_segmentation_parameters(
         project_path=None,
         verbose=False
 ):
+    from cebra_em_core.project_utils.params import copy_default_params, query_parameters
 
     if verbose:
         print(f'project_path = {project_path}')
@@ -315,6 +313,12 @@ def init_segmentation(
 
     :return:
     """
+    from cebra_em_core.project_utils.config import (
+        init_image_config,
+        get_config,
+        add_to_config_json,
+        get_config_filepath
+    )
 
     if verbose:
         print(f'project_path = {project_path}')
@@ -390,6 +394,8 @@ def init_beta_map(
         project_path=None,
         verbose=False
 ):
+    from cebra_em_core.project_utils.config import get_config
+    from cebra_em_core.dataset.mobie_utils import get_mobie_project_path, init_segmentation_map
 
     if verbose:
         print(f'name = {name}')
@@ -399,9 +405,24 @@ def init_beta_map(
     if 'segmentations' in config_seg and name in config_seg['segmentations']:
         return
 
+    mobie_project_path = get_mobie_project_path(project_path=project_path)
+
     # Initialize the Mobie project
     init_segmentation_map(
-        name, base_segmentation, 'CebraINF', beta, stitched=stitched, project_path=project_path, verbose=verbose
+        name, base_segmentation, mobie_project_path, beta, stitched=stitched, project_path=project_path, verbose=verbose
     )
 
 
+def remove_segmentation(
+        seg_name,
+        project_path=None,
+        debug=False,
+        verbose=False
+):
+    from cebra_em_core.dataset.mobie_utils import remove_datasets
+    from cebra_em_core.project_utils.project import remove_segmentation_meta
+
+    not_removed = remove_datasets(seg_name, project_path=project_path, verbose=verbose, debug=debug)
+    if not_removed:
+        return
+    remove_segmentation_meta(seg_name, project_path=project_path, verbose=verbose, debug=debug)

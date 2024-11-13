@@ -84,7 +84,25 @@ Look for suitable locations using the MoBIE viewer and note down the coordinates
 cem-init-gt -b "x.xxx, y.yyy, z.zzz"
 ```
 
-for each of the ground truth cubes. 
+for each of the ground truth cubes.
+
+Note that you can make use of MoBIE's position logging:
+1. In the BigDataViewer window hover over the center of the new ground truth cube and press ```C```. This will log the location. \
+In Fiji's log window the output should look like this (shortened for readability): 
+```
+# Current location
+[...]
+## Mouse pointer position
+{"position":[4.032021853546912,2.251951086956522,1.054225972540046],"timepoint":0}
+[...]
+{"normalVector":[0.0,0.0,1.0],"timepoint":0}
+```
+
+2. Copy the entire line below "## Mouse pointer position" which contains the location of your mouse in the dataset
+3. Paste it into your ```cem-init-gt``` command like so **(note the single quotes)**: 
+```
+cem-init-gt -b '{"position":[4.032021853546912,2.251951086956522,1.054225972540046],"timepoint":0}'
+```
 
 To see which ground truth cubes are already initialized run
 
@@ -157,7 +175,7 @@ cem-link-gt 0 1 2 3 mito mito_it01
 Run the second iteration (also consider different values for beta if necessary by adding e.g. ```--param beta=0.6,0.7,0.8```)
 
 ```
-cem-run -t mito_it01
+cem-run mito_it01
 ```
 
 Then repeat with further iterations until the result is satisfactory (usually 2 to 3 iterations yield good results).
@@ -172,9 +190,36 @@ cem-run stitch-mito_it01 --param beta=0.7
 
 This will stitch the mitochondria segmentation of iteration 01 (mito_it01) with beta = 0.7.
 
+### Removing a segmentation
+
+You can completely remove a segmentation from the CebraEM project with the command
+
+```
+cem-rm-segmentation mito_it01
+```
+
+Note that this physically deletes the segmentation map as well as all associated project files and project metadata 
+that points to this dataset. 
+
+To check which dataset is removed use
+
+```
+cem-rm-segmentation mito_it01 -d 
+```
+
+The ```-d```/```--debug``` triggers a dry-run which will not delete anything and only show what would be done.
+
 ## Visualize with MoBIE
 
 A CebraEM project is wrapped around a MoBIE project and can be directly opened within the MoBIE viewer (https://github.com/mobie/mobie-viewer-fiji) (1). 
+
+After successful installation of MoBIE (see [Installation of the MoBIE browser](../README.md#installation-of-the-mobie-browser)) you can open a CebraEM/MoBIE project using ```Fiji -> Plugins -> MoBIE -> Open -> Open Collection Table...```
+
+This will pop up a dialog where you need to specify the following:
+ - For the field "Table Path", select the file ```mobie.csv``` from your project directory
+ - Make sure "Data Root" is set to ```UseTableFolder```
+ - Make sure "Data Root Folder" is empty
+
 
 
 

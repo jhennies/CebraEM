@@ -1,6 +1,5 @@
 
 import numpy as np
-from vigra import filters, analysis
 
 
 def _cdist(xy1, xy2):
@@ -69,6 +68,7 @@ def watershed_dt_with_probs(
         return_intermediates=False,
         verbose=False
 ):
+    from vigra import filters, analysis
 
     # from h5py import File
     # from random import randint

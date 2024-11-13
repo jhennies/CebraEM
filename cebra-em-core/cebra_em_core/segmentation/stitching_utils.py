@@ -1,6 +1,5 @@
 
 import numpy as np
-from vigra import analysis
 
 
 def load_with_zero_padding(dataset, starts, ends, shape, verbose=False):
@@ -168,6 +167,7 @@ def merge_mappings(mappings, convert_items=None):
 
 
 def match_ids_at_block_faces(block_faces, block_faces_ref, crop=False):
+    from vigra import analysis
 
     def _normalize_block_face_shapes(block_face, block_face_ref):
         # Make the block faces match if cropping is enabled, otherwise just check for match

@@ -2,12 +2,9 @@
 import numpy as np
 import pickle
 import json
-import os
+
 from pybdv.metadata import get_data_path
 from pybdv.util import open_file, get_key
-
-# from pybdv.bdv_datasets import BdvDataset
-
 from cebra_em_core.project_utils.config import get_config, absolute_path
 from cebra_em_core.project_utils.project import get_current_project_path
 from cebra_em_core.dataset.bdv_utils import is_h5
@@ -45,25 +42,11 @@ def load_data(data_path, data_key, position, shape):
     return data
 
 
-# def save_data(data, data_path, position, shape):
-#     bdv_ds = BdvDataset(
-#         data_path,
-#         timepoint=0,
-#         setup_id=0,
-#         downscale_mode='nearest',  # It's always a segmentation
-#         n_threads=1,
-#         verbose=True
-#     )
-#     bdv_ds[
-#         position[0]: position[0] + shape[0],
-#         position[1]: position[1] + shape[1],
-#         position[2]: position[2] + shape[2]
-#     ] = data
-
-
 if __name__ == '__main__':
 
     image = snakemake.params['image_name']
+    import re
+    image_base = re.sub(r'_b0_\d+$', '', image)
     cube_idx = snakemake.wildcards['idx']
 
     print(f">>> STARTING: Apply mapping for {image}[{cube_idx}]")
@@ -80,18 +63,18 @@ if __name__ == '__main__':
     output = snakemake.output[0]
 
     # Get the config
-    config_seg = get_config(image, project_path=project_path)
+    config_seg = get_config(image_base, project_path=project_path)
     positions_fp = absolute_path(config_seg['positions'], project_path=project_path)
     # data_xml_path = absolute_path(config_seg['xml_path'])
     # stitched_data_xml = absolute_path(config_seg['stitched_dataset']['xml_path'], project_path=project_path)
     # stitched_data_path = get_data_path(stitched_data_xml, return_absolute_path=True)
 
-    stitched_img_xml_rel_path = config_seg['segmentations'][f'{image}_b{str.replace(str(beta), ".", "_")}']['xml_path_stitched']
+    stitched_img_xml_rel_path = config_seg['segmentations'][image]['xml_path_stitched']
     stitched_img_data_path = get_data_path(
         absolute_path(stitched_img_xml_rel_path, project_path=project_path),
         return_absolute_path=True
     )
-    img_xml_rel_path = config_seg['segmentations'][f'{image}_b{str.replace(str(beta), ".", "_")}']['xml_path']
+    img_xml_rel_path = config_seg['segmentations'][image]['xml_path']
     img_xml_abs_path = absolute_path(img_xml_rel_path, project_path=project_path)
 
     # Get shape and position
@@ -144,8 +127,6 @@ if __name__ == '__main__':
         downscale_mode='nearest',
         halo=None,
         background_value=0,
-        unique=False,
-        update_max_id=False,
         cast_type=None,
         block_description=dict(
             path=project_path,

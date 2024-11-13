@@ -4,22 +4,12 @@ This file contains all the implementation that could potentially be integrated d
 Some functions are copied here from the elf package and just changed slightly
 """
 
-from copy import deepcopy
 import numpy as np
-import vigra
-import multiprocessing
-import nifty.graph.rag as nrag
 
 from elf.segmentation.workflows import (
     FEATURE_NAMES,
-    DEFAULT_RF_KWARGS,
-    _compute_features,
-    _load_rf
+    DEFAULT_RF_KWARGS
 )
-import elf.segmentation.learning as elf_learn
-import elf.segmentation.features as elf_feats
-import elf.segmentation.multicut as elf_mc
-from elf.segmentation.workflows import _mask_edges, _get_solver
 
 DEFAULT_NRF_KWARGS = {'n_estimators': 200, 'max_depth': 10}
 
@@ -34,6 +24,9 @@ def compute_edge_labels(rag, gt, ignore_label=None, n_threads=None, return_node_
             to ignore in learning (default: None)
         n_threads [int] - number of threads (default: None)
     """
+    import multiprocessing
+    import nifty.graph.rag as nrag
+
     n_threads = multiprocessing.cpu_count() if n_threads is None else n_threads
 
     node_labels = nrag.gridRagAccumulateLabels(rag, gt, n_threads)
@@ -55,6 +48,8 @@ def compute_edge_labels(rag, gt, ignore_label=None, n_threads=None, return_node_
 
 
 def compute_node_features(input_map, segmentation, n_threads=None):
+    import vigra
+
     """ Compute node features from input map accumulated over segmentation """
 
     stat_feature_names = ["Count", "Kurtosis", "Maximum", "Minimum", "Quantiles",
@@ -73,6 +68,7 @@ def _compute_node_and_edge_features_and_labels(
         raw, boundaries, watershed, labels, feature_names, n_threads,
         mask_zeros=False
 ):
+    from elf.segmentation.workflows import _compute_features
 
     rag, edge_features = _compute_features(raw, boundaries, watershed, feature_names, False, n_threads=n_threads)
     # FIXME this is already computed in _compute_features: extract from there!
@@ -106,6 +102,8 @@ def edge_and_node_training(
         n_threads=None
 ):
     """ Train random forest classifier for edges and one for nodes """
+    from copy import deepcopy
+    import elf.segmentation.learning as elf_learn
 
     if mask is not None:
         print('Using masks for edge and node training!')
@@ -194,6 +192,10 @@ def predict_node_classification_mc_wf(
 ):
     """ Semantic instance segmentation for objects of two classes (one background and multiple foreground) """
 
+    from elf.segmentation.workflows import _compute_features, _load_rf
+    import elf.segmentation.learning as elf_learn
+    import elf.segmentation.features as elf_feats
+
     if mask is not None:
         print('Applying mask ...')
         assert 0 not in watershed
@@ -234,6 +236,7 @@ def predict_node_classification_mc_wf(
 
 
 def _assign_classes(seg, classes, beta):
+    import vigra
 
     ids = np.unique(seg)
     max_id = seg.max()
@@ -259,6 +262,9 @@ def node_classification_mc_wf(
         solver_kwargs={},
         n_threads=None
 ):
+    import elf.segmentation.features as elf_feats
+    import elf.segmentation.multicut as elf_mc
+    from elf.segmentation.workflows import _mask_edges, _get_solver
 
     beta_nodes = beta if beta_nodes is None else beta_nodes
 

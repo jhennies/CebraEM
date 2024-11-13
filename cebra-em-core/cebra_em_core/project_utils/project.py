@@ -97,3 +97,131 @@ def unlock_project(project_path=None):
         return ''
     else:
         return 'is_unlocked_error'
+
+
+def delete_segmentation_config(name, project_path=None, verbose=False, debug=False):
+    from cebra_em_core.project_utils.config import get_config_filepath
+
+    # Removing segmentation config
+    config_filepath = get_config_filepath(name, project_path)
+
+    if verbose:
+        print(f'config_filepath = {config_filepath}')
+
+    import os
+
+    try:
+        print(f'Deleting: {config_filepath}')
+        if not debug:
+            os.remove(config_filepath)
+    except Exception as e:
+        print(f'Error deleting {config_filepath}: {e}')
+
+
+def remove_config_link(name, project_path=None, verbose=False, debug=False):
+
+    from cebra_em_core.project_utils.config import get_config, get_config_filepath
+    config_main = get_config('main', project_path)
+
+    print(f'Removing link to config_{name}.json in config_main.json')
+
+    if verbose:
+        print('')
+        for k, v in config_main['configs'].items():
+            print(f'{k}: {v}')
+        print('')
+
+    del(config_main['configs'][name])
+
+    if verbose:
+        for k, v in config_main['configs'].items():
+            print(f'{k}: {v}')
+        print('')
+
+    if not debug:
+        config_main_fp = get_config_filepath('main', project_path)
+        with open(config_main_fp, 'w') as f:
+            json.dump(config_main, f, indent=2)
+
+
+def remove_tasks(name, project_path=None, verbose=False, debug=False):
+
+    from cebra_em_core.project_utils.dependencies import get_dependencies_filepath
+    from cebra_em_core.project_utils.tasks import get_positions_filepath
+
+    dep_fp = get_dependencies_filepath(name, project_path, relpath=False)
+    pos_fp = get_positions_filepath(name, project_path, relpath=False)
+
+    try:
+        print(f'Deleting: {dep_fp}')
+        if not debug:
+            os.remove(dep_fp)
+    except Exception as e:
+        print(f'Error deleting {dep_fp}: {e}')
+
+    try:
+        print(f'Deleting: {pos_fp}')
+        if not debug:
+            os.remove(pos_fp)
+    except Exception as e:
+        print(f'Error deleting {pos_fp}: {e}')
+
+
+def remove_workflow_files(name, project_path=None, verbose=False, debug=False):
+
+    from glob import glob
+    import re
+
+    print(f"Deleting {name}'s workflow files in directory ./snk_wf")
+
+    project_path = get_current_project_path(project_path)
+
+    snk_dirpath = os.path.join(project_path, 'snk_wf')
+
+    # Match the general file format
+    filepaths = glob(os.path.join(snk_dirpath, f'*_{name}_*'))
+
+    # Set up some regexes that match the possible files
+    regex1 = re.compile(rf'run_{re.escape(name)}_\d+\.pkl')
+    regex2 = re.compile(rf'run_multicut_{re.escape(name)}_0.\d+_\d+\.json')
+    regex3 = re.compile(rf'train_{re.escape(name)}_n?rf\.pkl')
+    regex4 = re.compile(rf'.+_mapping_{re.escape(name)}_b0.\d+(_\d+)?\.(json|done)')
+
+    # Filter the files using the regex
+    filepaths = [
+        fp for fp in filepaths
+        if (
+            regex1.search(os.path.basename(fp)) or
+            regex2.search(os.path.basename(fp)) or
+            regex3.search(os.path.basename(fp)) or
+            regex4.search(os.path.basename(fp))
+        )
+    ]
+
+    if verbose:
+        print('\nRemoving these files:\n')
+        print(sorted([os.path.split(fp)[1] for fp in filepaths]))
+        print('')
+
+    for fp in filepaths:
+        try:
+            # print(f'Deleting: {fp}')
+            if not debug:
+                os.remove(fp)
+        except Exception as e:
+            print(f'Error deleting {fp}: {e}')
+
+
+def remove_segmentation_meta(name, project_path=None, verbose=False, debug=False):
+
+    print(f'Cleaning up metadata for: {name}\n')
+
+    from cebra_em_core.project_utils.gt import remove_gt_links
+    remove_tasks(name, project_path, verbose=verbose, debug=debug)
+    remove_workflow_files(name, project_path=project_path, verbose=verbose, debug=debug)
+    remove_gt_links(name, project_path=project_path, verbose=verbose, debug=debug)
+    delete_segmentation_config(name, project_path=project_path, verbose=verbose, debug=debug)
+    remove_config_link(name, project_path=project_path, verbose=verbose, debug=debug)
+
+    print('')
+

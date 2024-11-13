@@ -27,10 +27,17 @@ which includes these steps:
    - Back in the "ImageJ Updater" window click ```Apply Changes``` which will now trigger download and installation of 
      the required packages
    - Close and re-open Fiji to complete the installation
- 
-Alternatively, can download and extract a Fiji that already includes MoBIE from the [this release](https://github.com/jhennies/CebraEM/releases/download/v0.0.3/fiji-linux64-with-mobie.zip).
 
-After successful installation of MoBIE you can open a CebraEM/MoBIE project using ```Fiji -> Plugins -> MoBIE -> Open -> Project -> Open MoBIE Project ...```
+TODO: 
+Alternatively, can download and extract a Fiji that already includes MoBIE 
+from [this release](https://github.com/jhennies/CebraEM/releases/download/v0.1.0/fiji-linux64-with-mobie.zip).
+
+After successful installation of MoBIE you can open a CebraEM/MoBIE project using ```Fiji -> Plugins -> MoBIE -> Open -> Open Collection Table...```
+
+This will pop up a dialog where you need to specify the following:
+ - For the field "Table Path", select the file ```mobie.csv``` from your project directory
+ - Make sure "Data Root" is set to ```UseTableFolder```
+ - Make sure "Data Root Folder" is empty
 
 ### Download of the CebraEM source code
 
