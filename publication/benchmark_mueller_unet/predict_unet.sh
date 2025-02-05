@@ -21,4 +21,5 @@ python predict_unet.py \
   "$input_filepath" \
   $output_dirpath \
   $model_dirpath \
+  -src /scratch/hennies/projects/hennies/cebra-em-publication/mueller-unet/protocol-notebooks/unet \
   -v

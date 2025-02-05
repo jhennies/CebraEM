@@ -5,12 +5,17 @@ def predict_unet(
         input_filepath,
         output_dirpath,
         model_dirpath,
+        unet_src_dirpath=None,
         verbose=False
 ):
 
     if verbose:
         print(f'input_filepath = {input_filepath}')
         print(f'output_dirpath = {output_dirpath}')
+
+    if unet_src_dirpath is not None:
+        import sys
+        sys.path.append(unet_src_dirpath)
 
     import numpy as np
     from tifffile import imread, imwrite
@@ -68,18 +73,22 @@ if __name__ == '__main__':
                         help='Folder where the result will be written to')
     parser.add_argument('model_dirpath', type=str,
                         help='Folder which contains the model (output of train_unet.py)')
+    parser.add_argument('-src', '--unet_src_dirpath', type=str, default=None,
+                        help='Local location of https://github.com/betaseg/protocol-notebooks/tree/main/unet')
     parser.add_argument('-v', '--verbose', action='store_true')
 
     args = parser.parse_args()
     input_filepath = args.input_filepath
     output_dirpath = args.output_dirpath
     model_dirpath = args.model_dirpath
+    unet_src_dirpath = args.unet_src_dirpath
     verbose = args.verbose
 
     predict_unet(
         input_filepath,
         output_dirpath,
         model_dirpath,
+        unet_src_dirpath=unet_src_dirpath,
         verbose=verbose,
     )
 
