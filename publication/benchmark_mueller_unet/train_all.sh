@@ -5,7 +5,7 @@ input_dirs=$2
 
 echo repo_path = $(repo_path)
 
-for dirpath in input_dirs; do
+for dirpath in $input_dirs; do
   echo processing $dirpath
 done
 
