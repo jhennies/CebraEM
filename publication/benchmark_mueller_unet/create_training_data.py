@@ -126,19 +126,27 @@ def _determine_val_cubes(mask_filepaths, raw_filepaths, number_of_val_cubes):
     return parts_info
 
 
-def _bin_volume(volume, bin_factor):
+def _bin_volume(volume, bin_factor, method='mean'):
     """Bins a 3D volume by an integer factor using NumPy reshaping and averaging."""
     assert volume.shape[0] % bin_factor == 0
     assert volume.shape[1] % bin_factor == 0
     assert volume.shape[2] % bin_factor == 0
 
-    shape = (volume.shape[0] // bin_factor, bin_factor,
-             volume.shape[1] // bin_factor, bin_factor,
-             volume.shape[2] // bin_factor, bin_factor)
+    if method == 'mean':
 
-    dtype = volume.dtype
+        shape = (volume.shape[0] // bin_factor, bin_factor,
+                 volume.shape[1] // bin_factor, bin_factor,
+                 volume.shape[2] // bin_factor, bin_factor)
 
-    return volume.reshape(shape).mean(axis=(1, 3, 5)).astype(dtype)
+        dtype = volume.dtype
+
+        return volume.reshape(shape).mean(axis=(1, 3, 5)).astype(dtype)
+
+    if method == 'nearest':
+
+        return volume[::bin_factor, ::bin_factor, ::bin_factor]
+
+    raise ValueError(f'Invalid method for binning: {method}')
 
 
 def _process_organelle_set(parts_info, target_dirpaths, binning=1):
@@ -184,7 +192,7 @@ def _process_organelle_set(parts_info, target_dirpaths, binning=1):
         mask_data = mask_data.astype('uint8')
 
         if binning > 1:
-            mask_data = _bin_volume(mask_data, binning)
+            mask_data = _bin_volume(mask_data, binning, method='nearest')
 
         mask_out_filepath = os.path.join(
             mask_out_dirpath,
