@@ -19,6 +19,7 @@ def predict_unet(
     limit_gpu_memory(fraction=0.8, total_memory=12000)
     from model import UNetConfig, UNet
     np.random.seed(42)
+    from glob import glob
 
     def apply(model, x0):
         x = x0.astype(np.float32) / 255.
@@ -30,19 +31,25 @@ def predict_unet(
 
         return y
 
-    # load file
-    x0 = imread(input_filepath)
+    filepaths = glob(input_filepath)
 
-    model_basedir, model_name = os.path.split(model_dirpath)
-    model = UNet(None, model_name, basedir=model_basedir)
+    for filepath in filepaths:
 
-    y = apply(model, x0)
+        filepath = Path(filepath)
 
-    # save output
-    out = Path(output_dirpath)
+        # load file
+        x0 = imread(filepath)
 
-    out.mkdir(exist_ok=True, parents=True)
-    imwrite(out / f"{Path(input_filepath).stem}.unet.tif", y)  # .astype(np.uint16))
+        model_basedir, model_name = os.path.split(model_dirpath)
+        model = UNet(None, model_name, basedir=model_basedir)
+
+        y = apply(model, x0)
+
+        # save output
+        out = Path(output_dirpath)
+
+        out.mkdir(exist_ok=True, parents=True)
+        imwrite(out / f"{Path(filepath).stem}.unet.tif", y)  # .astype(np.uint16))
 
 
 if __name__ == '__main__':
@@ -56,7 +63,7 @@ if __name__ == '__main__':
         formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument('input_filepath', type=str,
-                        help='Path to a 3D tif image file')
+                        help='Path to a 3D tif image file; Can be a glob for multiple files. e.g. "/path/to/*.tif"')
     parser.add_argument('output_dirpath', type=str,
                         help='Folder where the result will be written to')
     parser.add_argument('model_dirpath', type=str,
