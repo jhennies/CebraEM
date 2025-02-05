@@ -17,7 +17,7 @@ train_data_dirpath=$1
 unet_name=$2
 out_dirpath=$3
 
-python train_unet.py \
+python /g/icem/hennies/src/github/jhennies/CebraEM-benchmark/CebraEM/publication/benchmark_mueller_unet/train_unet.py \
   $train_data_dirpath \
   -name $unet_name \
   -src /scratch/hennies/projects/hennies/cebra-em-publication/mueller-unet/protocol-notebooks/unet \
