@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# cd to benchmark-dir
+# /g/icem/hennies/src/github/jhennies/CebraEM-benchmark/CebraEM/publication/benchmark_mueller_unet/train_all.sh /g/icem/hennies/src/github/jhennies/CebraEM-benchmark/CebraEM/publication/benchmark_mueller_unet/ "$(pwd)/gt-hela-1/*" unet-00 $(pwd)/unets-hela-1/
+
 repo_path=$1
 input_dirs=$2  # e.g. path/to/gt-hela-1
 run_name=$3  # e.g. unet-00

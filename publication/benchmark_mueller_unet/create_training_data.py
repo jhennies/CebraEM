@@ -126,7 +126,20 @@ def _determine_val_cubes(mask_filepaths, raw_filepaths, number_of_val_cubes):
     return parts_info
 
 
-def _process_organelle_set(parts_info, target_dirpaths):
+def _bin_volume(volume, bin_factor):
+    """Bins a 3D volume by an integer factor using NumPy reshaping and averaging."""
+    assert volume.shape[0] % bin_factor == 0
+    assert volume.shape[1] % bin_factor == 0
+    assert volume.shape[2] % bin_factor == 0
+
+    shape = (volume.shape[0] // bin_factor, bin_factor,
+             volume.shape[1] // bin_factor, bin_factor,
+             volume.shape[2] // bin_factor, bin_factor)
+
+    return volume.reshape(shape).mean(axis=(1, 3, 5))
+
+
+def _process_organelle_set(parts_info, target_dirpaths, binning=1):
 
     from h5py import File
     from tifffile import imwrite
@@ -153,6 +166,9 @@ def _process_organelle_set(parts_info, target_dirpaths):
 
             raw_data = raw_data[start_at: start_at + length, :]
 
+        if binning > 1:
+            raw_data = _bin_volume(raw_data, binning)
+
         raw_out_filepath = os.path.join(
             raw_out_dirpath,
             os.path.splitext(os.path.split(raw_filepath)[1])[0] + f'-{start_at}.tif'
@@ -164,6 +180,9 @@ def _process_organelle_set(parts_info, target_dirpaths):
 
         mask_data[mask_data > 0] = 255
         mask_data = mask_data.astype('uint8')
+
+        if binning > 1:
+            mask_data = _bin_volume(mask_data, binning)
 
         mask_out_filepath = os.path.join(
             mask_out_dirpath,
@@ -178,6 +197,7 @@ def create_training_data(
         min_val_fraction=0.25,
         allow_splits=1,
         organelles=None,
+        binning=1,
         verbose=False
 ):
 
@@ -217,7 +237,7 @@ def create_training_data(
             print(f'parts_info = {parts_info}')
 
         # Process the dataset
-        _process_organelle_set(parts_info, target_dirpaths[organelle])
+        _process_organelle_set(parts_info, target_dirpaths[organelle], binning=binning)
 
     print('------------------------------------------------')
 
@@ -241,6 +261,8 @@ if __name__ == '__main__':
                         help='Allow splitting data cubes n times; default=1')
     parser.add_argument('--organelles', type=str, nargs='+', default=None,
                         help='If set, only the specified organelle(s) will be used; Default=None')
+    parser.add_argument('--binning', type=int, default=1,
+                        help='Binning factor used to downsample the data; [1, 2, 4, 8, ...]; default=1 (no binning)')
     parser.add_argument('-v', '--verbose', action='store_true')
 
     args = parser.parse_args()
@@ -249,6 +271,7 @@ if __name__ == '__main__':
     min_val_fraction = args.min_val_fraction
     allow_splits = args.allow_splits
     organelles = args.organelles
+    binning = args.binning
     verbose = args.verbose
 
     create_training_data(
@@ -257,5 +280,6 @@ if __name__ == '__main__':
         min_val_fraction=min_val_fraction,
         allow_splits=allow_splits,
         organelles=organelles,
+        binning=binning,
         verbose=verbose
     )
