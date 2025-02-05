@@ -26,18 +26,13 @@ def train_unet(
 
     import numpy as np
     from tqdm import tqdm
-    from tifffile import imread, imwrite
-    # from itertools import chain
-    # from skimage.segmentation import find_boundaries
-    # from keras.optimizers import Adam
-    # from keras.callbacks import ModelCheckpoint
+    from tifffile import imread
     from datetime import datetime
-    # from csbdeep.internals.nets import custom_unet
-    from csbdeep.utils import Path, normalize
-    from csbdeep.utils.tf import CARETensorBoard, limit_gpu_memory
+    from csbdeep.utils import Path
+    from csbdeep.utils.tf import limit_gpu_memory
     limit_gpu_memory(fraction=0.8, total_memory=12000)
     from csbdeep.data.generate import sample_patches_from_multiple_stacks
-    from augmend import Augmend, BaseTransform, Elastic, Identity, FlipRot90, AdditiveNoise, CutOut, GaussianBlur, IntensityScaleShift
+    from augmend import Augmend, Elastic, Identity, FlipRot90, AdditiveNoise, IntensityScaleShift
     from model import UNetConfig, UNet
     np.random.seed(42)
 
@@ -164,7 +159,8 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Trains a Mueller et al. U-Net',
+        description=('Trains a Mueller et al. U-Net\n'
+                     'Derived from https://github.com/betaseg/protocol-notebooks/blob/main/unet/run_unet.ipynb'),
         formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument('train_data_dirpath', type=str,
