@@ -1,41 +1,4 @@
 
-"""
-FIXME: The below should make individual training folders for each organelle as well (not only for each dataset)
-
-[For each dataset: (This is done outside of this script)]
-
-    Find masks -> masks = []
-    Determine organelles from masks -> organelles = [...]
-    For each organelle:
-        Find images and masks for the organelle -> images = [...], masks = [...]
-        if split condition is met -> split_images = True else False
-        if split_images:
-            do the split such that newlen(images) = len(images) * (num_splits+1)
-        Set up dictionaries to link images/masks to filenames -> dict_images = {image[0]: fn[0], ...}
-
-        For each image:
-            Load from hdf5 -> image_data = np.array()
-            if not split_images:
-                Determine output location -> out_filepath = .../dataset-organelle-name/type/images/image-basename.tif
-                Save image as 3D tif to out_filepath
-            else:
-                Split image in half -> image[0] = image[:n/2], image[1] = image[n/2:]
-                for idx in [0, 1]:
-                    Determine output location -> out_filepath = .../dataset-organelle-name/type/images/image-basename-idx.tif
-                    Save image[idx] as 3D tif to out_filepath
-        For each mask:
-            Convert mask to uint8
-            Set values > 0 to 255
-            if not split_images:
-                Determine output location -> out_filepath = .../dataset-organelle-name/type/masks/mask-basename.tif
-                Save mask as 3D tif to out_filepath
-            else:
-                Split mask in half -> mask[0] = mask[:n/2], mask[1] = mask[n/2:]
-                for idx in [0, 1]:
-                    Determine output location -> out_filepath = .../dataset-organelle-name/type/masks/mask-basename-idx.tif
-                    Save mask[idx] as 3D tif to out_filepath
-
-"""
 import os.path
 from glob import glob
 import numpy as np
@@ -268,7 +231,7 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Initializes a CebraEM project',
+        description='Creates the training data structure required by the Mueller et al. U-Net',
         formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument('input_gt_dirpath', type=str, default=None,
