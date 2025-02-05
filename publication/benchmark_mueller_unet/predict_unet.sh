@@ -7,8 +7,8 @@
 #SBATCH -n 4
 #SBATCH -t 1-0:00:00
 #SBATCH --mem=16G
-#SBATCH -e train-unet.err
-#SBATCH -o train-unet.out
+#SBATCH -e predict-unet.err
+#SBATCH -o predict-unet.out
 
 module load TensorFlow/2.11.0-foss-2022a-CUDA-11.7.0
 module load scikit-image/0.19.3-foss-2022a
