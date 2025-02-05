@@ -136,7 +136,9 @@ def _bin_volume(volume, bin_factor):
              volume.shape[1] // bin_factor, bin_factor,
              volume.shape[2] // bin_factor, bin_factor)
 
-    return volume.reshape(shape).mean(axis=(1, 3, 5))
+    dtype = volume.dtype
+
+    return volume.reshape(shape).mean(axis=(1, 3, 5)).astype(dtype)
 
 
 def _process_organelle_set(parts_info, target_dirpaths, binning=1):
