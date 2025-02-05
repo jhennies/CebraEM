@@ -14,6 +14,9 @@ def create_prediction_data(
     from h5py import File
     from tifffile import imwrite
 
+    if not os.path.exists(output_dirpath):
+        os.mkdir(output_dirpath)
+
     filepaths = glob(os.path.join(input_dirpath, '*-raw.h5'))
 
     for filepath in filepaths:
