@@ -64,16 +64,6 @@ def _get_image_and_mask_filepaths(dirpath, organelle):
         cube_name = os.path.split(filepath)[1].split(f'-{organelle}')[0]
         raw_filepaths.append(os.path.join(dirpath, f'{cube_name}-raw.h5'))
 
-    # filepaths = glob(os.path.join(dirpath, '*.h5'))
-    # contents = [os.path.splitext(filepath)[0].split('-')[-1] for filepath in filepaths]
-    #
-    # mask_filepaths = []
-    # raw_filepaths = []
-    # for idx, content in enumerate(contents):
-    #     if content == organelle:
-    #         mask_filepaths.append(filepaths[idx])
-    #         cube_name = os.path.split(filepaths[idx])[1].split(f'-{organelle}')[0]
-    #         raw_filepaths.append(os.path.join(dirpath, f'{cube_name}-raw.h5'))
     return mask_filepaths, raw_filepaths
 
 
