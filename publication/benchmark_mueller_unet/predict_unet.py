@@ -38,15 +38,15 @@ def predict_unet(
 
     filepaths = glob(input_filepath)
 
+    model_basedir, model_name = os.path.split(model_dirpath)
+    model = UNet(None, model_name, basedir=model_basedir)
+
     for filepath in filepaths:
 
         filepath = Path(filepath)
 
         # load file
         x0 = imread(filepath)
-
-        model_basedir, model_name = os.path.split(model_dirpath)
-        model = UNet(None, model_name, basedir=model_basedir)
 
         y = apply(model, x0)
 
