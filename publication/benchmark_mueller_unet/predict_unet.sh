@@ -18,7 +18,7 @@ output_dirpath=$2
 model_dirpath=$3
 
 python predict_unet.py \
-  $input_filepath \
+  "$input_filepath" \
   $output_dirpath \
   $model_dirpath \
   -v
