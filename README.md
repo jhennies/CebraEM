@@ -95,6 +95,12 @@ As an example, for our system with Cuda version 11, we installed pytorch success
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 ```
 
+For Cuda version 12, this works for us:
+
+```
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+```
+
 **Now it is important to test the installation**
 
 The following script runs the main steps of the CebraEM pipeline using a small test dataset.

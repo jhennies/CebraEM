@@ -6,9 +6,12 @@ def run_cebra_net(
         input_data
 ):
 
+    print('Importing bioimageio.core ...')
     import bioimageio.core
     import xarray as xr
     from cebra_em_core.misc.repo import get_repo_path
+
+    print('Imports done!')
 
     # Set up the model
     try:
