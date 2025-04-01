@@ -1,5 +1,4 @@
 import os
-import time
 
 
 def train_unet(
@@ -11,9 +10,10 @@ def train_unet(
 ):
 
     if out_dirpath is not None:
+        import time
+        import random
+        time.sleep(random.uniform(0, 5))
         if not os.path.exists(out_dirpath):
-            import random
-            time.sleep(random.uniform(0, 5))
             os.mkdir(out_dirpath)
         os.chdir(out_dirpath)
 
