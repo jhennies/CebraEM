@@ -13,9 +13,9 @@
 module load TensorFlow/2.11.0-foss-2022a-CUDA-11.7.0
 module load scikit-image/0.19.3-foss-2022a
 
-input_filepath=$1
-output_dirpath=$2
-model_dirpath=$3
+input_filepath=$1  # of the cube to be predicted
+output_dirpath=$2  # Where to write the result
+model_dirpath=$3  # The model file
 
 python predict_unet.py \
   "$input_filepath" \
