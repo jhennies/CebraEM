@@ -10,16 +10,21 @@ sbatch /g/icem/hennies/src/github/jhennies/CebraEM-benchmark/CebraEM/publication
 
 repo_path=$1
 input_files=$2  # e.g. path/to/gt-hela-1
-#run_name=$3  # e.g. unet-00
-#output_dirpath=$4  # e.g. path/to/unets-hela-1
+run_name=$3  # e.g. hela-1-predict-mito-bin2-00
+model_dirpath=$4  # e.g. unets-hela-1-bin2/models/mito-unet-00/
 
 echo repo_path = $repo_path
 
 for filepath in $input_files; do
   echo ''
   echo processing $filepath
-
+  echo ''
+  echo sbatch /g/icem/hennies/src/github/jhennies/CebraEM-benchmark/CebraEM/publication/benchmark_mueller_unet/predict_unet.sh
+  echo  ${filepath}
+  echo  "$(pwd)/${run_name}"
+  echo  model_dirpath
 done
+
 #
 #for dirpath in $input_dirs; do
 #  echo ''
