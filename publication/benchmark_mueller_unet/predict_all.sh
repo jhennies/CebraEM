@@ -23,6 +23,12 @@ for filepath in $input_files; do
   echo "  ${filepath}"
   echo "  $(pwd)/${run_name}"
   echo "  ${model_dirpath}"
+
+  sbatch /g/icem/hennies/src/github/jhennies/CebraEM-benchmark/CebraEM/publication/benchmark_mueller_unet/predict_unet.sh \
+    ${filepath} \
+    $(pwd)/${run_name} \
+    ${model_dirpath}
+
 done
 
 #

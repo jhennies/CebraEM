@@ -5,7 +5,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH -N 1
 #SBATCH -n 4
-#SBATCH -t 1-0:00:00
+#SBATCH -t 0-0:30:00
 #SBATCH --mem=16G
 #SBATCH -e predict-unet.err
 #SBATCH -o predict-unet.out
