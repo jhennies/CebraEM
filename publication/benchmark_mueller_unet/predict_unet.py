@@ -39,6 +39,9 @@ def predict_unet(
     filepaths = glob(input_filepath)
 
     model_basedir, model_name = os.path.split(model_dirpath)
+    if verbose:
+        print(f'model_name = {model_name}')
+        print(f'model_basedir = {model_basedir}')
     model = UNet(None, model_name, basedir=model_basedir)
 
     for filepath in filepaths:

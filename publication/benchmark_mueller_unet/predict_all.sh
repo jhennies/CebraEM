@@ -1,7 +1,12 @@
 #!/bin/bash
 
-# cd to benchmark-dir
-# /g/icem/hennies/src/github/jhennies/CebraEM-benchmark/CebraEM/publication/benchmark_mueller_unet/train_all.sh /g/icem/hennies/src/github/jhennies/CebraEM-benchmark/CebraEM/publication/benchmark_mueller_unet/ "$(pwd)/gt-hela-1/*" unet-00 $(pwd)/unets-hela-1/
+"""
+sbatch /g/icem/hennies/src/github/jhennies/CebraEM-benchmark/CebraEM/publication/benchmark_mueller_unet/predict_unet.sh \
+    val-hela-1-bin2/hela-1-10nm-011-val-raw.tif \
+    hela-1-predict-mito-bin2-00 \
+    unets-hela-1-bin2/models/mito-unet-00/
+"""
+
 
 repo_path=$1
 input_dirs=$2  # e.g. path/to/gt-hela-1
