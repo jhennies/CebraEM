@@ -17,7 +17,7 @@ input_filepath=$1  # of the cube to be predicted
 output_dirpath=$2  # Where to write the result
 model_dirpath=$3  # The model file
 
-python predict_unet.py \
+python /g/icem/hennies/src/github/jhennies/CebraEM-benchmark/CebraEM/publication/benchmark_mueller_unet/predict_unet.py \
   "$input_filepath" \
   $output_dirpath \
   $model_dirpath \
