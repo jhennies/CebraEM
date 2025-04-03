@@ -126,7 +126,7 @@ def _determine_val_cubes(mask_filepaths, raw_filepaths, number_of_val_cubes):
     return parts_info
 
 
-def _bin_volume(volume, bin_factor, method='mean'):
+def bin_volume(volume, bin_factor, method='mean'):
     """Bins a 3D volume by an integer factor using NumPy reshaping and averaging."""
     assert volume.shape[0] % bin_factor == 0
     assert volume.shape[1] % bin_factor == 0
@@ -177,7 +177,7 @@ def _process_organelle_set(parts_info, target_dirpaths, binning=1):
             raw_data = raw_data[start_at: start_at + length, :]
 
         if binning > 1:
-            raw_data = _bin_volume(raw_data, binning)
+            raw_data = bin_volume(raw_data, binning)
 
         raw_out_filepath = os.path.join(
             raw_out_dirpath,
