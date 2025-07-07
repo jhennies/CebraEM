@@ -730,8 +730,9 @@ class CebraAnnWidget(QWidget):
                       halo[1]: -halo[1],
                       halo[2]: -halo[2],
                 ]
+            from pybdv.metadata import get_key
             with File(self._project.get_absolute_path(self._project.sv), mode='w') as f:
-                f.create_dataset('data', data=sv, compression='gzip')
+                f.create_dataset(get_key(True, 0, 0, 0), data=sv, compression='gzip')
 
             self.update_layer('sv', sv, 'labels', visible=True, translate=None)
 
