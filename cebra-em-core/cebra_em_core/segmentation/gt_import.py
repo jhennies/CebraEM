@@ -9,10 +9,12 @@ def confine_annotation_to_supervoxel_level(
         target_filepath,
         input_key=None,
         supervoxel_key=None,
-        crop_to_supervoxels=False
+        crop_to_supervoxels=False,
+        project_path=None
 ):
 
     from pybdv.util import open_file
+    from cebra_em_core.project_utils.config import get_config
 
     # Get the segmentation and supervoxels
     with open_file(input_filepath, mode='r') as f:
@@ -44,8 +46,10 @@ def confine_annotation_to_supervoxel_level(
                     new_seg[sv == sv_lbl] = seg_lbl
 
     # Save the result
-    from cebra_em_core.dataset.bdv_utils import create_simple_bdv_h5_dataset
+    resolution = get_config('supervoxels', project_path=project_path)['resolution']
+    from cebra_em_core.dataset.bdv_utils import create_simple_bdv_h5_dataset, add_xml_to_simple_bdv_h5_dataset
     create_simple_bdv_h5_dataset(target_filepath, new_seg, attrs=None)
+    add_xml_to_simple_bdv_h5_dataset(target_filepath, unit='micrometer', resolution=resolution)
 
 
 def import_annotation(
@@ -83,6 +87,7 @@ def import_annotation(
         target_filepath,
         input_key=input_key,
         supervoxel_key=get_key(True, 0, 0, 0),
-        crop_to_supervoxels=crop_center
+        crop_to_supervoxels=crop_center,
+        project_path=project_path
     )
 
