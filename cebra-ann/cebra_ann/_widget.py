@@ -648,6 +648,7 @@ class CebraAnnWidget(QWidget):
 
             self._project.set_mem()
 
+            print(f'Performing pre-processing ...')
             raw = pre_processing(raw, sigma, qnorm_low, qnorm_high)
 
             # run_cebra_net(
@@ -659,6 +660,7 @@ class CebraAnnWidget(QWidget):
             #     squeeze_result=True
             # )
 
+            print(f'Running CebraNET prediction ...')
             mem = run_cebra_net(raw)
 
             with File(self._project.get_absolute_path(self._project.mem), mode='w') as f:

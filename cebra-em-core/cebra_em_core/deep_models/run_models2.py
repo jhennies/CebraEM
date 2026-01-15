@@ -19,6 +19,7 @@ def pre_processing(raw, sigma=0.0, qnorm_low=0.0, qnorm_high=1.0):
         raw = quantile_norm(raw, qnorm_low, qnorm_high)
 
     if sigma > 0:
+        print(f'Gaussian smooting with sigma = {sigma}')
         raw = gaussianSmoothing(raw, sigma)
 
     return raw
